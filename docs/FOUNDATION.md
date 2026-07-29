@@ -258,7 +258,7 @@ Decisions made now because they get expensive later.
 
 | Area | Decision | Why |
 |---|---|---|
-| Framework | Next.js 15 App Router, TypeScript `strict` | Server components for data, minimal client state |
+| Framework | Next.js 16 App Router, React 19, TypeScript `strict` | Server components for data, minimal client state |
 | Styling | Semantic token layer over Tailwind | `--surface-raised`, never `bg-gray-100` in a component |
 | Primitives | Radix, unstyled | A11y + focus management free; we own 100% of the visual layer |
 | Motion | Motion (Framer), shared spring config | Easing lives in tokens — one vocabulary, not per-component guesses |

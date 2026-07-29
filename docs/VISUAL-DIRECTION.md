@@ -7,6 +7,28 @@ treat them as the starting system, not as untouchable.
 
 ---
 
+## 0. The mark — LOCKED
+
+**Wordmark:** NORTH lettered stroke by stroke in the same hairline hand that
+draws the turn glyphs and the horizon marks, wide-tracked, with the **O
+replaced by a working compass** — bezel ticks east and west, and a needle whose
+north point is the ONE filled shape in the entire identity. Everything else
+North draws is an open stroke; the direction itself is the exception.
+
+**App icon / favicon:** the compass alone, on the wordmark's own coordinates
+cropped square. The icon is a LETTER OF THE NAME, not a second drawing, which
+is why the two can never drift apart.
+
+Both live in `components/nds/Wordmark.tsx` (`Wordmark`, `CompassMark`) and are
+proofed in `/design` under *Wordmark*. The app icon is `app/icon.svg`.
+
+**Do not redraw.** The geometry — cap height 28, every optical gap 9 units,
+both needle halves on one pen with identical waist and tip — was settled by
+measurement, not by eye. Scale with `height`/`size`; nudge `strokeWidth` only
+where a surface renders the mark small enough that the hairline would wash out.
+The mark is ink, or `text-on-deep` on the sky. Never a hue, never reversed out
+of a box, never set in a typeface.
+
 ## 0. The references, decoded
 
 "Apple Health, Linear, Arc level of polish" is a feeling, not a spec. What those
@@ -432,7 +454,8 @@ North's guesses.
 
 - **No green or red for financial direction.** §3.3
 - **No colored primary button.** The primary action is ink. §3.1
-- **No shadows for elevation.** Hairline and surface shift. §6
+- **No shadow *stacks* for elevation.** One soft warm ambient on the card;
+  hairline and surface shift do the rest. §6, amended §11
 - **No second card on a screen.** §6
 - **No number animating upward.** §8.3
 - **No dual-axis chart, ever.** §7.3
@@ -441,3 +464,72 @@ North's guesses.
 - **No multi-column layout at any breakpoint.** §5
 - **No tabular figures on display-size numbers.** §4.2
 - **No decorative element anywhere.** §2
+
+---
+
+## 11. The craft pass — July 2026 amendment
+
+The foundation above was right; the first execution of it read as a wireframe.
+This pass added the sensory layer without touching the product's spine. What
+changed, deliberately:
+
+- **The atmosphere.** An indigo→teal→paper gradient (`--sky-900/600/300`,
+  OKLab-interpolated) holds the top of every screen — the brand indigo made
+  environmental: *the sky is the coach*. It is **ground, not signal**, so it
+  does not count against one-signal-per-viewport, and it is not decoration —
+  it carries orientation the way paper carries reading. Content always lands
+  back on paper; this is still a light-first product, not a dark mode.
+- **Overlines.** Geist Mono, 11px, caps, tracked (`type-overline`) for
+  mastheads, section labels, and stat lines. Always a label, never a sentence.
+- **Hairline data marks.** The horizon band is now a fan of thin vertical
+  hairlines peaking at the central estimate — the distribution IS the mark.
+  Rung ticks are thin vertical hairlines. Still no axes, gridlines, legends.
+- **Pills.** Buttons and chips are capsules; primary navigation is a floating
+  pill dock on mobile and a segmented row on the atmosphere from md up. The
+  primary action is still ink.
+- **Real card elevation.** One soft, warm ambient shadow. Near-invisible read
+  as unfinished next to the atmosphere; a stack would read as chrome.
+
+Unchanged, and reaffirmed against the fintech references that prompted this
+pass: **no balance-as-hero, no transaction feed, no to-the-cent projections,
+no module grid.** Those are the moves that would turn North back into the
+dashboard it exists to replace.
+
+---
+
+## 12. The alive pass — the wow, bounded (July 2026)
+
+The craft pass made North coherent; this pass makes it arresting. Every move
+is spectacle **in service of meaning**, with a hard bound written next to it:
+
+- **The Horizon Field** (`HorizonField`). The projection as a landscape: a
+  full-width fan of hairlines, and — where the projection is the subject — a
+  real slider: drag and the year moves under a plumb-line cursor while the
+  whole scene recomputes. `role="slider"`, arrow keys, year in
+  `aria-valuetext`. *Bound: only where the projection is the subject (Goals,
+  the calm day, Scenario).* 
+- **It breathes.** In-band bars oscillate ±7% on a slow stagger — uncertainty
+  is alive, literally. *Bound: the only ambient motion in the product;
+  reduced-motion collapses it.*
+- **Emphasized figures.** A read may break ONE figure onto its own
+  display-serif line at weight 500, confidence mark intact — the big bold
+  number, inside the sentence. *Bound: one per read, enforced by test; two is
+  a dashboard.*
+- **The aurora word.** One word per screen may fill with the sky
+  (`.text-aurora`), stops held to the AA-safe half of the ramp. *Bound: one
+  word, one screen, never a figure.*
+- **The verdict as a pull-quote.** Display italic serif; clay only for "Not
+  yet." — color when it means attention, ink when it means assent.
+- **Reveal choreography.** Figures settle blur(4px)→sharp, staggered.
+  *Bound: opacity never drops — the visibility rule holds.*
+- **The dock glides.** One shared active pill on the standard spring; mobile
+  items carry hand-drawn hairline glyphs (roof, needle, letter, peak). *Bound:
+  no icon library; desktop stays words.*
+- **The sky knows the hour.** Dawn/day/dusk are the same three tokens
+  rearranged at open. *Bound: no new hues; contrast figures unchanged.*
+- **Serif 500 exists** for emphasized figures and verdict words only — the
+  400-only rule is amended exactly that far.
+
+Still refused, so the wow never curdles into the cliché: no bare balance hero,
+no rainbow palette, no idle mascots, no counting numbers, no celebration of
+rung advancement.

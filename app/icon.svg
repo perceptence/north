@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="73.2 33.2 29.6 29.6">
+  <!-- The compass O, lifted verbatim from the wordmark's coordinates
+       (components/nds/Wordmark.tsx). Ink, not a hue: the icon is the same
+       drawing the masthead makes, so the two can never drift. -->
+  <rect x="73.2" y="33.2" width="29.6" height="29.6" fill="#faf8f5"/>
+  <g fill="none" stroke="#1a1714" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="88" cy="48" r="11.6"/>
+    <path d="M77.6 48 H80.6"/>
+    <path d="M95.4 48 H98.4"/>
+    <path d="M84.9 48 L88 57 L91.1 48 Z"/>
+    <path d="M88 39 L91.1 48 L84.9 48 Z" fill="#1a1714"/>
+  </g>
+</svg>

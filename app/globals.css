@@ -1,26 +1,534 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   NORTH DESIGN SYSTEM — TOKENS
+   Spec: docs/DESIGN-SYSTEM.md
+
+   Two tiers. Components consume Tier 2 ONLY. A component referencing a Tier 1
+   token, a raw hex, or a raw px value is a review failure (§9, rule 9).
+
+   Every contrast figure in the comments is computed, not estimated.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------------
+   TIER 1 — PRIMITIVES
+   Named for what they ARE. Never referenced by a component.
+   ------------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Paper — warm neutral ground */
+  --paper-0: #ffffff;
+  --paper-50: #faf8f5;
+  --paper-100: #f2efea;
+  --paper-200: #e6e1d9;
+  --paper-300: #c9c1b6;
+
+  /* Ink — warm near-black */
+  --ink-900: #0f0d0b;
+  --ink-800: #1a1714;
+  --ink-700: #302b25;
+  --ink-600: #57514a;
+  --ink-500: #726b62;
+  --ink-400: #918b83;
+  --ink-300: #ada49a;
+
+  /* Signal */
+  --indigo-600: #2e3a8c;
+  --indigo-300: #6b87ff;
+  --clay-600: #a6522f;
+
+  /* Sky — the atmosphere ramp. Deep night indigo through horizon teal,
+     landing on paper. Derived from the brand indigo so the atmosphere IS
+     the coach's color made environmental. Contrast-verified:
+     paper on sky-900 = 13.67, on sky-600 = 7.35; 72% paper on sky-600 = 4.73. */
+  --sky-900: #20264e;
+  --sky-600: #35566b;
+  --sky-300: #82a7a4;
 }
 
+/* ---------------------------------------------------------------------------
+   TIER 2 — SEMANTIC
+   Named for what they DO. The only tier components may consume.
+   ------------------------------------------------------------------------ */
+:root {
+  /* Surface */
+  --surface-page: var(--paper-50);
+  --surface-raised: var(--paper-0);
+  --surface-sunken: var(--paper-100);
+  --surface-scrim: rgb(26 23 20 / 0.32);
+
+  /* Text — ratios vs surface-page */
+  --text-primary: var(--ink-800); /* 16.84  AA body */
+  --text-secondary: var(--ink-600); /*  7.39  AA body */
+  --text-tertiary: var(--ink-500); /*  4.96  AA body */
+  --text-inverse: var(--paper-50); /* 16.84  on ink   */
+  --text-disabled: var(--ink-300); /*  2.32  NON-TEXT ONLY */
+
+  /* Action */
+  --action-primary-bg: var(--ink-800);
+  --action-primary-bg-hover: var(--ink-700);
+  --action-primary-bg-pressed: var(--ink-900);
+  --action-border: var(--ink-400); /*  3.18  AA non-text */
+  --action-border-hover: var(--ink-500); /*  4.90  AA non-text */
+
+  /* Signal — max ONE signal element per viewport (§9, rule 3) */
+  --signal-coach: var(--indigo-600); /*  9.43 */
+  --signal-attention: var(--clay-600); /*  5.12 */
+  --signal-band: var(--indigo-600); /*  9.43  solid, 6px — never a tint */
+
+  /* Line */
+  --line-hairline: var(--paper-200); /*  1.23  separation only, no meaning */
+  --line-control: var(--ink-400); /*  3.18  control boundaries */
+
+  /* Atmosphere — the coach's sky. GROUND, not signal: it may hold the top of
+     a screen the way paper holds the rest, so it does not count against the
+     one-signal-per-viewport rule. Content always lands back on paper. */
+  --surface-deep: var(--sky-900);
+  --text-on-deep: rgb(250 248 245 / 0.95); /* 13.67 on sky-900, 7.35 on sky-600 */
+  --text-on-deep-dim: rgb(250 248 245 / 0.72); /* 7.77 / 4.73 */
+  --atmosphere: linear-gradient(
+    180deg,
+    var(--sky-900) 0%,
+    var(--sky-600) 45%,
+    var(--sky-300) 75%,
+    var(--paper-50) 100%
+  );
+
+  /* Confidence grammar (§2.3) */
+  --confidence-inferred-mark: var(--indigo-600);
+  --confidence-assumed-mark: var(--ink-400);
+
+  /* Elevation — warm-tinted; a cool shadow on warm paper reads as dirt.
+     The card's ambient lift was raised in the craft pass: near-invisible read
+     as unfinished next to the atmosphere. Still one soft shadow, never stacked
+     chrome. */
+  --elevation-card: 0 1px 2px rgb(26 23 20 / 0.05), 0 12px 32px -16px rgb(26 23 20 / 0.14);
+  --elevation-sheet: 0 8px 32px rgb(26 23 20 / 0.12);
+
+  /* Motion — MIRRORED FROM components/nds/motion.ts, which is the source of
+     truth. Changing a value here without changing it there will diverge the
+     CSS and JS animation vocabularies; `assertMotionTokensInSync` warns in
+     development when they disagree. */
+  --motion-micro: 120ms;
+  --motion-standard: 220ms;
+  --motion-considered: 320ms;
+  --motion-ceremonial: 700ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1); /* no overshoot, by design */
+}
+
+/* ---------------------------------------------------------------------------
+   TAILWIND THEME
+   Exposes Tier 2 as utilities. `inline` so var references resolve.
+   ------------------------------------------------------------------------ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Breakpoints. `initial` clears Tailwind's defaults so an unnamed one
+     cannot be used by accident (§6).
+
+     `xl` was added deliberately, for ONE job: the width at which the 600px
+     column leaves margins deep enough that wordless SCENERY may exceed the
+     measure. It is not a licence for a denser layout — see the amendment in
+     DESIGN-SYSTEM §6. */
+  --breakpoint-*: initial;
+  --breakpoint-md: 40rem; /* 640 — tablet  */
+  --breakpoint-lg: 64rem; /* 1024 — desktop */
+  --breakpoint-xl: 80rem; /* 1280 — room for scenery to breathe past the measure */
+
+  --color-surface-page: var(--surface-page);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-scrim: var(--surface-scrim);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-disabled: var(--text-disabled);
+
+  --color-action-primary: var(--action-primary-bg);
+  --color-action-primary-hover: var(--action-primary-bg-hover);
+  --color-action-primary-pressed: var(--action-primary-bg-pressed);
+  --color-action-border: var(--action-border);
+  --color-action-border-hover: var(--action-border-hover);
+
+  --color-signal-coach: var(--signal-coach);
+  --color-signal-attention: var(--signal-attention);
+  --color-signal-band: var(--signal-band);
+
+  --color-line-hairline: var(--line-hairline);
+  --color-line-control: var(--line-control);
+
+  --color-surface-deep: var(--surface-deep);
+  --color-text-on-deep: var(--text-on-deep);
+  --color-text-on-deep-dim: var(--text-on-deep-dim);
+
+  /* Spacing is deliberately NOT redefined.
+     Tailwind's 4px-based scale already expresses the NDS 8/4 rhythm exactly:
+       space-1→p-1(4)   space-2→p-2(8)    space-3→p-3(12)  space-4→p-4(16)
+       space-5→p-6(24)  space-6→p-8(32)   space-7→p-12(48) space-8→p-16(64)
+       space-9→p-24(96)
+     Renaming these would make `p-5` mean 24px instead of 20px and silently
+     break every arbitrary utility (h-11 for a 44px hit target, etc.). The
+     sanctioned steps are documented; the framework's scale is left intact. */
+
+  /* Radius — semantic, so `rounded-lg` keeps its Tailwind meaning (§5.1) */
+  --radius-chip: 0.5rem; /*  8 — chips, inputs, band ends */
+  --radius-control: 0.75rem; /* 12 — buttons */
+  --radius-card: 1.25rem; /* 20 — the decision card */
+  --radius-sheet: 1.75rem; /* 28 — sheets */
+
+  --shadow-card: var(--elevation-card);
+  --shadow-sheet: var(--elevation-sheet);
+
+  --font-voice: var(--font-newsreader), Georgia, serif;
+  --font-ui: var(--font-geist-sans), system-ui, sans-serif;
+  --font-figure: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* The content column never widens past 600px, at any breakpoint (§6) */
+  --container-column: 37.5rem;
+
+  /* The considered pause. Not a spinner — there are no spinners (§9, rule 12).
+     This stays in CSS: an infinite ambient loop needs no JS, and running it
+     through Motion would keep a render loop alive for a pulsing dot. */
+  --animate-coach-pulse: coach-pulse 1.6s ease-in-out infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes field-breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.07);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes coach-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* sheet-rise / sheet-fade removed — Motion owns the Sheet's enter AND exit now.
+   CSS could do the enter but not the exit, which is what made it the one
+   shipped component with a real animation gap. */
+
+/* ---------------------------------------------------------------------------
+   BASE
+   ------------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.625rem;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Focus is designed, never removed (§9, rule 18).
+     The 2px offset is load-bearing: the ring alone measures 1.78:1 against the
+     ink primary button. With the offset, ring-vs-page is 9.43 and
+     page-vs-button is 16.84. */
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--signal-coach);
+    outline-offset: 2px;
+  }
+
+  /* Numbers never jitter where they align. Applied by role, not globally —
+     display-size numbers use proportional figures (§4.2). */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   TYPE SCALE (§4.2)
+   Defined as classes rather than Tailwind sizes because the responsive step is
+   intrinsic to the token — `type-voice-lg` IS responsive; it is not a variant
+   the caller opts into.
+   ------------------------------------------------------------------------ */
+@layer components {
+  .type-voice-xl,
+  .type-voice-lg,
+  .type-voice-md {
+    font-family: var(--font-newsreader), Georgia, serif;
+    font-weight: 400; /* the serif ships at 400 only — bold reads as advertising */
+  }
+
+  .type-voice-xl {
+    font-size: 2.125rem; /* 34 */
+    line-height: 2.75rem;
+    letter-spacing: -0.015em;
+  }
+  @media (width >= 40rem) {
+    .type-voice-xl {
+      font-size: 2.5rem; /* 40 */
+      line-height: 3.125rem;
+    }
+  }
+
+  .type-voice-lg {
+    font-size: 1.875rem; /* 30 */
+    line-height: 2.5rem; /* 40 */
+    letter-spacing: -0.01em;
+  }
+  @media (width >= 40rem) {
+    .type-voice-lg {
+      font-size: 2rem;
+      line-height: 2.75rem;
+    }
+  }
+  @media (width >= 64rem) {
+    .type-voice-lg {
+      font-size: 2.125rem;
+      line-height: 2.875rem;
+    }
+  }
+
+  .type-voice-md {
+    font-size: 1.375rem; /* 22 — at the 20px serif floor */
+    line-height: 2rem;
+    letter-spacing: -0.005em;
+  }
+  @media (width >= 40rem) {
+    .type-voice-md {
+      font-size: 1.5rem;
+      line-height: 2.125rem;
+    }
+  }
+
+  /**
+   * No scrollbar gutter on phone and tablet.
+   *
+   * Below `lg` the product is a touch surface: every one of those platforms
+   * draws an overlay scrollbar that fades on its own, so a persistent track is
+   * a desktop artifact sitting down the edge of a screen whose whole argument
+   * is calm. Above `lg` the pointer is a mouse and the scrollbar stays, because
+   * there it is genuinely the affordance for scrolling.
+   *
+   * Scrolling itself is untouched — this hides the paint, never the behaviour,
+   * and keyboard, wheel and touch all still work.
+   */
+  @media (width < 64rem) {
+    html {
+      scrollbar-width: none;
+    }
+    html::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .type-body {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: 1.0625rem; /* 17 */
+    line-height: 1.625rem;
+    font-weight: 400;
+  }
+
+  .type-label {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: 0.875rem; /* 14 */
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .type-meta {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: 0.8125rem; /* 13 */
+    line-height: 1.125rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+
+  .type-figure {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.9375rem; /* 15 */
+    line-height: 1.375rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Overline — mono caps micro-label. The craft register: screen mastheads,
+     section labels, stat lines. Always a label, never a sentence. */
+  /* Section heading INSIDE a screen — "What you're working toward", "Where
+     this leaves you". Mono caps like the overline so it stays in the same
+     voice, but larger, tighter-tracked and heavier so it outranks it: a
+     masthead and a section heading set identically is not a hierarchy.
+     Change this and every in-page section heading follows. */
+  .type-section {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.8125rem; /* 13 */
+    line-height: 1.125rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .type-overline {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.6875rem; /* 11 */
+    line-height: 1rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* The coach's sky. Absolutely positioned behind the top of a screen and
+     fading into paper — atmosphere, not a dark mode. Size it with height
+     utilities at the use site. */
+  .atmosphere {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    background: var(--atmosphere);
+    /* Same stops, interpolated in OKLab — sRGB interpolation bands visibly on
+       the teal→paper tail. Older engines drop this line and keep the token. */
+    background: linear-gradient(
+      180deg in oklab,
+      var(--sky-900) 0%,
+      var(--sky-600) 45%,
+      var(--sky-300) 75%,
+      var(--paper-50) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* One gradient-filled word per screen, maximum — the playful move, bounded.
+     Stops stay in the AA-safe half of the sky (worst stop sky-600 = 7.35:1),
+     so the word is decoration AND legible text. */
+  /* A boxed piece of the atmosphere, for gallery specimens only. The product
+     uses `.atmosphere` full-bleed at the top of a screen; this is the same
+     ramp made into a swatch so a mark can be proofed against it. */
+  .atmosphere-swatch {
+    background: linear-gradient(
+      160deg in oklab,
+      var(--sky-900) 0%,
+      var(--sky-600) 55%,
+      var(--sky-300) 100%
+    );
+  }
+
+  .text-aurora {
+    background-image: linear-gradient(
+      100deg in oklab,
+      var(--sky-900),
+      var(--signal-coach) 55%,
+      var(--sky-600)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* The field breathes — uncertainty is alive. Subtle scale from the
+     baseline, long period, staggered per bar at the use site. The global
+     reduced-motion block collapses it to nothing. */
+  .breathe {
+    transform-origin: bottom;
+    animation: field-breathe 7s ease-in-out infinite;
+  }
+
+  /* Measure cap — sets the column, not the viewport (§4.2) */
+  .measure {
+    max-width: 34ch;
+  }
+
+  /* Range input.
+     Built on the native control so keyboard, touch, and the slider role come
+     from the platform. Only the paint is ours — the pseudo-elements below are
+     the one place Tailwind cannot reach. */
+  .nds-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2.75rem; /* 44px target around a 4px track */
+    background: transparent;
+    cursor: grab;
+  }
+  .nds-slider:active {
+    cursor: grabbing;
+  }
+
+  .nds-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--surface-sunken);
+  }
+  .nds-slider::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--surface-sunken);
+  }
+
+  /* The thumb is ink, like every primary control. Never a hue. */
+  .nds-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: -0.625rem;
+    border-radius: 9999px;
+    background: var(--action-primary-bg);
+    border: 2px solid var(--surface-raised);
+  }
+  .nds-slider::-moz-range-thumb {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--surface-raised);
+    border-radius: 9999px;
+    background: var(--action-primary-bg);
+  }
+
+  .nds-slider:focus-visible {
+    outline: none;
+  }
+  .nds-slider:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--signal-coach);
+    outline-offset: 2px;
+  }
+  .nds-slider:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--signal-coach);
+    outline-offset: 2px;
+  }
+
+  /* Projects a 44px touch target beyond an inline control's visual bounds
+     without disturbing text flow (§9, rule 17).
+     Inline controls — an interrogable figure, "what's assumed", "Back" — are
+     18–20px tall as text. Every one of them needs this. */
+  .hit-target {
+    position: relative;
+  }
+  .hit-target::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 2.75rem; /* 44 */
+    transform: translateY(-50%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   REDUCED MOTION
+   Everything degrades to opacity. Non-negotiable (§7).
+   ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--motion-micro) !important;
+    transition-property: opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
+  }
 }

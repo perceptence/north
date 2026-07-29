@@ -11,6 +11,10 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // core/ and its tests use explicit .ts specifiers so Node's built-in test
+    // runner can execute them directly, with no transpiler and no test
+    // framework. Safe here because noEmit is on — nothing is written out.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [

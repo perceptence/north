@@ -94,6 +94,15 @@ Contrast measured against the surface each token actually renders on.
 | `action-border` | `ink-400` | **3.18** | AA non-text |
 | `action-border-hover` | `ink-500` | **4.90** | AA non-text |
 
+**Atmosphere** *(craft pass, July 2026)*
+
+| Semantic token | Primitive | Contrast | Use |
+|---|---|---|---|
+| `surface-deep` | `sky-900` | 13.67 *(paper on it)* | The sky's deep zone |
+| `text-on-deep` | paper @ 95% | 13.67 / 7.35 | Text on the sky |
+| `text-on-deep-dim` | paper @ 72% | 7.77 / 4.73 | Inactive nav on the sky |
+| `--atmosphere` | sky ramp → paper | — | The gradient itself; OKLab in `.atmosphere` |
+
 **Signal**
 
 | Semantic token | Primitive | vs page | Use |
@@ -163,6 +172,29 @@ never on large blocks.** A 6px solid band is calmer *and* more accessible than a
 | `space-stack` | `space-5` | Default vertical gap between blocks |
 | `space-field` | `space-4` | Between conversation turn and its answers |
 
+### 3.1 Vertical rhythm — the grammar *(added, July 2026)*
+
+The tokens above are a palette. Screens compose with a **grammar**: four steps
+named for the RELATIONSHIP they express, in `components/nds/rhythm.ts`.
+
+| Step | Value | Expresses |
+|---|---|---|
+| `pair` | 8 | A label and the thing it names — an eyebrow and its title |
+| `heading` | 16 | A heading and the block it opens |
+| `block` | 24 | Elements within one block |
+| `screen` | 40 | Between major blocks on a screen |
+
+**Why this was needed.** Every screen used the tokens, and every screen picked
+its own — a survey found eight different gap values doing four jobs. The worst
+of it: on Navigator the question and the field answering it sat 40px apart (the
+between-blocks gap) while a heading and its list sat 12px apart. *The pair that
+belongs together was pushed further apart than the pair that doesn't.*
+
+The values are deliberately far apart. Two steps differing by 4px are two steps
+nobody can tell apart, which is how a scale rots back into eight arbitrary
+numbers. **If two things are a pair, they get `pair`** — on every screen,
+without a judgement call.
+
 ---
 
 ## 4. Typography
@@ -189,8 +221,9 @@ Type is the one thing that scales across breakpoints. Values: `base → md → l
 | `type-figure` | 15/22 | figure | 400 | 0 | Ledger and derivation values |
 
 **Weights:** 400 and 500 only. A third weight is a request to justify, not a
-default. The serif ships at 400 exclusively — bold editorial serif reads as
-advertising.
+default. The serif ships at 400 for speech, with 500 permitted for exactly two
+things: emphasized figures and verdict words (VISUAL-DIRECTION §12) — bold
+editorial serif anywhere else reads as advertising.
 
 **Serif floor: 20px.** Below it, use `font-ui`. Both a legibility requirement
 and an aesthetic one.
@@ -211,7 +244,8 @@ viewport.
 | Token | px | Use |
 |---|---|---|
 | `radius-sm` | 8 | Chips, inputs, band ends |
-| `radius-md` | 12 | Buttons |
+| `radius-md` | 12 | Inputs, small inline controls |
+| `radius-full` | 9999 | **Buttons, chips, the dock** — controls are capsules (craft pass) |
 | `radius-lg` | 20 | The decision card |
 | `radius-xl` | 28 | Sheets |
 | `radius-full` | 9999 | Rung ticks, coach presence dot |
@@ -227,7 +261,7 @@ nearly invisible.
 | Token | Value | Use |
 |---|---|---|
 | `elevation-flat` | `none` | Default for everything |
-| `elevation-card` | `0 1px 2px rgba(26,23,20,0.04)` | The decision card |
+| `elevation-card` | `0 1px 2px …0.05` + `0 12px 32px -16px …0.14` | The decision card — one soft warm ambient (craft pass) |
 | `elevation-sheet` | `0 8px 32px rgba(26,23,20,0.12)` | Sheets only |
 
 Shadows are **warm-tinted** (`ink-800`-based), never neutral black — a cool
@@ -275,6 +309,34 @@ grid at 1024px has turned back into a dashboard.
 whitespace.
 
 ---
+
+### 6.1 The measure, and what may exceed it — amendment (July 2026)
+
+**The rule stands: the reading column never widens past 600px, and desktop
+gets whitespace, not density.** A coaching product that becomes a grid at
+1024px has turned back into a dashboard.
+
+The rule protects a MEASURE — the line length prose is readable at — and the
+absence of a second column competing for attention. It was never a claim about
+the pixels themselves. So one thing is now allowed past it:
+
+**Wordless scenery may exceed the measure from `xl` (1280px).** The horizon
+field on Goals and on Today's calm day is a graphic with no text in it, and at
+desk width it can use the room the column leaves. Nothing is added to the
+screen; one existing element simply breathes.
+
+What is still refused, and why:
+- **No marginalia column.** A second column of content in the margin is exactly
+  the density this rule exists to prevent, whatever it holds.
+- **No prose past the measure.** Text stays in the 600px column at every width.
+- **No second reading destination on screen.** One thing at a time survives.
+
+`xl` exists for this job alone (`app/globals.css`). It is not a licence for a
+wider layout, and a fifth breakpoint would need its own argument.
+
+Desktop's real answer remains what it already was: the navigation moved into
+the left margin as a rail, and the Assumptions panel opens into the right. The
+margins carry CHROME and DISCLOSURE, never a second read.
 
 ## 7. Motion tokens
 
@@ -346,6 +408,37 @@ Used **once** in the entire product: onboarding's opening question.
 - No placeholder text. Placeholders as labels are an accessibility failure and the question already does that work.
 - **Don't:** build a form-field suite. North has one text input and a chip. A validation system, field groups, and inline error text are all speculative — add them when a second field exists.
 
+#### The composer *(amended twice, July 2026)*
+
+Both open questions — onboarding's opening turn and Navigator's door — went
+through three forms. A bare hairline rule had no presence: a floating divider
+under a question. Ruled paper had presence but no content: hairlines floating
+in a white void read as an empty table, with the controls orbiting outside.
+
+`SpokenField` is now a **composer** — one object with anatomy:
+
+- **An opening quote, your words, and the two ways to finish saying them**
+  (the turn's primary action and the "Or say it" mic pill) all inside the same
+  sheet. The box contains real things, so it never reads as a void.
+- **The hanging quote is load-bearing.** Today opens with *"You said …"* — what
+  you write here is literally what the coach quotes back, and the mark says so
+  up front. Typed words render in Newsreader italic: speech being written down.
+- **Room for two lines before it grows.** A one-line slot reads as a search
+  bar, and this is a place to say something.
+- **Raised white, hairline edge, no elevation** — the one elevated thing on any
+  screen is the decision `Card`. Focus darkens the sheet's own border; no
+  second ring inside it, which would draw a box in a box.
+- **Click anywhere on the sheet to write.** The whole surface hands you the
+  pen; the controls keep their own clicks.
+- **It aligns with the content column** *(amended)*. The sheet used to bleed
+  outward by its own padding so the writing stayed flush with the question
+  above it — buying that alignment by making the composer the widest object on
+  the page, wider than the question and wider than the list beneath. On
+  Navigator it simply read as spread out. The column is the page's measure;
+  the answer sitting a pen's width inside it is the smaller price.
+- Still **no placeholder** — the question above is the label (§8.2), and the
+  quote is an affordance, not a hint.
+
 ### 8.3 Containers
 
 #### `Card` — *the AI insight card*
@@ -369,9 +462,33 @@ Three **variants**, not three components:
 | `satisfied` | *"Nothing needs your attention. That's rare."* | None |
 
 - **Anatomy, in order:** read (`type-voice-lg`) → `RungIndicator` → primary → secondary → `HorizonBand`
+- **Emphasis is weight, never size, and never a line break.** A segment marked `emphasis` renders `font-medium` inline. It used to break onto its own display-size line, which threw the one number the read turns on out of the sentence explaining it — "The other" stranded above and "is sitting still" below.
 - **Surface:** `surface-raised` on `surface-page`, `radius-lg`, `elevation-card`, 1px `line-hairline`
 - **Chrome:** none. No header, no icon, no overflow menu. The content is the card.
 - **Don't:** nest a Card in a Card. Render two Cards on one screen. Add a card header.
+
+##### The goal card — a surface, not a `Card` *(amended, July 2026)*
+
+Goals divided only by a hairline read as **one continuous run of prose**: the
+eye finds no edge, so a second destination looks like a second paragraph about
+the first. Each goal now gets its own contained surface.
+
+It borrows the Card's **surface, radius and hairline** and refuses its
+**elevation**, because the shadow is the part that carries meaning:
+
+> The Card is the one thing on a screen that is *lifted*. That is what makes it
+> read as "this needs you." A goal is somewhere you're heading, not something
+> asking for a decision today.
+
+So "one Card per screen" is intact — Home's decision card is still the only
+elevated object in the product. Flat contained surfaces are available to any
+list whose items are being mistaken for one item; a **shadow** is not.
+
+A side effect worth knowing: a bounded card exposes repetition that a hairline
+hides. The goal's deadline had been printed twice — once opposite the label,
+once under the band as *"On this path in 2 years"* — and only became obviously
+wrong once there was an edge around it. It now appears on the band alone, where
+it qualifies the figure it belongs to.
 
 #### `Row`
 The ledger entry. History is **rows, not cards** — that contrast is what makes
@@ -400,12 +517,22 @@ All four overlays ([UX-ARCHITECTURE §5](UX-ARCHITECTURE.md)).
 - **Accessibility:** the Assumptions sheet is this component's **table-view twin** — no value is reachable only through the visual encoding.
 - **Don't:** add an axis, a midpoint marker, or a point estimate. A line asserts precision the model doesn't have.
 
-#### `RungIndicator`
+#### `RungIndicator` *(amended, July 2026)*
+
+**With `onInterrogate` it becomes a button into the ladder disclosure**,
+wearing the same dotted rule an *inferred* figure wears, because that is what
+it is: a derived reading of your situation. Without it the mark was a dead end
+— and a number the reader cannot interrogate is a number taken on faith, which
+is the one thing no figure in North is allowed to be. The disclosure it opens
+(`LadderPanel`) uses `ExplanationPanel`, not `DerivationSheet`: this is the
+reasoning behind a whole answer, meant to be read, not one number's arithmetic.
+
+
 
 - **Primary form is typographic:** *"4 of 7 · tax-advantaged space"* in `type-meta`.
 - Optional: seven 2px ticks, `radius-full`, `signal-coach` filled / `text-disabled` inactive.
 - **Hard constraint: never celebrate advancement.** No animation on rung change, no completion state, no color shift to "done." The moment it reads as a progress ring, North is a game about money.
-- **Don't:** use this as a progress bar in onboarding. Onboarding has no progress indicator — that would make a conversation a form.
+- **Don't:** confuse this with onboarding's wayfinding strip. The rung ladder is financial standing; the wayfinding strip is position on a scrolled route ([UX-ARCHITECTURE §4.2](UX-ARCHITECTURE.md)). Neither fills toward "done."
 
 ### 8.5 Navigation
 
@@ -430,13 +557,140 @@ not build it now.
 ### 8.6 Conversation
 
 #### `ConversationTurn`
-Used in onboarding **and** in the correction loop — the reuse that removes a
-settings screen from the IA.
+The correction loop and goal capture's turn primitive — the reuse that removes
+a settings screen from the IA. (Onboarding proper now composes its own
+full-viewport sections; see [UX-ARCHITECTURE §4.2](UX-ARCHITECTURE.md).)
 
 - **Anatomy:** question (`type-voice-md`) → answer affordance (`ChoiceChip` set or `TextField`) → back
-- Prior turns scroll up and recede to `text-secondary`.
-- **No progress indicator.** Ever.
+- **No workload meter.** The onboarding shell carries a wayfinding strip (position, never percentage); the turn itself never carries anything.
 - **One question at a time.** Rendering two is a system violation, not a layout choice.
+
+#### Product-tier companions — `TurnGlyph`, `SpokenField`
+Not NDS components — they live in `components/north/` because they encode
+product meaning (the onboarding script's turn ids, the Web Speech API) — but
+they are documented here and shown in `/design` so the system stays honest
+about every mark it makes.
+
+- **`TurnGlyph`** — six hairline strokes that morph between figures, one per
+  turn. Authored as anchor grids on a uniform skeleton (6 strokes × 6 anchors
+  → Catmull-Rom → `M + 5C`), so every figure interpolates into every other on
+  `SPRING.fluid`. Ambient drift between morphs; stills under reduced motion.
+  Mount once and change `turnId` — keying it turns the morph into a swap.
+- **`SpokenField`** — the opening turn's answer and Navigator's door: the
+  composer (see *The composer*, §8.2) — a hanging quote, your words in
+  Newsreader italic (speech written down), and the actions inside one sheet,
+  with Web Speech dictation behind an "Or say it" pill. Strictly progressive
+  (no API → no button, gated on hydration), and no listening failure is ever
+  announced.
+
+#### The action marks — `AssumedMark`, `SignpostMark`, `ReleaseMark` *(user-reviewed, July 2026)*
+
+**North has no icon library and will not gain one.** Every mark comes from the
+same hairline pen as the turn glyphs, the horizon fan, and the wordmark's
+compass: 1.25 stroke on a 16 grid, a hair lighter than the nav glyphs because
+they sit beside `type-meta` text and must not outweigh it.
+
+All four current marks were **chosen by the user from drawn candidates**, after
+two generations of in-world drawings (confidence-rule dashes, horizon domes)
+failed the same test: legibility at 16px without prior knowledge of the
+product's grammar. The lesson, recorded: *a mark may live in the product's
+world, but it must first read in the reader's.*
+
+- **`AssumedMark` — the asterisk.** Print's own footnote mark: "there is fine
+  print behind this figure." Financial documents taught everyone what it means,
+  and the disclosure it opens genuinely is the fine print.
+- **`SignpostMark` — a signpost.** Naming a goal is putting up the sign that
+  says where next. The product's verb (name a destination), not the
+  spreadsheet's (add a row). Replaced the bare plus.
+- **`ReleaseMark` — the wind.** Gusts curling away: released to the weather,
+  which the sky already owns. Kind rather than punitive — let go, not deleted.
+- **`DirectionMark` (Insights) — two ticks on a ground line.** Before and
+  after; up means the second reading stands taller. A comparison drawn as a
+  comparison, in the rung indicator's language. Not a chevron (every
+  dashboard's arrow) and not a trend curve (a mute diagonal at this size).
+
+Rejected along the way, recorded so they aren't re-proposed: bare dashes
+(hamburger menu), a minus (deletion), abstract domes (illegible small),
+balloon/bird/kite/feather (draw badly at 16px), diagonal arrows (legible but
+every dashboard's voice).
+
+#### The gutter bleed — a pattern, not a one-off *(July 2026)*
+
+A Navigator row's hover fill extends past the measure. The rule it follows —
+and the rule for anything that joins it:
+
+> **A surface bleeds by exactly its own horizontal padding**, so the surface
+> grows while the text inside it does not move. And the bleed must stay
+> **inside the host's gutter** (`px-4 md:px-6`) or the page scrolls sideways.
+
+Twelve and twenty sit under sixteen and twenty-four with room to spare, which
+is why `-mx-3 px-3 md:-mx-5 md:px-5` is the safe pair. A fill that stops flush
+with its text reads as a highlighted paragraph; a row's target is the whole
+line, and the fill should say so.
+
+**Use it for a FILL, not for a container.** The composer bled once and was
+pulled back: on a background tint the bleed is invisible and only the target
+grows, but on a bordered surface the edge itself moves, and a container wider
+than the column reads as spread out no matter how well the text inside lines
+up.
+
+#### `ActionLink` — THE tertiary action *(pattern locked, July 2026)*
+
+> **A drawn mark, then a label carrying a dotted rule in `signal-coach`.**
+> Nothing else in the product looks like this, and everything that behaves like
+> this looks like this.
+
+The dotted rule is not decoration: it is the mark North already uses for
+*"there is more behind this"* — an inferred `Figure` wears it, and so does the
+interrogable `RungIndicator`. Before the pattern, tertiary actions were a
+scatter of bare text buttons with trailing arrows in three different type
+sizes, and the only way to know one was pressable was to try it.
+
+**A trailing arrow is not part of this pattern.** The mark leads; an arrow on
+the other end is a second icon saying the same thing.
+
+Every quiet action in the product now uses it — *What's assumed*, *Name
+another*, *Adjust this one*, *Let this one go*, *The long view*, *Everything
+you've decided*, *Watch how you got here*, and the back links. Two things
+deliberately do **not**: the scenario list rows on Navigator (a numbered table
+of contents, whose arrow is a row affordance) and the story's *Close* (chrome
+on the deep ground, where the tertiary colour cannot go — it carries the dotted
+rule in `text-on-deep` instead).
+
+A `quiet` Button carries padding, so its label sits indented from the content
+it belongs to and no negative margin fixes that honestly. `ActionLink` is flush
+left by construction, and `hit-target` grows the touch area to 44px without
+adding a visual box.
+
+- **Pass no `className` for colour or alignment.** `cn` is a plain joiner, not
+  `tailwind-merge` — an override from the call site does not replace the
+  component's own class; both land and stylesheet order picks the winner. If a
+  different appearance is needed, the component needs a variant (§10).
+
+#### `SectionHeading` — the one rank *(added, July 2026)*
+
+The heading that opens a block within a screen. It takes **no tone and no
+variant**.
+
+`Text variant="section"` already existed and every section heading used it —
+but each call site chose its own `tone`, so one rank rendered at three
+different greys across the product, and the horizon band's caption had drifted
+to `type-overline` entirely. **A rank whose appearance is decided per call site
+is not a rank.**
+
+Mono caps 13/500/0.1em, `text-secondary`. Heavier and larger than
+`type-overline`, which is the quieter mark reserved for a page's own dateline
+in the masthead position. The two are not interchangeable. If a heading needs
+to look different, it is a different rank and needs its own name.
+
+#### Display casing for engine strings
+
+Rung labels are authored in prose case (`"goal funding"`) because the engine
+drops them into sentences — *"North is watching your goal funding"*, and the
+letter's own copy. Where a label **stands alone and heads a line** — the rung
+indicator, the ladder panel — `lib/text.ts#sentenceCase` capitalises it. CSS
+`text-transform: capitalize` is not a substitute: it gives "Goal Funding", and
+"Surplus With Nowhere To Go".
 
 #### `CoachPresence`
 The considered pause between turns.
@@ -511,7 +765,8 @@ are not.
 covers it) · Tooltip (no hover-gated content) · Accordion · Tabs · Badge ·
 Avatar · Toast · Breadcrumb · Table · Pagination · Skeleton · Spinner ·
 DatePicker · Select · Checkbox · Radio (ChoiceChip covers it) · Slider ·
-Progress bar.
+Progress bar (onboarding's wayfinding ticks are position on a route, built
+in-place — deliberately not a reusable meter).
 
 Every one of those is a reasonable component in a different product. **In North
 each one would be evidence the design drifted back toward a dashboard.**
