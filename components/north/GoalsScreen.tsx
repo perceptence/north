@@ -30,6 +30,7 @@ import { saveProfile, useProfile } from "@/state/profile-store";
 import {
   ActionLink,
   AdjustMark,
+  AjarMark,
   AssumedMark,
   SignpostMark,
   ReleaseMark,
@@ -125,11 +126,18 @@ export function GoalsScreen() {
       {/* The horizon sentence — the largest thing on the screen, and now the
           page's heading. With the tab name gone from the bar, the h1 is what
           the screen actually says rather than what it is filed under. */}
+      {/* No `onInterrogate` here, deliberately. These figures and the
+          "What's assumed" link below opened the SAME panel, so the screen
+          offered two doors into one room and spent its dotted rule — the
+          product's one mark for "there is more behind this" — on the door
+          that says least about where it goes. The link names the room;
+          the figures just state the range. Today keeps its interrogable
+          figures because there they are the only way in. */}
       <m.div {...stage(0)}>
         <h1 className="type-voice-xl text-text-primary">
           <ReadProse
             read={{ ...emptyActions, segments: scene.headline }}
-            onInterrogate={() => setSheet(true)}
+            unruled
           />
         </h1>
       </m.div>
@@ -396,9 +404,9 @@ function GoalAdjustment({
         </ChoiceChipGroup>
       </ConversationTurn>
 
-      <Button variant="quiet" onClick={onDone} className="self-start">
+      <ActionLink icon={<AjarMark />} onClick={onDone}>
         Leave it as it is
-      </Button>
+      </ActionLink>
     </div>
   );
 }
@@ -463,9 +471,9 @@ function GoalConversation({
         </ChoiceChipGroup>
       </ConversationTurn>
 
-      <Button variant="quiet" onClick={onCancel} className="self-start">
+      <ActionLink icon={<AjarMark />} onClick={onCancel}>
         Leave it for now
-      </Button>
+      </ActionLink>
     </div>
   );
 }

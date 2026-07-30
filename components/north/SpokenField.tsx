@@ -1,16 +1,10 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { CoachPresence, RHYTHM } from "@/components/nds";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
+import { useSpeechRecognition } from "@/lib/use-speech-recognition";
 
 /**
  * The spoken answer — onboarding's free-text turn, upgraded from a form line
@@ -37,36 +31,6 @@ import { useHydrated } from "@/lib/use-hydrated";
  * user's words.
  */
 
-/* Minimal shapes for the Web Speech API — lib.dom omits it, and the vendor
-   types package would be a dependency for one field. */
-interface RecognitionResultChunk {
-  0: { transcript: string };
-  isFinal: boolean;
-}
-interface RecognitionEvent {
-  results: ArrayLike<RecognitionResultChunk>;
-}
-interface Recognition {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  onresult: ((event: RecognitionEvent) => void) | null;
-  onend: (() => void) | null;
-  onerror: (() => void) | null;
-  start(): void;
-  stop(): void;
-  abort(): void;
-}
-
-function recognitionCtor(): (new () => Recognition) | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as {
-    SpeechRecognition?: new () => Recognition;
-    webkitSpeechRecognition?: new () => Recognition;
-  };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
-
 export interface SpokenFieldProps {
   value: string;
   onChange: (value: string) => void;
@@ -89,16 +53,25 @@ export function SpokenField({
   className,
 }: SpokenFieldProps) {
   const areaRef = useRef<HTMLTextAreaElement>(null);
-  const recognitionRef = useRef<Recognition | null>(null);
   /** The typed text at the moment dictation began — spoken words append. */
   const baseRef = useRef("");
-  const [listening, setListening] = useState(false);
   // Gated on hydration: the server cannot know whether this browser speaks,
   // so it must not guess — rendering the mic during SSR is a hydration
   // mismatch in every browser that lacks the API (and its absence is one in
   // every browser that has it).
   const hydrated = useHydrated();
-  const canListen = hydrated && recognitionCtor() !== null;
+  const {
+    available,
+    listening,
+    start: startListening,
+    stop: stopListening,
+  } = useSpeechRecognition({
+    onResult: (spoken) => {
+      const base = baseRef.current.trim();
+      onChange(base ? `${base} ${spoken}` : spoken);
+    },
+  });
+  const canListen = hydrated && available;
 
   // Auto-grow. A scrollbar inside a one-question field reads as a form.
   useLayoutEffect(() => {
@@ -107,45 +80,6 @@ export function SpokenField({
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [value]);
-
-  // Leaving the turn mid-dictation must not leave the microphone open.
-  useEffect(() => () => recognitionRef.current?.abort(), []);
-
-  const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
-    setListening(false);
-  }, []);
-
-  const startListening = useCallback(() => {
-    const Ctor = recognitionCtor();
-    if (!Ctor) return;
-
-    const recognition = new Ctor();
-    recognition.lang = navigator.language || "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    baseRef.current = value;
-
-    recognition.onresult = (event) => {
-      const spoken = Array.from(
-        { length: event.results.length },
-        (_, i) => event.results[i][0].transcript,
-      )
-        .join("")
-        .trim();
-      const base = baseRef.current.trim();
-      onChange(base ? `${base} ${spoken}` : spoken);
-    };
-    // Both paths end the session the same quiet way: the pill returns to
-    // "Speak", the typed text stands, nothing apologizes.
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => setListening(false);
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
-  }, [onChange, value]);
 
   return (
     /* ── THE COMPOSER ──────────────────────────────────────────────────────
@@ -238,7 +172,17 @@ export function SpokenField({
           <button
             type="button"
             aria-pressed={listening}
-            onClick={listening ? stopListening : startListening}
+            onClick={() => {
+              if (listening) {
+                stopListening();
+                return;
+              }
+              // The transcript is a full re-delivery each update, not a
+              // delta — so THIS field is responsible for remembering what was
+              // already typed and prepending it back on.
+              baseRef.current = value;
+              startListening();
+            }}
             className={cn(
               "type-label inline-flex min-h-11 cursor-pointer items-center gap-2.5",
               "rounded-full border px-4 py-3 select-none",

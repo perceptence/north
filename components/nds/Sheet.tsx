@@ -14,15 +14,28 @@ import { useMediaQuery } from "@/lib/use-media-query";
 import { DURATION, EASE, TRANSITION } from "./motion";
 
 /**
- * All four overlays: Derivation, Assumptions, Decision detail, Correction.
+ * Every overlay in the product: Derivation, Assumptions, the ladder,
+ * Navigator's working, Correction.
  *
  * Built on native `<dialog>`, which supplies the focus trap, Esc handling,
- * top-layer stacking, and focus restoration to the trigger — behaviors that are
- * subtly wrong in most hand-rolled implementations.
+ * top-layer stacking, and focus restoration to the trigger — behaviors that
+ * are subtly wrong in most hand-rolled implementations. `ExplanationPanel`
+ * used to hand-roll exactly that (its own keydown listener, its own scroll
+ * lock, no history entry, no exit animation) because it wanted a different
+ * SHAPE than this used to offer. It doesn't anymore: this now offers both
+ * shapes itself, so `ExplanationPanel` is a thin skin over this instead of a
+ * second dialog implementation.
  *
- * Mobile is a bottom sheet with drag-to-dismiss; tablet and desktop are a
- * centered modal (docs/DESIGN-SYSTEM.md §8.3). A Sheet always has a live
- * parent — it is never a root route.
+ * Below `lg` (1024px — phone AND tablet, not just phone) this is a bottom
+ * sheet with drag-to-dismiss. At `lg` and up it is a full-height pane
+ * pinned to the right edge — never a centered, floating modal. A modal
+ * asks to be read as a separate surface hovering over the page; everything
+ * this product discloses is closer to "the rest of what's already on
+ * screen," which a pane attached to the edge says and a floating card
+ * doesn't. Tablet stays on the sheet side of that split rather than the
+ * desktop side — the surface is still held and tapped, not pointed at.
+ *
+ * A Sheet always has a live parent — it is never a root route.
  *
  * Opening pushes a history entry so the system back gesture dismisses it.
  *
@@ -42,7 +55,7 @@ import { DURATION, EASE, TRANSITION } from "./motion";
  * removes ~25 lines of pointer bookkeeping.
  *
  * `dragListener={false}` means only the handle can start a drag, so content
- * inside the sheet still scrolls. The handle is `md:hidden` (display:none), so
+ * inside the sheet still scrolls. The handle is `lg:hidden` (display:none), so
  * drag is unreachable on pointer devices without any extra breakpoint logic.
  *
  * NOT YET IMPLEMENTED: animating from the element that spawned the sheet
@@ -67,8 +80,15 @@ const SCRIM_TRANSITION = { duration: DURATION.standard, ease: EASE.out } as cons
 export interface SheetProps {
   open: boolean;
   onClose: () => void;
-  /** Rendered as the sheet's heading and its accessible name. */
-  title: string;
+  /**
+   * The sheet's heading, and the dialog's accessible name — wrapped in the
+   * element `aria-labelledby` points to, with no styling imposed here. A
+   * plain label (`DerivationSheet`'s "Where this comes from") and a fuller
+   * heading (`ExplanationPanel`'s eyebrow + thesis) both just supply their
+   * own, already-styled content, so there is one accessible name, tied to
+   * whatever is actually visible, never a hidden duplicate of it.
+   */
+  title: ReactNode;
   children: ReactNode;
   className?: string;
 }
@@ -77,7 +97,7 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pushedRef = useRef(false);
   const dragControls = useDragControls();
-  const isModal = useMediaQuery("(min-width: 40rem)");
+  const isPanel = useMediaQuery("(min-width: 64rem)");
   const titleId = useId();
 
   // Keeps the effects below keyed on `open` alone, so an unstable onClose from
@@ -148,17 +168,18 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
     [dragControls],
   );
 
-  // The panel rises on mobile and settles in place on desktop. Under
+  // The panel rises from the edge it rests against — bottom on a sheet, the
+  // right pane just settles in place with a short rise of its own. Under
   // `reducedMotion="user"` Motion drops the transform legs and keeps opacity,
   // so both degrade to a cross-fade without any extra branch here.
   // A per-variant transition belongs INSIDE the variant object. Motion has no
   // top-level `transition.exit` key — writing one silently applies the enter
   // spring to the exit too.
-  const panelMotion = isModal
+  const panelMotion = isPanel
     ? {
-        initial: { opacity: 0, scale: 0.97 },
-        animate: { opacity: 1, scale: 1 },
-        exit: { opacity: 0, scale: 0.98, transition: EXIT_TRANSITION },
+        initial: { y: 18 },
+        animate: { y: 0 },
+        exit: { y: 18, transition: EXIT_TRANSITION },
       }
     : {
         initial: { y: "100%" },
@@ -180,66 +201,69 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
         "bg-transparent p-0 backdrop:bg-transparent",
       )}
     >
-      <div className="relative flex h-full w-full items-end justify-center md:items-center">
-        <AnimatePresence onExitComplete={handleExitComplete}>
-          {open && (
-            <m.div
-              key="scrim"
+      <AnimatePresence onExitComplete={handleExitComplete}>
+        {open && (
+          <m.div
+            key="scrim"
+            aria-hidden="true"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={SCRIM_TRANSITION}
+            className="absolute inset-0 bg-surface-scrim"
+          />
+        )}
+
+        {open && (
+          <m.div
+            key="panel"
+            {...panelMotion}
+            transition={TRANSITION.standard}
+            drag={isPanel ? false : "y"}
+            dragControls={dragControls}
+            dragListener={false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 1 }}
+            onDragEnd={(_, info) => {
+              if (
+                info.offset.y > DRAG_DISMISS_OFFSET ||
+                info.velocity.y > DRAG_DISMISS_VELOCITY
+              ) {
+                onClose();
+              }
+            }}
+            className={cn(
+              "absolute inset-x-0 bottom-0 w-full bg-surface-sunken shadow-sheet",
+              "rounded-t-sheet lg:rounded-none",
+              "max-h-[85dvh] overflow-y-auto",
+              // Only `top` and `left` are ever overridden below — `right`
+              // and `bottom` are already 0 from the base rule and stay 0 at
+              // every size, so nothing here fights another class over the
+              // same property. Adding `bottom` back at lg (even redundantly
+              // as `inset-y-0`) is exactly the two-classes-one-property trap
+              // that cost this its full height the first time.
+              "lg:top-0 lg:left-auto lg:w-[34rem] lg:max-h-none",
+              className,
+            )}
+          >
+            {/* Drag affordance — phone and tablet. lg:hidden means drag is
+                simply unreachable once this is a pane, not a sheet. */}
+            <div
+              onPointerDown={startDrag}
+              className="flex h-6 cursor-grab touch-none items-center justify-center lg:hidden"
               aria-hidden="true"
-              onClick={onClose}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={SCRIM_TRANSITION}
-              className="absolute inset-0 bg-surface-scrim"
-            />
-          )}
-
-          {open && (
-            <m.div
-              key="panel"
-              {...panelMotion}
-              transition={TRANSITION.standard}
-              drag={isModal ? false : "y"}
-              dragControls={dragControls}
-              dragListener={false}
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 1 }}
-              onDragEnd={(_, info) => {
-                if (
-                  info.offset.y > DRAG_DISMISS_OFFSET ||
-                  info.velocity.y > DRAG_DISMISS_VELOCITY
-                ) {
-                  onClose();
-                }
-              }}
-              className={cn(
-                "relative w-full bg-surface-sunken shadow-sheet",
-                "rounded-t-sheet md:rounded-sheet",
-                "max-h-[85dvh] overflow-y-auto md:max-w-[32.5rem]",
-                className,
-              )}
             >
-              {/* Drag affordance — mobile only. `display:none` above md means
-                  drag is simply unreachable on pointer devices. */}
-              <div
-                onPointerDown={startDrag}
-                className="flex h-6 cursor-grab touch-none items-center justify-center md:hidden"
-                aria-hidden="true"
-              >
-                <span className="h-1 w-9 rounded-full bg-action-border" />
-              </div>
+              <span className="h-1 w-9 rounded-full bg-action-border" />
+            </div>
 
-              <div className="px-6 pt-2 pb-8 md:pt-6">
-                <h2 id={titleId} className="type-label text-text-tertiary">
-                  {title}
-                </h2>
-                <div className="mt-4">{children}</div>
-              </div>
-            </m.div>
-          )}
-        </AnimatePresence>
-      </div>
+            <div className="px-6 pt-2 pb-8 lg:pt-6">
+              <div id={titleId}>{title}</div>
+              <div className="mt-4">{children}</div>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
     </dialog>
   );
 }

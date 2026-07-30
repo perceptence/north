@@ -300,7 +300,7 @@ grid at 1024px has turned back into a dashboard.
 | Column | Full width | 600px centered | 600px centered |
 | Page margin | `space-4` | `space-6` | `space-7` |
 | `type-voice-lg` | 30/40 | 32/44 | 34/46 |
-| Sheets | Bottom sheet, drag-dismiss | Centered modal | Centered modal |
+| Sheets | Bottom sheet, drag-dismiss | Bottom sheet, drag-dismiss | Right-hand pane |
 | App bar | Sticky | Static | Static |
 | Min hit target | 44px | 44px | 32px (pointer) |
 | Hover states | None | Pointer only | Yes |
@@ -369,12 +369,34 @@ The only way type enters the product.
 A number, rendered with its confidence. **The only way a number enters the
 product.**
 
-- **Props:** `value`, `confidence` (stated / inferred / assumed), `format` (currency / percent / duration / count), `context` (prose / tabular), `interrogable`, `onInterrogate`
+- **Props:** `value`, `confidence` (stated / inferred / assumed), `format` (currency / percent / duration / count), `context` (prose / tabular), `interrogable`, `onInterrogate`, `unruled`
 - **Rendering:** `context="prose"` → serif proportional figures, inline in the read. `context="tabular"` → `font-figure`, tabular, right-aligned.
 - **Confidence:** applies the §2.3 tokens. Never improvised.
 - **Accessibility:** `aria-label` **must** include the confidence — *"$40,000, a figure you told us"* / *"6% annual return, our assumption."* A sighted user reads this from the visual grammar; a screen reader user must get the same meaning, not a bare number.
 - **Hit area:** when `interrogable`, the touch target expands to 44px vertically beyond the glyph bounds. The mark is small; the target is not.
 - **Don't:** render a currency value as raw text anywhere, ever.
+
+##### `unruled` — dropping the confidence rule *(added, July 2026)*
+
+Suppresses the **visible** `assumed` rule while the confidence stays in the
+accessible name. One caller: Goals' headline.
+
+The screen was saying the same uncertainty three times in one viewport — the
+sentence ends *"on what North can see"*, the fan below it encodes the range
+as its own width, and *"What's assumed"* opens the full disclosure. A dash
+under each endpoint on top of that is not a fourth degree of honesty, and at
+1px it mimics the dotted **openable** rule closely enough to imply a door
+that isn't there. Those two figures also *were* openable and opened the same
+panel the link does, so the screen offered two doors into one room and spent
+its openable mark on the one that named its destination worst.
+
+> **This is never a way to present a guess as a fact.** The confidence still
+> travels in `aria-label` — that is the actual non-negotiable, not the line.
+> Legitimate only where the surrounding prose already says what the rule
+> would have said. If in doubt, keep the rule.
+
+`interrogable` still wins the paint: an openable figure keeps its dotted rule
+regardless, because that rule marks a door rather than a degree of certainty.
 
 ### 8.2 Action
 
@@ -498,12 +520,16 @@ the card mean something.
 - **Outcomes:** `held` / `deferred` / `open`. **There is deliberately no "failed," "missed," or "overdue"** — a commitment not acted on returns to `open` and the coach re-asks. Guilt is a retention bug ([STRATEGY §3, P3](STRATEGY.md)).
 - Separated by `line-hairline`. No fill, no radius, no elevation.
 
-#### `Sheet`
-All four overlays ([UX-ARCHITECTURE §5](UX-ARCHITECTURE.md)).
+#### `Sheet` *(breakpoint moved, modal retired, July 2026)*
+All overlays ([UX-ARCHITECTURE §5](UX-ARCHITECTURE.md)). `ExplanationPanel`
+is a skin over this, not a second implementation — it supplies a richer
+eyebrow + thesis header in place of a plain label, and inherits every
+dismiss path from here rather than reimplementing its own.
 
-- **Mobile:** bottom sheet, drag-to-dismiss, `radius-xl` top corners
-- **Tablet / desktop:** centered modal, `radius-xl`, max 520px
-- **Origin:** animates from the element that spawned it — the derivation sheet rises from the tapped `Figure`, not from the screen edge.
+- **Mobile and tablet (below `lg`, 1024px):** bottom sheet, drag-to-dismiss, `radius-xl` top corners.
+- **Desktop (`lg` and up):** a full-height pane pinned to the right edge, 34rem, no rounding — never a floating, centered modal. A modal reads as a separate surface hovering over the page; a disclosure is closer to "the rest of what's already on screen," which an edge-pinned pane says and a floating card doesn't.
+- Tablet stays on the sheet side of that split rather than the desktop side — the surface is still held and tapped, not pointed at.
+- **Origin:** animates from the element that spawned it — the derivation sheet rises from the tapped `Figure`, not from the screen edge. **Not yet implemented** — currently rises from its resting edge instead (bottom on a sheet, a short rise in place for a pane).
 - **Always has a live parent.** Never a root route.
 - Focus trap, `Esc` to dismiss, focus returns to the trigger. Pushes a history entry so system back dismisses it.
 
@@ -651,7 +677,8 @@ the other end is a second icon saying the same thing.
 
 Every quiet action in the product now uses it — *What's assumed*, *Name
 another*, *Adjust this one*, *Let this one go*, *The long view*, *Everything
-you've decided*, *Watch how you got here*, and the back links. Two things
+you've decided*, *Watch how you got here*, *Leave it as it is*, *Or borrow a
+story and watch it work*, and the back links. Two things
 deliberately do **not**: the scenario list rows on Navigator (a numbered table
 of contents, whose arrow is a row affordance) and the story's *Close* (chrome
 on the deep ground, where the tertiary colour cannot go — it carries the dotted

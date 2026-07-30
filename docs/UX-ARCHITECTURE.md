@@ -18,7 +18,7 @@ Four tiers. Confusing them is how products like this sprawl.
 |---|---|---|
 | **Flow** | Linear, entered once, no navigation out | Arrival → Onboarding |
 | **Surface** | A destination you return to | Today, Decisions |
-| **Overlay** | Contextual, dismissible, always has a parent | Derivation, Assumptions, Decision detail, Correction |
+| **Overlay** | Contextual, dismissible, always has a parent | Derivation, Assumptions, the ladder, Correction |
 | **State** | Same surface, different content | First-run, Steady, Return, Satisfied, Empty, Loading, Error |
 
 The discipline this enforces: **new capability is a state or an overlay until
@@ -28,20 +28,17 @@ promoting states to surfaces.
 ### Structure
 
 ```
-Arrival  ──▶  Onboarding  ──▶  Today ◀──────────┐
- (flow)        (flow)          (home surface)   │
-                                 │              │
-                                 │  ┌───────────┴──────────┐
-                                 │  │ Overlays             │
-                                 │  │  · Derivation        │
-                                 │  │  · Assumptions       │
-                                 │  │  · Correction        │
-                                 │  └──────────────────────┘
-                                 ▼
-                              Decisions
-                            (surface, pushed)
-                                 │
-                                 └─▶ Decision detail (overlay)
+Arrival  ──▶  Onboarding  ──▶  Today · Navigator · Insights · Goals
+ (flow)        (flow)          the four dock destinations (§12)
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    ▼                     ▼                     ▼
+                Overlays              Decisions             The story
+             · Derivation           (drill-down)          (drill-down)
+             · Assumptions
+             · The ladder
+             · Navigator's working
+             · Correction
 ```
 
 `/design` exists as a project artifact, not a product surface. It is outside
@@ -338,9 +335,14 @@ accounts, so it cannot know either way. The waiting is the respect.
 Conflating them is what produced the instant callback.
 
 **Primary actions**
-- **Mark held** — resolve an open commitment.
-- **Tap a decision** → Decision detail overlay: the situation as it stood then,
-  and what changed since.
+- **Mark held / Not yet** — resolve the open commitment, pinned at the top.
+- **Back** — named for wherever you came from, because this is a drill-down
+  rather than a dock destination.
+
+Settled entries are **read-only rows**. Tapping one opens nothing: per-entry
+detail was designed as an overlay and deferred
+([BACKLOG](BACKLOG.md#decision-detail)), and the timeline redesign made the
+run of months carry the interval that a detail view would otherwise explain.
 
 **Why this screen exists**
 It is the memory made visible, and it is the one surface no competitor has.
@@ -602,8 +604,17 @@ screen.
 |---|---|---|---|
 | O1 | **Derivation** | Any number | Where this figure comes from, field by field, each labeled with its confidence |
 | O2 | **Assumptions** | Horizon line | What the projection assumes, in plain sentences, and which assumptions are guesses |
-| O3 | **Decision detail** | A decision entry | The situation at the time, and what has changed since |
-| O4 | **Correction** | O1 or O2 | The coach re-asks about one field |
+| O3 | **The ladder** | The rung indicator | All seven rungs, and why this one is yours |
+| O4 | **Navigator's working** | A scenario answer | The reasoning behind the answer, so you can disagree with it |
+| O5 | **Correction** | O1 or O2 | The coach re-asks about one field |
+
+O1 wears `Sheet`'s plain label header; O2–O4 wear `ExplanationPanel`'s
+eyebrow-and-thesis header. Both are the same component underneath
+([DESIGN-SYSTEM §8.3](DESIGN-SYSTEM.md)) — a sheet below `lg`, a right-hand
+pane above it, never a centered modal.
+
+**Decision detail was designed and deferred**, not built — see
+[BACKLOG](BACKLOG.md#decision-detail).
 
 ### 5.3 The correction loop — the one worth detailing
 
@@ -657,7 +668,7 @@ the one disclosure in the product meant to be READ rather than scanned.
 | **F1** | First run | Arrival → Onboarding (6–8 turns) → reveal → Today → first decision |
 | **F2** | Return | Today *(return state)* → answer the callback → outcome recorded → next rung surfaces |
 | **F3** | Interrogate & correct | Today → number → Derivation → field → Correction → recompute |
-| **F4** | Review | Today → continuity strip → Decisions → entry → Decision detail |
+| **F4** | Review | Today → continuity strip → Decisions → resolve what's open → back to where you came from |
 | **F5** | Defer | Today → "Not now" → recorded as open → next rung surfaces |
 
 **F1 and F2 are the demo.** F1 proves the product's thesis; F2 proves the moat.

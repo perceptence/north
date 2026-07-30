@@ -44,6 +44,12 @@ export interface ReadProseProps {
   staged?: boolean;
   /** Set the opening sentence at display size and the rest a step down. */
   lead?: boolean;
+  /**
+   * Drop the visible confidence rule from every figure in this read, keeping
+   * it in the accessible name. Only where the prose around them already
+   * states the uncertainty — see `Figure`'s `unruled`.
+   */
+  unruled?: boolean;
 }
 
 /**
@@ -87,6 +93,7 @@ export function ReadProse({
   onInterrogate,
   staged = false,
   lead = false,
+  unruled = false,
 }: ReadProseProps) {
   // One counter across both blocks, so the staged delays stay in reading
   // order rather than restarting at the body.
@@ -114,6 +121,7 @@ export function ReadProse({
           onInterrogate={
             onInterrogate ? () => onInterrogate(segment) : undefined
           }
+          unruled={unruled}
         />
       );
 

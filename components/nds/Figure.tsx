@@ -38,6 +38,24 @@ export interface FigureProps {
   /** Renders as a button into the derivation sheet. */
   interrogable?: boolean;
   onInterrogate?: () => void;
+  /**
+   * Drop the visible confidence rule — the dashed `assumed` mark — while
+   * keeping the confidence in the accessible name.
+   *
+   * For the one case where the rule is the THIRD statement of the same
+   * uncertainty in a single viewport: Goals' headline says "on what North
+   * can see" in words, sits above a fan whose width IS the uncertainty, and
+   * carries a "What's assumed" link to the full disclosure. A dash under
+   * each endpoint on top of that is not more honesty, it is noise — and it
+   * mimics the dotted openable rule closely enough to imply a door that
+   * isn't there.
+   *
+   * **Never a way to quietly present a guess as a fact.** The confidence
+   * still travels in the accessible name (CLAUDE.md's actual
+   * non-negotiable), so this is only ever legitimate where the surrounding
+   * prose already says what the rule would have said.
+   */
+  unruled?: boolean;
   className?: string;
 }
 
@@ -104,6 +122,7 @@ export function Figure({
   label,
   interrogable = false,
   onInterrogate,
+  unruled = false,
   className,
 }: FigureProps) {
   const formatted = format({ value, format: kind, abbreviate });
@@ -128,9 +147,17 @@ export function Figure({
 
   // Openable wins the paint. A figure you can act on says so first; its
   // confidence is still on the accessible name either way.
+  // `unruled` only ever suppresses the CONFIDENCE rule. An openable figure
+  // keeps its dotted rule regardless, because that rule marks a door rather
+  // than a degree of certainty — hiding it would leave a button with no
+  // affordance at all.
   const shared = cn(
     contextClass,
-    interrogable ? OPENABLE_CLASS : CONFIDENCE_CLASS[confidence],
+    interrogable
+      ? OPENABLE_CLASS
+      : unruled
+        ? "text-text-primary"
+        : CONFIDENCE_CLASS[confidence],
     className,
   );
 

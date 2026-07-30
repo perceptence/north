@@ -320,7 +320,7 @@ export function InsightsScreen() {
 
         <ActionLink
           icon={<LedgerMark />}
-          onClick={() => router.push("/decisions")}
+          onClick={() => router.push("/decisions?from=insights")}
         >
           Everything you&rsquo;ve decided
         </ActionLink>

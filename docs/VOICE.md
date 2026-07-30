@@ -1,6 +1,8 @@
 # North — Voice
 
-**Status: proposal, for review. Nothing here is built.**
+**Status: Phase 1 built (§7) — voice INPUT in onboarding, North still silent.
+Phases 2–4 remain proposal.** See §9 for what shipped, what it cost to get
+right, and where the design changed on contact with actual code.
 
 A plan for making North something you *talk to* rather than something you read.
 Researched against how state-of-the-art voice agents are built in 2026, then
@@ -351,3 +353,74 @@ Each phase is independently shippable and independently reversible.
 3. **Input first, output third** — Phases 1 and 2 ship without North ever
    making a sound. That is the cautious order; the alternative is to lead with
    the story narration, which is the better demo but the higher-exposure one.
+
+---
+
+## 9. What Phase 1 actually took to build *(July 2026)*
+
+Onboarding's choice turns can now be answered by voice, end to end, with
+North still making no sound at all. Twelve turns — everything except the one
+free-text question, which already had dictation. Nothing here required a
+model call or an API key; there is no hosted-model infrastructure in this
+project at all, and per §2.1 that was never the plan for the router regardless.
+
+**What shipped:**
+
+- `core/onboarding/voice-match.ts` — the router, as a deterministic local
+  matcher, not a model call. Scores every option on a turn by phrase overlap
+  and numeric closeness (numbers are extracted from BOTH the transcript and
+  the option's own label text, in natural units — "$20,000" and "twenty
+  thousand" both read as 20000 — so the matcher never needs to know a turn's
+  internal cents/basis-point encoding). Requires a confidence floor AND a
+  decisive margin over the runner-up, or it returns `null` and the UI asks
+  again — same refusal shape as `core/navigator/match.ts`. 45 tests,
+  including one that round-trips every option's own label back through the
+  matcher for all 12 live choice turns as a standing regression guard.
+- `lib/use-speech-recognition.ts` — the Web Speech vendor shim, extracted out
+  of `SpokenField` so both it and the new choice control share one
+  implementation instead of two copies drifting apart.
+- `lib/use-mic-amplitude.ts` — a `getUserMedia` + `AnalyserNode` RMS meter,
+  written into a Motion `MotionValue` (not React state — this updates every
+  frame, and routing that through `setState` would re-render 60 times a
+  second for a number nothing in the tree branches on). Never connects its
+  stream to the audio destination; it only measures, never plays anything
+  back.
+- `TurnGlyph` gained `listening` + `amplitude` props. While listening, the
+  turn's own ambient life (swell/grow/bob/pivot/fan) holds still and the
+  whole figure instead breathes on live mic level via `useTransform` — the
+  same six-stroke mark the product already draws with, not a new waveform or
+  orb. Both props are optional and every existing call site is unaffected.
+- `VoiceChoice` — the "Or say it" control for a choice turn. A confident
+  match calls the exact same `choose(turn, choice)` handler a tap already
+  uses, so it inherits the existing pick-hold animation for free and adds no
+  new "selected" state of its own. A miss shows a quiet retry line with what
+  was actually heard still on screen, never an alarm.
+
+**Two findings worth recording, because they'll matter for Phases 2–4 too:**
+
+1. **The "thinking" state in §4.1 doesn't apply yet.** It was designed for a
+   real network round-trip. A deterministic local matcher is synchronous —
+   there is nothing to wait for, so nothing renders a thinking beat.
+   Inventing a fake delay to show one would be exactly the kind of "no
+   spinners, no workload meters" violation this product refuses elsewhere.
+   The state stays reserved for if/when a real model call ever sits behind
+   the router.
+2. **A tie at a shared numeric boundary needs the WORD, not just the number.**
+   "$200k–$400k" and "Over $400k" both score a perfect numeric hit at exactly
+   400000 — the ranges touch. Token overlap alone didn't reliably break it
+   ("$400k" and "400 thousand" tokenize differently). The fix was to treat an
+   explicit "over"/"under" in the transcript as its own strong, direct signal
+   toward whichever option's label opens the same way, rather than trusting
+   incidental word overlap to carry it. Recorded in the matcher's own
+   comments so Phase 2's `matchQuestion` extensions don't rediscover this the
+   hard way.
+
+**What I could not verify:** this sandbox's browser reports
+`SpeechRecognition`/`getUserMedia`/`AudioContext` as present, but live capture
+is blocked at the tool level. I confirmed the permission-denied path directly
+— clicking "Or say it" correctly requests the mic, gets refused, and the
+button reverts to idle with zero console errors and no stray "didn't catch a
+match" message (since nothing was ever heard). I could not exercise a real
+recognized utterance end to end outside of the 45 unit tests, which is the
+actual correctness surface for the matcher regardless. Tap-only flow was
+re-verified unaffected on two different choice turns after this change.

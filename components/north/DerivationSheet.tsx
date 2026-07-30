@@ -184,7 +184,11 @@ export function DerivationSheet({
     <Sheet
       open={open}
       onClose={close}
-      title={correcting ? "One question" : "Where this comes from"}
+      title={
+        <h2 className="type-label text-text-tertiary">
+          {correcting ? "One question" : "Where this comes from"}
+        </h2>
+      }
     >
       {correcting ? (
         <CorrectionTurn

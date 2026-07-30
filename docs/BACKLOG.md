@@ -64,3 +64,34 @@ foreclosing: keep the `SituationProfile` and the Waterfall engine free of any
 notion of an employer, sponsor, or tenant. If a cohort concept is ever needed it
 belongs in a layer *above* the engine, so the reasoning that produces a person's
 advice can never take an organization as input.
+
+---
+
+## Decision detail
+
+**Status:** Designed, deferred. Not built.
+
+A per-entry overlay off the Decisions ledger: the situation as it stood when
+you made that call, and what has changed since. It was specified as overlay
+**O3** in [UX-ARCHITECTURE §5](UX-ARCHITECTURE.md) and drawn into the IA
+before the ledger was rebuilt.
+
+**Why it is not in the product.** The Decisions redesign replaced a grouped
+list with a continuous run of months
+(`core/decisions/timeline.ts`), and that run carries the thing a detail view
+was mainly there to supply: *interval*. A busy month reads as a cluster, a
+quiet stretch reads as quiet, and a settled entry states its own outcome and
+date on the row. What remained for an overlay was "the situation at the
+time" — which the product does not store, because a `SituationProfile` is
+current-state, not an event log.
+
+**What it would cost.** Real historical snapshots. `usePreviousProfile`
+holds exactly one prior profile for the story's diff, which is not a
+history. Building this means either snapshotting the profile at every
+decision or deriving one from an event log that does not exist yet — a data
+model change, not a screen.
+
+**Constraint to preserve:** decision rows stay read-only until that history
+exists. A tap target that opens a thin or reconstructed "situation then" is
+worse than no tap target, on the one screen whose whole job is being
+trustworthy about your own record.

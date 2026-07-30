@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -179,9 +179,58 @@ export function BackMark() {
   );
 }
 
+/**
+ * Leave it for now — the door, ajar.
+ *
+ * Chosen in review (July 2026) over four alternatives: a compass ring with no
+ * needle, a gate left unlatched, an unset map pin, three dots trailing off.
+ * The pin borrowed a shape the product doesn't otherwise draw; the rest
+ * needed the label beside them to confirm the reading. A door held ajar says
+ * it alone — you can still step back out, and nothing on the other side has
+ * changed while you were gone.
+ */
+export function AjarMark() {
+  return (
+    <Mark>
+      <path d="M4.4 2.6 V13.4" />
+      <path d="M4.4 2.6 L11.6 4 V12.4 L4.4 13.4" />
+      <circle cx="9.4" cy="8.2" r="0.5" fill="currentColor" stroke="none" />
+    </Mark>
+  );
+}
+
+/**
+ * Or borrow a story — the open book.
+ *
+ * Chosen in review (July 2026) over three alternatives: StoryMark's own
+ * triangles mirrored to play forward, a small live window, a ticket stub.
+ * Reads as "a story" more directly than any of them, at the cost of saying
+ * less about "watch it work" — the half of the label it doesn't cover.
+ *
+ * The spine down the centre was a second pass: without it, the two leaf
+ * curves shared an endpoint but drew no line there, and read as a pair of
+ * parentheses rather than a binding.
+ */
+export function OpenBookMark() {
+  return (
+    <Mark>
+      <path d="M8 3.2 V12.8" />
+      <path d="M7.7 3.8 C6 2.9 3.8 2.9 2.4 3.6 V12.2 C3.8 11.5 6 11.5 7.7 12.4" />
+      <path d="M8.3 3.8 C10 2.9 12.2 2.9 13.6 3.6 V12.2 C12.2 11.5 10 11.5 8.3 12.4" />
+    </Mark>
+  );
+}
+
 export interface ActionLinkProps {
   icon?: ReactNode;
-  onClick: () => void;
+  /**
+   * Takes the click event — unlike a bare `() => void`, this lets a caller
+   * call `stopPropagation()` when ActionLink sits inside a larger tap
+   * target (StoryScreen's whole-screen advance is the one place that
+   * matters today). Every existing caller ignores the argument and keeps
+   * working unchanged; only callers that need it have to ask for it.
+   */
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   children: ReactNode;
   className?: string;
 }

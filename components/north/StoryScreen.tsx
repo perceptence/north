@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   RHYTHM,
@@ -21,6 +21,12 @@ import { usePreviousProfile, useProfile } from "@/state/profile-store";
 import { ActionLink, BackMark } from "./ActionGlyphs";
 import { ReadProse } from "./ReadProse";
 import { Sky } from "./Sky";
+import {
+  narrowViewport,
+  SKY_HEIGHT_PX,
+  SKY_TRAVEL_HANDOVER_MS,
+  SKY_TRAVEL_TRANSITION,
+} from "./sky-travel";
 import { TurnGlyph } from "./TurnGlyph";
 
 /**
@@ -50,6 +56,10 @@ export function StoryScreen() {
   const reduce = useReducedMotion();
   const [now] = useState(() => new Date());
   const [index, setIndex] = useState(0);
+  /** Overrides the sky to the product shell's own height while leaving;
+   *  null means settled at this screen's natural height (26dvh empty,
+   *  30dvh with beats). */
+  const [skyHeight, setSkyHeight] = useState<number | null>(null);
 
   const story =
     hydrated && profile
@@ -68,6 +78,26 @@ export function StoryScreen() {
   const advance = () => setIndex((i) => nextIndex(i, total));
   const back = () => setIndex(prevIndex);
 
+  /**
+   * Shrink the sky to the product shell's own height, then hand over —
+   * ArrivalScreen's wordmark trick, aimed at a height instead of a position.
+   * Every exit from this screen lands on the shell (Today or Insights),
+   * which share one sky height, so there is only ever one target.
+   */
+  const leave = useCallback(
+    (href: string) => {
+      if (reduce) {
+        router.push(href);
+        return;
+      }
+      setSkyHeight(
+        narrowViewport() ? SKY_HEIGHT_PX.product.narrow : SKY_HEIGHT_PX.product.wide,
+      );
+      window.setTimeout(() => router.push(href), SKY_TRAVEL_HANDOVER_MS);
+    },
+    [reduce, router],
+  );
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "ArrowRight" || event.key === " ") {
@@ -78,11 +108,11 @@ export function StoryScreen() {
         event.preventDefault();
         setIndex(prevIndex);
       }
-      if (event.key === "Escape") router.push("/insights");
+      if (event.key === "Escape") leave("/insights");
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [total, router]);
+  }, [total, leave]);
 
   if (!hydrated || !profile) return null;
 
@@ -91,7 +121,26 @@ export function StoryScreen() {
   if (!story || story.tooEarly) {
     return (
       <div className="relative flex min-h-dvh flex-col">
-        <Sky className="h-[26dvh]" />
+        {/* Grows in from the shell's own height (as if continuing straight
+            from Insights) up to this screen's natural 26dvh — absolute, like
+            Sky's own `.atmosphere`, so it never claims flow height itself;
+            the content below is spaced by its own `pt-[26dvh]`. */}
+        <m.div
+          className="absolute inset-x-0 top-0"
+          initial={
+            reduce
+              ? false
+              : {
+                  height: narrowViewport()
+                    ? SKY_HEIGHT_PX.product.narrow
+                    : SKY_HEIGHT_PX.product.wide,
+                }
+          }
+          animate={{ height: skyHeight ?? window.innerHeight * 0.26 }}
+          transition={SKY_TRAVEL_TRANSITION}
+        >
+          <Sky className="h-full" />
+        </m.div>
         <main className="relative flex flex-1 flex-col px-4 md:px-6 lg:px-7">
           <div className="mx-auto flex w-full max-w-column flex-col gap-7 pt-[26dvh]">
             <Text variant="voice-lg" as="h1" measure>
@@ -103,7 +152,7 @@ export function StoryScreen() {
               one.
             </Text>
             <div className="flex flex-wrap gap-3">
-              <Button variant="primary" onClick={() => router.push("/today")}>
+              <Button variant="primary" onClick={() => leave("/today")}>
                 Back to today
               </Button>
               <Button variant="secondary" onClick={() => router.push("/demo")}>
@@ -129,7 +178,24 @@ export function StoryScreen() {
         if (event.key === "Enter") advance();
       }}
     >
-      <Sky className="h-[30dvh]" />
+      {/* Same as the too-early sky above, aimed at 30dvh instead of 26 —
+          this view is taller because it carries a beat's own horizon too. */}
+      <m.div
+        className="absolute inset-x-0 top-0"
+        initial={
+          reduce
+            ? false
+            : {
+                height: narrowViewport()
+                  ? SKY_HEIGHT_PX.product.narrow
+                  : SKY_HEIGHT_PX.product.wide,
+              }
+        }
+        animate={{ height: skyHeight ?? window.innerHeight * 0.3 }}
+        transition={SKY_TRAVEL_TRANSITION}
+      >
+        <Sky className="h-full" />
+      </m.div>
 
       <main className="relative flex flex-1 flex-col px-4 pb-10 md:px-6 lg:px-7">
         <div className="mx-auto flex w-full max-w-column flex-1 flex-col">
@@ -159,7 +225,7 @@ export function StoryScreen() {
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                router.push("/insights");
+                leave("/insights");
               }}
               className="type-meta hit-target cursor-pointer rounded-full text-text-on-deep opacity-70 underline decoration-dotted decoration-text-on-deep decoration-1 underline-offset-4 transition-opacity duration-[--motion-micro] hover:opacity-100"
             >
@@ -210,32 +276,52 @@ export function StoryScreen() {
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-4 pt-8">
-            {last ? (
-              <Button
-                variant="primary"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  router.push("/today");
-                }}
-              >
-                That&rsquo;s where you are
-              </Button>
-            ) : (
-              <Text variant="meta" tone="tertiary">
-                Tap to continue
-              </Text>
-            )}
-
+          <div className="flex items-start gap-4 pt-8">
             {index > 0 && (
               <ActionLink
                 icon={<BackMark />}
-                onClick={() => back()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  back();
+                }}
                 className="[&>span]:decoration-text-tertiary"
               >
                 Back
               </ActionLink>
             )}
+
+            {/* flex + items-start, not a plain block: this div carries no
+                type-* class of its own, so as a plain block its anonymous
+                line box would inherit whatever (much larger) line-height
+                sits above it in the tree, and centre the short meta text
+                inside that inherited box — offset from Back, which sets its
+                own line-height directly. Flex layout positions the child
+                against the DIV'S box, not an inherited line box, and
+                items-start puts it flush with Back's own self-start.
+
+                min-h-11 still reserves the primary Button's own height from
+                the very first beat, so the swap from this meta line to the
+                final Button on the last beat changes NEITHER this row's
+                height NOR, through the HorizonField's mt-auto above, its
+                position — the button appears in space already held for it
+                rather than pushing the beat upward. */}
+            <div className="ml-auto flex min-h-11 items-start">
+              {last ? (
+                <Button
+                  variant="primary"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    leave("/today");
+                  }}
+                >
+                  That&rsquo;s where you are
+                </Button>
+              ) : (
+                <Text variant="meta" tone="tertiary">
+                  Tap to continue
+                </Text>
+              )}
+            </div>
           </div>
         </div>
       </main>

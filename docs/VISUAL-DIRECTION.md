@@ -248,7 +248,7 @@ sentence, not a number.**
 | Step | Size / Line | Face | Use |
 |---|---|---|---|
 | `voice-lg` | 30 / 40 | Serif | The read on Today |
-| `voice-md` | 22 / 32 | Serif | Onboarding questions, decision detail |
+| `voice-md` | 22 / 32 | Serif | Onboarding questions, ledger entries, goal pacing |
 | `body` | 17 / 26 | Sans | Supporting prose |
 | `label` | 14 / 20 | Sans | Actions, field labels |
 | `meta` | 13 / 18 | Sans | Timestamps, rung indicator |
@@ -525,8 +525,16 @@ is spectacle **in service of meaning**, with a hard bound written next to it:
 - **The dock glides.** One shared active pill on the standard spring; mobile
   items carry hand-drawn hairline glyphs (roof, needle, letter, peak). *Bound:
   no icon library; desktop stays words.*
-- **The sky knows the hour.** Dawn/day/dusk are the same three tokens
-  rearranged at open. *Bound: no new hues; contrast figures unchanged.*
+- **The sky travels between screens.** Arrival and the story wear a tall,
+  scenic sky; every other screen wears a short one, and crossing that
+  boundary animates the height linearly rather than cutting
+  (`components/north/sky-travel.ts`). *Bound: one fixed ramp, no new hues,
+  contrast figures unchanged.*
+
+  *Superseded (July 2026): the sky used to pick dawn/day/dusk from the
+  reader's clock at mount. "Doesn't shift mid-session" was the intent, but
+  mount-scoped is not session-scoped — a long session that outlives an hour
+  boundary silently remounts into a different gradient. One ramp now.*
 - **Serif 500 exists** for emphasized figures and verdict words only — the
   400-only rule is amended exactly that far.
 

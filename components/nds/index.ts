@@ -14,6 +14,16 @@ export { DURATION, EASE, SPRING, TRANSITION, VIEWPORT } from "./motion";
  * the obvious choice over `motion` (which `LazyMotion strict` rejects anyway).
  */
 export { m, AnimatePresence, useReducedMotion, useInView, useScroll } from "motion/react";
+/**
+ * `useMotionValue` + `useTransform`: the escape hatch for values that change
+ * every frame (live mic amplitude). Writing into a MotionValue with `.set()`
+ * repaints the styled element directly and never touches React state or
+ * triggers a re-render — the only correct way to drive a 60fps signal in this
+ * system. Reach for these ONLY for that; a value that changes on user action
+ * still belongs in `useState`.
+ */
+export { useMotionValue, useTransform } from "motion/react";
+export type { MotionValue } from "motion/react";
 
 // Foundation
 export { CompassMark, Wordmark } from "./Wordmark";

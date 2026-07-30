@@ -1,7 +1,15 @@
 "use client";
 
 import type { TargetAndTransition, Transition } from "motion/react";
-import { m, SPRING, TRANSITION, useReducedMotion } from "@/components/nds";
+import {
+  m,
+  SPRING,
+  TRANSITION,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+  type MotionValue,
+} from "@/components/nds";
 import type { TurnId } from "@/core/onboarding/script";
 import { cn } from "@/lib/cn";
 
@@ -380,16 +388,51 @@ function groupLife(life: Life): {
 export interface TurnGlyphProps {
   turnId: TurnId;
   className?: string;
+  /**
+   * The mark is listening. Ambient life (the per-turn swell/grow/bob/pivot/
+   * fan loop) holds still — the same still pose `prefers-reduced-motion`
+   * already produces, reused rather than re-invented — and the whole figure
+   * breathes on `amplitude` instead. Two competing motions read as noise;
+   * only one may drive the mark at a time.
+   */
+  listening?: boolean;
+  /**
+   * Live mic level in [0, 1], as a MotionValue — see `lib/use-mic-amplitude`.
+   * Read via `useTransform`, so a silent mic (permission refused, API
+   * unavailable) just holds the figure at its resting scale rather than
+   * looking broken. Ignored unless `listening` is true.
+   */
+  amplitude?: MotionValue<number>;
 }
 
 /**
  * Mount once, change `turnId`, watch the lines walk. Never key this on the
  * turn — a remount swaps figures instead of morphing them.
  */
-export function TurnGlyph({ turnId, className }: TurnGlyphProps) {
+export function TurnGlyph({
+  turnId,
+  className,
+  listening = false,
+  amplitude,
+}: TurnGlyphProps) {
   const reduce = useReducedMotion();
   const { figure, life } = TURN_GLYPH[turnId];
   const group = groupLife(life);
+
+  // Hooks run every render regardless of whether `amplitude` was passed, so
+  // there is always a real MotionValue behind the transform — a conditional
+  // hook call here would be the actual bug, not this fallback.
+  const fallbackAmplitude = useMotionValue(0);
+  // A hair of scale, not a lurch — SPRING/TRANSITION govern discrete moves,
+  // this is a continuous read of a value that is ALREADY smoothed upstream
+  // (the one-pole filter in useMicAmplitude), so no extra spring is layered
+  // on top. If it ever reads as twitchy in practice, that filter's the knob.
+  const listenScale = useTransform(amplitude ?? fallbackAmplitude, [0, 1], [1, 1.06]);
+
+  // Reduced motion and active listening both mean the same thing to the
+  // ambient loop: stop. They mean it for different reasons, so they stay two
+  // named booleans rather than collapsing the reason away.
+  const holdStill = reduce || listening;
 
   return (
     <svg
@@ -399,11 +442,18 @@ export function TurnGlyph({ turnId, className }: TurnGlyphProps) {
       className={cn("h-12 w-[72px] overflow-visible", className)}
     >
       <m.g
-        animate={reduce ? { rotate: 0, scaleY: 1 } : group.animate}
-        transition={group.transition}
+        animate={holdStill ? { rotate: 0, scaleY: 1 } : group.animate}
+        transition={
+          holdStill
+            ? { rotate: TRANSITION.considered, scaleY: TRANSITION.considered }
+            : group.transition
+        }
         style={{
           transformBox: "fill-box",
           transformOrigin: group.origin ?? "50% 50%",
+          // A plain 1 when not listening — inert, and never fights the
+          // group's own rotate/scaleY animation above.
+          scale: listening ? listenScale : 1,
         }}
       >
         {figure.map((stroke, index) => {
@@ -418,7 +468,7 @@ export function TurnGlyph({ turnId, className }: TurnGlyphProps) {
               strokeOpacity={STROKE_OPACITY[index]}
               initial={{ pathLength: 0 }}
               animate={
-                reduce
+                holdStill
                   ? { d: toPath(stroke), x: 0, y: 0, pathLength: 1 }
                   : { d: toPath(stroke), ...spark.animate }
               }
@@ -429,7 +479,7 @@ export function TurnGlyph({ turnId, className }: TurnGlyphProps) {
                   : { ...SPRING.fluid, delay: index * 0.05 },
                 // The mount draw-in, unless the life keeps redrawing anyway.
                 pathLength:
-                  !reduce && life.kind === "grow"
+                  !holdStill && life.kind === "grow"
                     ? spark.transition.pathLength
                     : { ...TRANSITION.considered, delay: 0.1 + index * 0.12 },
                 x: spark.transition.x ?? TRANSITION.considered,

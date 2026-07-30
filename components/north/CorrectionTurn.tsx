@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   RHYTHM,
-  Button,
   ChoiceChip,
   ChoiceChipGroup,
   ConversationTurn,
@@ -13,6 +12,7 @@ import { applyAnswers } from "@/core/onboarding/correction";
 import { SCRIPT, toAnswer, type Answers, type TurnId } from "@/core/onboarding/script";
 import { saveProfile, useProfile } from "@/state/profile-store";
 import { cn } from "@/lib/cn";
+import { ActionLink, AjarMark } from "./ActionGlyphs";
 
 /**
  * A correction: the coach asking one question again.
@@ -130,9 +130,9 @@ export function CorrectionTurn({
         </ChoiceChipGroup>
       </ConversationTurn>
 
-      <Button variant="quiet" onClick={onCancel} className="self-start">
+      <ActionLink icon={<AjarMark />} onClick={onCancel}>
         Leave it as it is
-      </Button>
+      </ActionLink>
     </div>
   );
 }

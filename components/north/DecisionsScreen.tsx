@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Button,
   EmptyState,
@@ -18,6 +18,7 @@ import { ledgerMonths, openDecision, summariseLedger } from "@/core/decisions";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import { resolveDecision, useDecisions } from "@/state/decisions-store";
+import { ActionLink, BackMark } from "./ActionGlyphs";
 import { ReadProse } from "./ReadProse";
 
 /**
@@ -58,8 +59,32 @@ function dayLabel(iso: string): string {
 
 const emptyActions = { action: { commit: "", defer: "" } };
 
+/**
+ * Where "back" goes, and what it is allowed to call the place.
+ *
+ * Decisions is a drill-down reached from two screens, so a generic "Back"
+ * is the one label that is never wrong and never useful — the reader has
+ * to remember how they got here. Navigator's own back link names its
+ * destination ("Navigator"), and this now matches it.
+ *
+ * The origin travels in the URL rather than in memory: it survives a
+ * reload, and a link someone sends still knows where its own way out
+ * goes. `today` is the fallback because Home is the product's root.
+ */
+const ORIGIN = {
+  today: { label: "Today", path: "/today" },
+  insights: { label: "Insights", path: "/insights" },
+} as const;
+
+type OriginKey = keyof typeof ORIGIN;
+
+function isOriginKey(value: string | null): value is OriginKey {
+  return value === "today" || value === "insights";
+}
+
 export function DecisionsScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const decisions = useDecisions();
   const hydrated = useHydrated();
   const reduce = useReducedMotion();
@@ -80,10 +105,29 @@ export function DecisionsScreen() {
     transition: { ...TRANSITION.standard, delay },
   });
 
+  const from = searchParams.get("from");
+  const origin = isOriginKey(from) ? ORIGIN[from] : ORIGIN.today;
+  /**
+   * `back()` when we know we were pushed here — it pops the entry rather
+   * than stacking a third one, and the origin keeps its scroll position,
+   * which matters on a page as long as Insights. A deep link has nothing
+   * to pop, so that case navigates outright and the label stays honest
+   * either way.
+   */
+  const leave = () => (isOriginKey(from) ? router.back() : router.push(origin.path));
+
   if (decisions.length === 0) {
     return (
       <div className={cn("flex flex-col pb-16", RHYTHM.screen)}>
-        <h1 className="type-overline text-text-tertiary">Decisions</h1>
+        {/* RHYTHM.block, matching Navigator's answer header — a back link
+            above a screen's own title is the same relationship on both
+            screens, so it is the same distance. */}
+        <div className={cn("flex flex-col", RHYTHM.block)}>
+          <ActionLink icon={<BackMark />} onClick={leave}>
+            {origin.label}
+          </ActionLink>
+          <h1 className="type-overline text-text-tertiary">Decisions</h1>
+        </div>
         {/* Never "no data" — always "here's what happens next"
             (docs/UX-ARCHITECTURE.md §7). */}
         <EmptyState
@@ -101,15 +145,22 @@ export function DecisionsScreen() {
 
   return (
     <div className={cn("flex flex-col pb-16", RHYTHM.screen)}>
-      {/* The coach speaks first, as on every other screen. This was the one
-          surface that opened with a label and went straight to a table — and
-          the pride it was built for lives in this sentence. */}
-      <m.div {...stage(0)} className={cn("flex flex-col", RHYTHM.pair)}>
-        <h1 className="type-overline text-text-tertiary">Decisions</h1>
-        <div className="type-voice-lg text-text-primary">
-          <ReadProse read={{ ...emptyActions, segments: summary.read }} />
-        </div>
-      </m.div>
+      {/* RHYTHM.block — see the empty state above. */}
+      <div className={cn("flex flex-col", RHYTHM.block)}>
+        <ActionLink icon={<BackMark />} onClick={leave}>
+          {origin.label}
+        </ActionLink>
+
+        {/* The coach speaks first, as on every other screen. This was the one
+            surface that opened with a label and went straight to a table — and
+            the pride it was built for lives in this sentence. */}
+        <m.div {...stage(0)} className={cn("flex flex-col", RHYTHM.pair)}>
+          <h1 className="type-overline text-text-tertiary">Decisions</h1>
+          <div className="type-voice-lg text-text-primary">
+            <ReadProse read={{ ...emptyActions, segments: summary.read }} />
+          </div>
+        </m.div>
+      </div>
 
       {/* Open commitments are PINNED and resolvable here — a ledger you can
           only read is a filing cabinet. */}
@@ -168,7 +219,18 @@ export function DecisionsScreen() {
             Recorded. North will ask what changed next time you&rsquo;re on
             Today, so the picture it has of you keeps up.
           </Text>
-          <Button variant="quiet" onClick={() => router.push("/today")}>
+          {/* Secondary — stroke, no fill, the same shape "Not yet" wears.
+              As a `quiet` Button its label sat 20px indented from the
+              sentence above it, because a quiet Button's padding pushes text
+              in with no visible box to justify the inset (the exact defect
+              ActionLink was introduced to fix). A bordered control has an
+              edge of its own, so the inset reads as the button's interior
+              rather than as broken alignment.
+
+              Secondary rather than primary on purpose: the caption says
+              North will ask "next time you're on Today", so this is a door
+              held open, not an instruction to walk through it now. */}
+          <Button variant="secondary" onClick={() => router.push("/today")}>
             Go to Today
           </Button>
         </m.div>

@@ -11,6 +11,7 @@ import {
   TRANSITION,
   Wordmark,
   m,
+  useMotionValue,
   useReducedMotion,
 } from "@/components/nds";
 import { buildProfile, isComplete } from "@/core/onboarding/build-profile";
@@ -29,6 +30,7 @@ import { saveProfile } from "@/state/profile-store";
 import { Sky } from "./Sky";
 import { SpokenField } from "./SpokenField";
 import { TURN_GLYPH, TurnGlyph } from "./TurnGlyph";
+import { VoiceChoice } from "./VoiceChoice";
 
 /**
  * The onboarding conversation — one question per viewport, on a vertical line.
@@ -68,6 +70,12 @@ export function OnboardingConversation() {
   const [picked, setPicked] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [activeId, setActiveId] = useState<TurnId>("openingConcern");
+  // Fed to the ONE mounted glyph while a choice turn is being answered by
+  // voice (docs/VOICE.md §4.1) — created once here because the glyph and the
+  // microphone live at different depths in the tree, and every VoiceChoice
+  // instance across every section writes into this same value.
+  const voiceAmplitude = useMotionValue(0);
+  const [voiceListening, setVoiceListening] = useState(false);
 
   const turns = useMemo(() => visibleTurns(answers), [answers]);
   const frontier = turns.findIndex((t) => answers[t.id] === undefined);
@@ -246,6 +254,8 @@ export function OnboardingConversation() {
           <div className="mx-auto w-full max-w-column">
             <TurnGlyph
               turnId={active.id}
+              listening={voiceListening}
+              amplitude={voiceAmplitude}
               className="h-20 w-[120px] text-text-secondary md:h-24 md:w-[144px]"
             />
           </div>
@@ -347,33 +357,47 @@ export function OnboardingConversation() {
                 }
               />
             ) : (
-              <ChoiceChipGroup label={turn.question} block={turn.block}>
-                {turn.options.map((choice) => {
-                  const chosen =
-                    answers[turn.id] !== undefined &&
-                    answers[turn.id]!.value === choice.value &&
-                    answers[turn.id]!.confidence ===
-                      (choice.confidence ?? "stated");
-                  const held = picked === `${turn.id}:${choice.label}`;
-                  return (
-                    <ChoiceChip
-                      key={choice.label}
-                      block={turn.block}
-                      selected={held || chosen}
-                      className={
-                        picked === null || !picked.startsWith(`${turn.id}:`)
-                          ? undefined
-                          : held
-                            ? "scale-[1.02] transition-transform duration-[--motion-standard]"
-                            : "scale-95 opacity-35 transition-[opacity,transform] duration-[--motion-standard]"
-                      }
-                      onSelect={() => choose(turn, choice)}
-                    >
-                      {choice.label}
-                    </ChoiceChip>
-                  );
-                })}
-              </ChoiceChipGroup>
+              <>
+                <ChoiceChipGroup label={turn.question} block={turn.block}>
+                  {turn.options.map((choice) => {
+                    const chosen =
+                      answers[turn.id] !== undefined &&
+                      answers[turn.id]!.value === choice.value &&
+                      answers[turn.id]!.confidence ===
+                        (choice.confidence ?? "stated");
+                    const held = picked === `${turn.id}:${choice.label}`;
+                    return (
+                      <ChoiceChip
+                        key={choice.label}
+                        block={turn.block}
+                        selected={held || chosen}
+                        className={
+                          picked === null || !picked.startsWith(`${turn.id}:`)
+                            ? undefined
+                            : held
+                              ? "scale-[1.02] transition-transform duration-[--motion-standard]"
+                              : "scale-95 opacity-35 transition-[opacity,transform] duration-[--motion-standard]"
+                        }
+                        onSelect={() => choose(turn, choice)}
+                      >
+                        {choice.label}
+                      </ChoiceChip>
+                    );
+                  })}
+                </ChoiceChipGroup>
+
+                {/* Speaking a choice and tapping it are two doors into one
+                    room — this calls the exact same `choose()` a tap does,
+                    so the pick-hold animation and the recorded answer are
+                    identical either way (docs/VOICE.md, Phase 1). */}
+                <VoiceChoice
+                  turn={turn}
+                  onMatch={(choice) => choose(turn, choice)}
+                  amplitude={voiceAmplitude}
+                  onListeningChange={setVoiceListening}
+                  disabled={voiceListening}
+                />
+              </>
             )}
           </div>
         </section>

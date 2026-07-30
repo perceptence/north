@@ -30,10 +30,12 @@ import type { Projection } from "@/core/projection";
 import {
   ActionLink,
   AdjustMark,
+  AjarMark,
   AssumedMark,
   BackMark,
   HorizonMark,
   LedgerMark,
+  OpenBookMark,
   ReleaseMark,
   SignpostMark,
   StoryMark,
@@ -613,8 +615,8 @@ export default function DesignGallery() {
           </Specimen>
 
           <Specimen
-            name="Sheet"
-            note="Native <dialog> — focus trap, Esc, and focus restoration come from the platform. Bottom sheet with drag-to-dismiss on mobile, centered modal above. Opening pushes a history entry so system back dismisses it. Resize the window to see both presentations."
+            name="Sheet — every overlay in the product"
+            note="Native <dialog> — focus trap, Esc, and focus restoration come from the platform. Below lg (1024px) it is a bottom sheet with drag-to-dismiss; at lg and up a full-height pane pinned to the right edge. Never a centered modal: a modal reads as a separate surface hovering over the page, and a disclosure is closer to the rest of what is already on screen. Tablet sits on the sheet side of that split — the surface is still held and tapped, not pointed at. Opening pushes a history entry so system back dismisses it. Resize the window to see both presentations. All three buttons below open the SAME component; only the header differs — a plain label for one number's arithmetic, an eyebrow-and-thesis for reasoning meant to be read."
           >
             <Grid>
               <Button variant="secondary" onClick={() => setSheet("derivation")}>
@@ -622,6 +624,9 @@ export default function DesignGallery() {
               </Button>
               <Button variant="secondary" onClick={() => setSheet("assumptions")}>
                 Open assumptions
+              </Button>
+              <Button variant="secondary" onClick={() => setSheet("ladder")}>
+                Open the ladder
               </Button>
             </Grid>
           </Specimen>
@@ -831,8 +836,8 @@ export default function DesignGallery() {
             </div>
           </Specimen>
           <Specimen
-            name="AssumptionsPanel"
-            note="Deliberately NOT shaped like DerivationSheet. A derivation explains one number — forensic, bounded, a drawer is right. This explains what North cannot know, which is the product's ethics, so it is a full-height room that opens under the sky and sets each assumption as a statement rather than a table row."
+            name="ExplanationPanel — AssumptionsPanel and the ladder"
+            note="A skin over Sheet, not a second dialog. It used to be a bespoke full-height room under its own band of sky, with its own Escape listener, its own scroll lock, no history entry and no exit animation. The sky went because a masthead-sized band of atmosphere read as chrome bolted onto a room that otherwise wears the same surface as every other sheet; the hand-rolled dismissal went because it was a worse copy of what <dialog> already gives. What is genuinely its own is the HEADER: an eyebrow and a full sentence in the coach's voice, because the reasoning behind a whole answer is meant to be read, where a number's receipt is scanned and dismissed in ten seconds. Same body surface, same breakpoints, same four ways out."
           >
             <div className="flex flex-col items-start gap-3">
               <Button
@@ -855,7 +860,7 @@ export default function DesignGallery() {
           </Specimen>
           <Specimen
             name="Action marks"
-            note="North has no icon library and will not gain one — every mark comes from the same hairline pen as the glyphs and the horizon fan. All four current marks were chosen in user review (July 2026) after the first in-world drawings failed the 16px read. 1.25 stroke on a 16 grid, a hair lighter than the nav glyphs because they sit beside meta text and must not outweigh it."
+            note="North has no icon library and will not gain one — every mark comes from the same hairline pen as the glyphs and the horizon fan. Every mark here was chosen in user review (July 2026) after the first in-world drawings failed the 16px read. 1.25 stroke on a 16 grid, a hair lighter than the nav glyphs because they sit beside meta text and must not outweigh it."
           >
             <div className="flex flex-col items-start gap-1">
               <ActionLink icon={<AssumedMark />} onClick={() => undefined}>
@@ -881,6 +886,12 @@ export default function DesignGallery() {
               </ActionLink>
               <ActionLink icon={<BackMark />} onClick={() => undefined}>
                 Navigator
+              </ActionLink>
+              <ActionLink icon={<AjarMark />} onClick={() => undefined}>
+                Leave it as it is
+              </ActionLink>
+              <ActionLink icon={<OpenBookMark />} onClick={() => undefined}>
+                Or borrow a story and watch it work
               </ActionLink>
             </div>
           </Specimen>
@@ -955,7 +966,7 @@ export default function DesignGallery() {
       <Sheet
         open={sheet === "derivation"}
         onClose={() => setSheet(null)}
-        title="Where this comes from"
+        title={<h2 className="type-label text-text-tertiary">Where this comes from</h2>}
       >
         <div className="flex flex-col">
           {[

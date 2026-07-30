@@ -16,8 +16,14 @@ import {
 } from "@/components/nds";
 import { cn } from "@/lib/cn";
 import { seedDemoStory } from "@/lib/demo-story";
-import { ActionLink, StoryMark } from "./ActionGlyphs";
+import { ActionLink, OpenBookMark } from "./ActionGlyphs";
 import { Sky } from "./Sky";
+import {
+  narrowViewport,
+  SKY_HEIGHT_PX,
+  SKY_TRAVEL_HANDOVER_MS,
+  SKY_TRAVEL_TRANSITION,
+} from "./sky-travel";
 
 /**
  * Arrival — the front door (docs/UX-ARCHITECTURE.md §4.1).
@@ -63,9 +69,23 @@ const MASTHEAD = {
  * toward its target — at handover it was still ~38px short, which reads as a
  * jump. An ease-out lands exactly, and its final frames are nearly stationary,
  * so handing over just as it arrives is invisible.
+ *
+ * The actual handover moment, though, is `SKY_TRAVEL_HANDOVER_MS`
+ * (`sky-travel.ts`), not a margin tuned for this animation. One `router.push`
+ * ends BOTH the mark's travel and the sky's, and the sky's linear motion has
+ * no eased tail to hide an early cut inside — it needs the full duration.
+ * Handing over 20ms early would have been invisible for the mark alone; it
+ * is not for the sky, so both now wait for the sky's own finish line.
+ *
+ * The duration itself is likewise the sky's, not a number chosen for the
+ * mark and coincidentally equal — the two must complete together, and
+ * `SKY_TRAVEL_TRANSITION.duration` is the one place that number is allowed
+ * to live.
  */
-const TRAVEL = { duration: 0.42, ease: EASE.out } as const;
-const HANDOVER_MS = 400;
+const TRAVEL = {
+  duration: SKY_TRAVEL_TRANSITION.duration,
+  ease: EASE.out,
+} as const;
 
 /** Illustrative, deliberately wide, and never rendered as text — the field is
  *  pure scenery here, hidden from assistive tech. A number this page cannot
@@ -83,6 +103,10 @@ export function ArrivalScreen() {
   const reduce = useReducedMotion();
   const markRef = useRef<HTMLDivElement>(null);
   const [travel, setTravel] = useState<Travel | null>(null);
+  /** The sky's own travel — null until a `leave()` is under way, then the
+   *  destination's height in px. Separate from `travel` because it animates
+   *  a different element for a different reason (a resize, not a landing). */
+  const [skyHeight, setSkyHeight] = useState<number | null>(null);
 
   /** Staged like the reveal: y only, and only on the way in. */
   const stage = (delay: number) => ({
@@ -99,7 +123,7 @@ export function ArrivalScreen() {
    */
   const leave = (
     href: string,
-    target: { y: number; height: number },
+    target: { y: number; height: number; skyHeightPx: number },
     seed?: () => void,
   ) => {
     const el = markRef.current;
@@ -114,22 +138,38 @@ export function ArrivalScreen() {
       y: target.y - rect.top,
       scale: target.height / rect.height,
     });
+    setSkyHeight(target.skyHeightPx);
 
     window.setTimeout(() => {
       seed?.();
       router.push(href);
-    }, HANDOVER_MS);
+    }, SKY_TRAVEL_HANDOVER_MS);
   };
 
   const begin = () => {
-    const narrow = window.innerWidth < 640;
+    const narrow = narrowViewport();
     leave("/start", {
       y: narrow ? MASTHEAD.onboarding.yNarrow : MASTHEAD.onboarding.y,
       height: MASTHEAD.onboarding.height,
+      skyHeightPx: narrow
+        ? SKY_HEIGHT_PX.onboarding.narrow
+        : SKY_HEIGHT_PX.onboarding.wide,
     });
   };
 
-  const borrow = () => leave("/today", MASTHEAD.product, seedDemoStory);
+  const borrow = () => {
+    const narrow = narrowViewport();
+    leave(
+      "/today",
+      {
+        ...MASTHEAD.product,
+        skyHeightPx: narrow
+          ? SKY_HEIGHT_PX.product.narrow
+          : SKY_HEIGHT_PX.product.wide,
+      },
+      seedDemoStory,
+    );
+  };
 
   /** Everything but the mark steps aside. Fading is fine on the way OUT. */
   const exit = travel ? { opacity: 0, y: -8 } : { opacity: 1, y: 0 };
@@ -138,8 +178,19 @@ export function ArrivalScreen() {
     <div className="relative flex min-h-dvh flex-col">
       {/* The sky sets weather, then gets out of the way. It was twice this
           tall with the content pushed below it, which bought nothing but a
-          scrollbar on a page that has one screen of content. */}
-      <Sky className="h-[26dvh]" />
+          scrollbar on a page that has one screen of content.
+
+          Absolute, matching Sky's own `.atmosphere` (position:absolute) —
+          this wrapper exists only to give Motion a height to animate;
+          it must NOT also claim flow height, or the content below (already
+          spaced by its own `pt-[26dvh]`) would end up pushed down twice. */}
+      <m.div
+        className={cn("absolute inset-x-0 top-0", skyHeight === null && "h-[26dvh]")}
+        animate={skyHeight !== null ? { height: skyHeight } : undefined}
+        transition={SKY_TRAVEL_TRANSITION}
+      >
+        <Sky className="h-full" />
+      </m.div>
 
       {/* Padding outside, measure inside — the same nesting the onboarding
           masthead uses, so the travelling mark's left edge never shifts. */}
@@ -198,7 +249,7 @@ export function ArrivalScreen() {
                   Begin
                 </Button>
 
-                <ActionLink icon={<StoryMark />} onClick={borrow}>
+                <ActionLink icon={<OpenBookMark />} onClick={borrow}>
                   Or borrow a story and watch it work
                 </ActionLink>
               </m.div>

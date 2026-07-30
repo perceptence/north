@@ -335,7 +335,7 @@ export function TodayScreen() {
       {decisions.length > 0 && (
         <ActionLink
           icon={<LedgerMark />}
-          onClick={() => router.push("/decisions")}
+          onClick={() => router.push("/decisions?from=today")}
         >
           {summarise(decisions)} · last{" "}
           {relativeTime(decisions[0].decidedAt, now)}
@@ -347,7 +347,7 @@ export function TodayScreen() {
       <Sheet
         open={catchUp !== null}
         onClose={() => setCatchUp(null)}
-        title="Let's catch up"
+        title={<h2 className="type-label text-text-tertiary">Let&rsquo;s catch up</h2>}
       >
         {catchUp && (
           <CorrectionTurn
