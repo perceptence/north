@@ -37,6 +37,7 @@ import {
   LedgerMark,
   OpenBookMark,
   ReleaseMark,
+  SpeakMark,
   SignpostMark,
   StoryMark,
 } from "@/components/north/ActionGlyphs";
@@ -892,6 +893,9 @@ export default function DesignGallery() {
               </ActionLink>
               <ActionLink icon={<OpenBookMark />} onClick={() => undefined}>
                 Or borrow a story and watch it work
+              </ActionLink>
+              <ActionLink icon={<SpeakMark />} onClick={() => undefined}>
+                Read this to me
               </ActionLink>
             </div>
           </Specimen>

@@ -1,8 +1,9 @@
 # North — Voice
 
-**Status: Phase 1 built (§7) — voice INPUT in onboarding, North still silent.
-Phases 2–4 remain proposal.** See §9 for what shipped, what it cost to get
-right, and where the design changed on contact with actual code.
+**Status: all four phases built (§7).** Voice input in onboarding (§9) and
+Navigator, and North speaks when asked — discreet by default, full register
+in the story (§10). Nothing here uses a model or a network call: the router
+is deterministic and local, and every spoken sentence is composed by `core/`.
 
 A plan for making North something you *talk to* rather than something you read.
 Researched against how state-of-the-art voice agents are built in 2026, then
@@ -424,3 +425,76 @@ match" message (since nothing was ever heard). I could not exercise a real
 recognized utterance end to end outside of the 45 unit tests, which is the
 actual correctness surface for the matcher regardless. Tap-only flow was
 re-verified unaffected on two different choice turns after this change.
+
+---
+
+## 10. What Phases 2–4 took to build *(July 2026)*
+
+North now speaks, and Navigator answers a spoken question without a tap.
+Still no model, still no network call, still no API key.
+
+**Phase 2 — Navigator by voice.** Smaller than the plan implied, because
+`SpokenField` already carried the mic and `matchQuestion` was already the
+router. What was missing was the *ending*: you dictated, then still had to
+reach for "Think it through". `SpokenField` gained `onSpeechEnd`, which
+hands the caller the transcript **directly rather than letting it read
+`value` back out of state** — the recognition callback can land before the
+render that committed it, and a caller reaching for the state variable would
+sometimes route the previous sentence. Navigator wires it to the same
+`submit` the button uses.
+
+That change surfaced a latent bug worth recording: `submit` had been passed
+straight to `onClick`, so making it take an optional question meant a
+`MouseEvent` would arrive where a string was expected and reach `.trim()`.
+Now `onClick={() => submit()}`, with the constraint written above the
+function.
+
+**Phase 3 — `spoken()` and the discreet register.** `core/speech/spoken.ts`,
+pure and total, 27 tests. Numbers become words, `formatMonths`' own rule is
+mirrored so 24 months is "two years" in the ear exactly as it is on screen,
+and em-dashes become commas because a synthesiser either ignores them or
+says "dash".
+
+Two things only showed up against real engine output, not fixtures:
+
+1. **The elision phrases had to be chosen against the copy, not in the
+   abstract.** The reads put figures in noun-phrase slots — "You have
+   ⟨figure⟩ set aside", "You're contributing ⟨figure⟩" — so "that much" /
+   "that long" / "that many" stay grammatical where a per-figure `label`
+   ("in cash", "of outgoings") duplicates the words that already follow it.
+2. **The hedge doubled.** Several rules already write "about ⟨figure⟩", and
+   the `assumed` hedge on top produced *"about roughly one thousand four
+   hundred fifty dollars"*. Caught by reading Today's actual output, not by
+   a test. `spoken()` now looks at the text immediately before a figure and
+   drops its own hedge when the copy already hedged.
+
+**Phase 4 — the story, narrated.** `ReadAloud` with `defaultRegister="full"`,
+and only here: choosing to play a story back is already choosing to listen,
+so eliding the figures would be protecting someone from the thing they
+asked for.
+
+Two guards this needed that the other surfaces did not: the control
+`stopPropagation`s, because the whole story stage is a tap target that
+advances the beat; and `ReadAloud` keys its "stop when the content changes"
+effect on the segments' **content**, never their array identity — every
+screen here recomposes its read during render, so depending on the array
+would have stopped the speech on the tick after it started, every time.
+
+**On the switch, in practice.** There is still no persistent "voice on".
+`ReadAloud` holds its register in component state and starts from its
+default on every reading, so "Say the numbers too" applies to the reading
+you are in and nothing after it. Navigating away silences North on unmount.
+
+**What I could not verify:** live microphone capture is blocked at the tool
+level in this sandbox, so Phase 2's spoken question was exercised by
+standing a fake recognition object in front of the same callback contract
+the hook codes against — which drove the real matcher, the real submit path
+and the real answer. Speech *output* was verified by capturing the exact
+string handed to `speechSynthesis.speak` on Today, Insights and the story;
+the audio itself was never played. What a synthesiser makes of the text is
+the one thing here still unheard.
+
+**One thing deliberately left unreviewed:** `SpeakMark` was drawn to unblock
+this work. Every other mark in `ActionGlyphs.tsx` was chosen by the user
+from candidates, and this one should get the same treatment before it counts
+as locked.

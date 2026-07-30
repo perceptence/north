@@ -5,7 +5,7 @@
  */
 
 export { observe, blindSpots } from "./observe.ts";
-export { composeLetter } from "./letter.ts";
+export { composeLetter, letterSegments } from "./letter.ts";
 export type { ChangeKind, Direction, Letter, LetterEntry } from "./letter.ts";
 export type {
   Insight,

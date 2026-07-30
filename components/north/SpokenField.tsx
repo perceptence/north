@@ -37,6 +37,17 @@ export interface SpokenFieldProps {
   /** Accessible name. Visually, the question above the field does this job. */
   label: string;
   onSubmit?: () => void;
+  /**
+   * Dictation just finished, with what it heard.
+   *
+   * Given the transcript directly rather than left to read `value` back out
+   * of state: this fires from the recognition engine's own callback, and a
+   * caller that reached for the state variable instead could easily read the
+   * render before the last `onChange` landed. Navigator uses it to answer a
+   * spoken question without a tap — "speak a question, read the answer"
+   * (docs/VOICE.md §7, Phase 2) — while the typed path keeps its button.
+   */
+  onSpeechEnd?: (transcript: string) => void;
   /** The turn's action (the Continue button), so it shares a row with the mic. */
   action?: ReactNode;
   autoFocus?: boolean;
@@ -48,6 +59,7 @@ export function SpokenField({
   onChange,
   label,
   onSubmit,
+  onSpeechEnd,
   action,
   autoFocus = false,
   className,
@@ -55,6 +67,9 @@ export function SpokenField({
   const areaRef = useRef<HTMLTextAreaElement>(null);
   /** The typed text at the moment dictation began — spoken words append. */
   const baseRef = useRef("");
+  /** The last full value dictation produced, for `onSpeechEnd`. Synchronous,
+   *  so it is always current by the time the engine says it has stopped. */
+  const heardRef = useRef("");
   // Gated on hydration: the server cannot know whether this browser speaks,
   // so it must not guess — rendering the mic during SSR is a hydration
   // mismatch in every browser that lacks the API (and its absence is one in
@@ -68,7 +83,16 @@ export function SpokenField({
   } = useSpeechRecognition({
     onResult: (spoken) => {
       const base = baseRef.current.trim();
-      onChange(base ? `${base} ${spoken}` : spoken);
+      const composed = base ? `${base} ${spoken}` : spoken;
+      heardRef.current = composed;
+      onChange(composed);
+    },
+    onEnd: () => {
+      const heard = heardRef.current.trim();
+      heardRef.current = "";
+      // Nothing heard is not a failure and gets no announcement — the user
+      // may simply have opened the mic and changed their mind.
+      if (heard) onSpeechEnd?.(heard);
     },
   });
   const canListen = hydrated && available;

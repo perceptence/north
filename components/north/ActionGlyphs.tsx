@@ -221,6 +221,31 @@ export function OpenBookMark() {
   );
 }
 
+/**
+ * Read this to me — the hanging quote, spoken.
+ *
+ * NOT a speaker cone and not radiating arcs: those are the category's two
+ * most tired shapes, and neither is drawn in this product's hand. The
+ * composer already opens with a hanging quotation mark meaning *speech being
+ * written down* (`SpokenField`), so a reading is that same mark pointed the
+ * other way — North's turn to talk. The pair of strokes is the quote; the
+ * short rule beneath is the line being read.
+ *
+ * NOTE: drawn, not reviewed. Every other mark in this file was chosen by the
+ * user from candidates; this one was authored to unblock Phase 3 and should
+ * get the same treatment before it is considered locked.
+ */
+export function SpeakMark() {
+  return (
+    <Mark>
+      <path d="M5.4 3.4 C4 4.4 3.4 5.8 3.4 7.4 H6.2 V4.2 H3.9" />
+      <path d="M11.6 3.4 C10.2 4.4 9.6 5.8 9.6 7.4 H12.4 V4.2 H10.1" />
+      <path d="M3.4 11.4 H12.6" />
+      <path d="M3.4 13.6 H8.6" />
+    </Mark>
+  );
+}
+
 export interface ActionLinkProps {
   icon?: ReactNode;
   /**

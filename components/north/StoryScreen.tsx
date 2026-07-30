@@ -19,6 +19,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { useDecisions } from "@/state/decisions-store";
 import { usePreviousProfile, useProfile } from "@/state/profile-store";
 import { ActionLink, BackMark } from "./ActionGlyphs";
+import { ReadAloud } from "./ReadAloud";
 import { ReadProse } from "./ReadProse";
 import { Sky } from "./Sky";
 import {
@@ -256,6 +257,22 @@ export function StoryScreen() {
             <div className="type-voice-xl measure text-text-primary">
               <ReadProse
                 read={{ ...emptyActions, segments: beat.segments }}
+              />
+            </div>
+
+            {/* Full register here, and ONLY here. Choosing to play a story
+                back is already choosing to listen, so eliding the figures
+                would be protecting someone from the thing they asked for
+                (docs/VOICE.md §7, Phase 4). Everywhere else stays discreet.
+
+                It stops itself on every beat change — ReadAloud keys on the
+                segments' content — so tapping through never leaves the
+                previous beat still being read over the new one. */}
+            <div onClick={(event) => event.stopPropagation()}>
+              <ReadAloud
+                segments={beat.segments}
+                defaultRegister="full"
+                label="Read this beat"
               />
             </div>
           </m.div>

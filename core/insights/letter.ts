@@ -255,3 +255,43 @@ function countWord(n: number): string {
     ["Zero", "One", "Two", "Three", "Four", "Five", "Six"][n] ?? String(n)
   );
 }
+
+/**
+ * The whole letter as one continuous run of segments.
+ *
+ * For reading aloud (`components/north/ReadAloud.tsx`). A letter read out
+ * that stops after its opening line is a trailer, so this walks the same
+ * parts the screen renders, in the same order, and joins them with real
+ * sentence breaks — a synthesiser pauses on punctuation, and without it the
+ * dispatches run together into one breathless paragraph.
+ *
+ * The footnote is deliberately excluded: it is the quiet aside about what
+ * North cannot see, which earns its place in the margin of a page someone is
+ * scanning and becomes a strange note to end a spoken letter on.
+ *
+ * Pure and total — an empty letter returns an empty array, and the caller
+ * says nothing rather than saying "nothing".
+ */
+export function letterSegments(letter: Letter): ReadSegment[] {
+  const out: ReadSegment[] = [];
+
+  const pushRun = (segments: ReadSegment[]): void => {
+    if (segments.length === 0) return;
+    if (out.length > 0) out.push(text(" "));
+    out.push(...segments);
+  };
+
+  pushRun(letter.opening);
+
+  for (const entry of letter.entries) {
+    // The label is a heading on screen; spoken, it is the sentence's subject
+    // and needs its own stop or it runs into the dispatch behind it.
+    pushRun([text(`${entry.label}.`)]);
+    pushRun(entry.segments);
+    pushRun(entry.meaning);
+  }
+
+  pushRun(letter.closing);
+
+  return out;
+}

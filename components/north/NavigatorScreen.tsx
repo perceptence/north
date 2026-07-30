@@ -134,8 +134,17 @@ export function NavigatorScreen() {
   // reflect the question back — being understood is half the answer.
   const matches = asked ? matchQuestion(asked, scenarios) : [];
 
-  const submit = () => {
-    const question = draft.trim();
+  /**
+   * Route a question. `spokenText` comes from dictation finishing, where the
+   * transcript must be passed in rather than read back out of `draft` — the
+   * recognition engine's callback can land before the render that committed
+   * it. Callers with no argument use the typed draft.
+   *
+   * MUST be invoked as `submit()`, never passed directly as an event
+   * handler: a MouseEvent arriving in `spokenText` would reach `.trim()`.
+   */
+  const submit = (spokenText?: string) => {
+    const question = (spokenText ?? draft).trim();
     if (!question) return;
     setAsked(question);
     const found = matchQuestion(question, scenarios);
@@ -178,9 +187,16 @@ export function NavigatorScreen() {
           value={draft}
           onChange={setDraft}
           label="Ask North a question in your own words"
-          onSubmit={submit}
+          onSubmit={() => submit()}
+          // Speak a question and it routes itself — the typed path still
+          // needs its button, and both land in the same `submit`.
+          onSpeechEnd={(transcript) => submit(transcript)}
           action={
-            <Button variant="primary" disabled={!draft.trim()} onClick={submit}>
+            <Button
+              variant="primary"
+              disabled={!draft.trim()}
+              onClick={() => submit()}
+            >
               Think it through
             </Button>
           }
