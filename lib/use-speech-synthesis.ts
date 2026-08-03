@@ -24,6 +24,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
  *    on the component — navigating away from a screen mid-sentence would
  *    otherwise leave North talking about a page that is gone.
  *
+ * ── `pending` IS A REAL MEASUREMENT, NOT A SPINNER ────────────────────────
+ * `speaking` used to be set optimistically the moment `speak()` was called,
+ * which made it a lie: the synthesiser takes a genuine, variable moment to
+ * start, and on first use it may still be loading a voice. It now flips on
+ * the utterance's own `onstart`, and `pending` covers the gap between asking
+ * and hearing.
+ *
+ * That gap is what voice mode draws as "thinking". The distinction matters:
+ * the product forbids invented delays and workload meters
+ * (docs/UX-ARCHITECTURE.md §11), so a considered beat is only allowed to
+ * exist where something is genuinely happening. This one is.
+ *
  * ── PROGRESSIVE, LIKE THE MIC ─────────────────────────────────────────────
  * `available` is false on the server and in any browser without the API, and
  * callers render nothing at all in that case — never a disabled control that
@@ -33,7 +45,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export interface UseSpeechSynthesis {
   /** False on the server and wherever the API is missing. */
   available: boolean;
+  /** Audio is actually coming out — set from the utterance's own `onstart`. */
   speaking: boolean;
+  /** Asked to speak, not yet audible. The real start-up gap. */
+  pending: boolean;
   /** Cancels anything already queued, then speaks this. */
   speak: (text: string) => void;
   stop: () => void;
@@ -48,17 +63,101 @@ export function speechSynthesisAvailable(): boolean {
   return synthesis() !== null;
 }
 
+/**
+ * Voices worth having, best first — matched as substrings against the
+ * platform's voice names.
+ *
+ * ── WHY THIS LIST EXISTS ──────────────────────────────────────────────────
+ * Left alone, browsers hand you `voices[0]`, which on most systems is a
+ * decades-old formant synth. That is the "1990s" sound, and it is a DEFAULT
+ * rather than a limit: the same machine usually ships a modern neural voice
+ * that simply is not first in the array.
+ *
+ * The tiers below are ordered by how these actually sound, not by vendor:
+ * explicitly neural/premium voices first, then the good modern defaults, and
+ * a general-quality hint last. Anything unmatched falls through to the
+ * platform default, so a machine with none of these still speaks.
+ *
+ * **This is the ceiling for on-device speech.** Matching a hosted neural TTS
+ * needs a server, a key, and a network round trip — a real architectural
+ * decision, not a tuning one, and deliberately not taken here.
+ */
+const PREFERRED_VOICES = [
+  // Apple's modern neural voices, and the premium/enhanced downloads.
+  "Ava (Premium)",
+  "Zoe (Premium)",
+  "Evan (Premium)",
+  "Ava (Enhanced)",
+  "Zoe (Enhanced)",
+  "Siri",
+  "Premium",
+  "Enhanced",
+  // Explicitly neural engines on other platforms.
+  "Neural",
+  "Natural",
+  // Chrome's bundled voices — a clear step up from the system formant ones.
+  "Google US English",
+  "Google UK English Female",
+  "Google UK English",
+  // Windows' newer set.
+  "Microsoft Aria",
+  "Microsoft Jenny",
+  "Microsoft Guy",
+];
+
+/** Novelty and legacy voices that must never be chosen, even if they match. */
+const REJECTED = /albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|princess/i;
+
+function pickVoice(engine: SpeechSynthesis): SpeechSynthesisVoice | null {
+  const voices = engine.getVoices().filter((v) => !REJECTED.test(v.name));
+  if (voices.length === 0) return null;
+
+  // English only — the copy is English, and a Spanish voice reading English
+  // is worse than a plain one.
+  const english = voices.filter((v) => v.lang.toLowerCase().startsWith("en"));
+  const pool = english.length > 0 ? english : voices;
+
+  for (const wanted of PREFERRED_VOICES) {
+    const found = pool.find((v) =>
+      v.name.toLowerCase().includes(wanted.toLowerCase()),
+    );
+    if (found) return found;
+  }
+
+  // Nothing preferred: a local voice still beats a remote one for latency,
+  // and the default is usually first among locals.
+  return pool.find((v) => v.localService) ?? pool[0];
+}
+
 export function useSpeechSynthesis(): UseSpeechSynthesis {
   const [speaking, setSpeaking] = useState(false);
-  // Held so the cleanup below can detach handlers before cancelling — an
-  // `onend` that fires during teardown would setState on a dead component.
+  const [pending, setPending] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+  /**
+   * Voices load asynchronously and are often EMPTY on first call — the
+   * single most common reason an app ends up on the default robot voice. So
+   * the choice is made once now and again whenever the list arrives.
+   */
+  useEffect(() => {
+    const engine = synthesis();
+    if (!engine) return;
+
+    const choose = () => {
+      voiceRef.current = pickVoice(engine);
+    };
+    choose();
+    engine.addEventListener("voiceschanged", choose);
+    return () => engine.removeEventListener("voiceschanged", choose);
+  }, []);
 
   const stop = useCallback(() => {
     const engine = synthesis();
     if (!engine) return;
     engine.cancel();
     setSpeaking(false);
+    setPending(false);
   }, []);
 
   const speak = useCallback((text: string) => {
@@ -69,14 +168,23 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
     engine.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    // Slightly under default: this is a coach reading a considered sentence,
-    // not an assistant reading a notification.
-    utterance.rate = 0.95;
+    if (voiceRef.current) utterance.voice = voiceRef.current;
+    // Just under conversational pace. A coach reading a considered sentence
+    // is not an assistant reading a notification, and the copy already
+    // carries its own pauses (core/speech/spoken.ts turns em-dashes into
+    // commas so the synthesiser breathes where the writing does).
+    utterance.rate = 0.98;
     utterance.pitch = 1;
 
     const finish = () => {
       setSpeaking(false);
+      setPending(false);
       utteranceRef.current = null;
+    };
+    // The honest signal: audio is out. Everything before this is `pending`.
+    utterance.onstart = () => {
+      setPending(false);
+      setSpeaking(true);
     };
     utterance.onend = finish;
     // A synthesis error is silence, never an announcement. There is nothing
@@ -84,14 +192,15 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
     utterance.onerror = finish;
 
     utteranceRef.current = utterance;
+    setPending(true);
     engine.speak(utterance);
-    setSpeaking(true);
   }, []);
 
   useEffect(
     () => () => {
       const utterance = utteranceRef.current;
       if (utterance) {
+        utterance.onstart = null;
         utterance.onend = null;
         utterance.onerror = null;
       }
@@ -100,5 +209,5 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
     [],
   );
 
-  return { available: speechSynthesisAvailable(), speaking, speak, stop };
+  return { available: speechSynthesisAvailable(), speaking, pending, speak, stop };
 }

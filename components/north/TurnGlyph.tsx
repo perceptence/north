@@ -48,11 +48,11 @@ import { cn } from "@/lib/cn";
  */
 
 /** An anchor: [x, y] in the 96×64 field. */
-type Anchor = readonly [number, number];
+export type Anchor = readonly [number, number];
 /** Exactly six anchors per stroke — the uniform skeleton. */
-type Stroke = readonly [Anchor, Anchor, Anchor, Anchor, Anchor, Anchor];
+export type Stroke = readonly [Anchor, Anchor, Anchor, Anchor, Anchor, Anchor];
 /** Exactly six strokes per figure. */
-type Figure = readonly [Stroke, Stroke, Stroke, Stroke, Stroke, Stroke];
+export type Figure = readonly [Stroke, Stroke, Stroke, Stroke, Stroke, Stroke];
 
 /**
  * How a figure lives between morphs. One kind per glyph, chosen to enact the
@@ -78,7 +78,7 @@ interface Glyph {
 }
 
 /** Layered depth: the lead strokes speak, the others accompany. */
-const STROKE_OPACITY = [1, 0.8, 0.62, 0.48, 0.38, 0.3] as const;
+export const STROKE_OPACITY = [1, 0.8, 0.62, 0.48, 0.38, 0.3] as const;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
@@ -87,7 +87,7 @@ const round = (n: number) => Math.round(n * 100) / 100;
  * output — the whole morph system rests on this being the only way a figure
  * becomes a path.
  */
-function toPath(stroke: Stroke): string {
+export function toPath(stroke: Stroke): string {
   const p = stroke;
   let d = `M ${p[0][0]} ${p[0][1]}`;
   for (let i = 0; i < p.length - 1; i++) {

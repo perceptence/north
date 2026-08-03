@@ -15,7 +15,6 @@ import type { Scenario } from "@/core/navigator";
 import type { SituationProfile } from "@/core/profile/types";
 import { spoken } from "@/core/speech";
 import type { EvaluateOptions, ReadSegment } from "@/core/waterfall";
-import type { TurnId } from "@/core/onboarding/script";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useMicAmplitude } from "@/lib/use-mic-amplitude";
@@ -28,7 +27,7 @@ import {
   useSpeechSynthesis,
 } from "@/lib/use-speech-synthesis";
 import { ReadProse } from "./ReadProse";
-import { TurnGlyph } from "./TurnGlyph";
+import { VoiceGlyph } from "./VoiceGlyph";
 
 /**
  * Voice mode — the one place North is a voice rather than a page.
@@ -61,23 +60,6 @@ import { TurnGlyph } from "./TurnGlyph";
  * deaf and hard-of-hearing users. The glyph is the theatre; the transcript
  * is the truth.
  */
-
-/**
- * The figures the mark drifts through while North talks.
- *
- * Chosen for shape variety rather than meaning — this is the coach's voice,
- * not a specific turn — so consecutive figures are visibly different and the
- * morph reads as movement rather than a twitch.
- */
-const SPEAKING_CYCLE: TurnId[] = [
-  "openingConcern",
-  "horizon",
-  "liquid",
-  "confidence",
-];
-
-/** How long each figure holds before the mark morphs to the next. */
-const CYCLE_MS = 2600;
 
 /**
  * The way in — the only one.
@@ -127,12 +109,14 @@ export function VoiceMode({
   const reduce = useReducedMotion();
   const [heard, setHeard] = useState("");
   const [answer, setAnswer] = useState<ReadSegment[]>([]);
-  const [cycle, setCycle] = useState(0);
 
   const amplitude = useMotionValue(0);
   const heardRef = useRef("");
 
-  const { speaking, speak, stop: stopSpeaking } = useSpeechSynthesis();
+  // `pending` is the real gap between asking the synthesiser to speak and
+  // audio actually starting — what the mark draws as thinking.
+  const { speaking, pending, speak, stop: stopSpeaking } =
+    useSpeechSynthesis();
 
   /** Answer a finished utterance, then say it back. */
   const answerNow = useCallback(
@@ -206,20 +190,10 @@ export function VoiceMode({
    * the answer and try to route it.
    */
   useEffect(() => {
-    if (!canHear || listening || speaking) return;
+    if (!canHear || listening || speaking || pending) return;
     const timer = window.setTimeout(start, 400);
     return () => window.clearTimeout(timer);
-  }, [canHear, listening, speaking, start]);
-
-  /** The mark drifts through figures while North talks. */
-  useEffect(() => {
-    if (!speaking || reduce) return;
-    const timer = window.setInterval(
-      () => setCycle((c) => c + 1),
-      CYCLE_MS,
-    );
-    return () => window.clearInterval(timer);
-  }, [speaking, reduce]);
+  }, [canHear, listening, speaking, pending, start]);
 
   /** Leaving must silence both halves — a mode you left that is still
    *  talking is the exact failure this design exists to prevent. */
@@ -239,7 +213,7 @@ export function VoiceMode({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const state = speaking ? "speaking" : listening ? "listening" : "waiting";
+  const state = speaking ? "speaking" : pending ? "thinking" : "listening";
 
   return (
     <div
@@ -299,13 +273,8 @@ export function VoiceMode({
       {/* The mark, centred and large. It IS the state: breathing on your own
           voice while listening, drifting between figures while North talks. */}
       <div className="relative flex flex-1 flex-col items-center justify-center px-6">
-        <TurnGlyph
-          turnId={
-            state === "speaking"
-              ? SPEAKING_CYCLE[cycle % SPEAKING_CYCLE.length]
-              : "openingConcern"
-          }
-          listening={state === "listening"}
+        <VoiceGlyph
+          state={state}
           amplitude={amplitude}
           className="h-40 w-[240px] text-text-on-deep md:h-52 md:w-[312px]"
         />
@@ -319,9 +288,9 @@ export function VoiceMode({
         >
           {state === "speaking"
             ? "North is speaking"
-            : state === "listening"
-              ? "Listening"
-              : "One moment"}
+            : state === "thinking"
+              ? "Thinking"
+              : "Listening"}
         </m.p>
       </div>
 
