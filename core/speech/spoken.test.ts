@@ -28,15 +28,17 @@ describe("numberToWords", () => {
     assert.equal(numberToWords(99), "ninety-nine");
   });
 
-  it("builds hundreds without an 'and'", () => {
-    assert.equal(numberToWords(100), "one hundred");
-    assert.equal(numberToWords(140), "one hundred forty");
-    assert.equal(numberToWords(365), "three hundred sixty-five");
+  it("speaks hundreds the way a person says them", () => {
+    // Written English drops the "and" and says "one hundred". Spoken English
+    // does neither, and this string exists only to be spoken.
+    assert.equal(numberToWords(100), "a hundred");
+    assert.equal(numberToWords(140), "a hundred and forty");
+    assert.equal(numberToWords(365), "three hundred and sixty-five");
   });
 
   it("scales through thousands and millions", () => {
     assert.equal(numberToWords(1_000), "one thousand");
-    assert.equal(numberToWords(140_000), "one hundred forty thousand");
+    assert.equal(numberToWords(140_000), "a hundred and forty thousand");
     assert.equal(numberToWords(1_500_000), "one million five hundred thousand");
   });
 });
@@ -44,7 +46,7 @@ describe("numberToWords", () => {
 describe("spoken — the full register", () => {
   it("says a currency figure in words", () => {
     const out = spoken([text("You have "), fig(14_000_000, "currency"), text(" set aside.")], "full");
-    assert.equal(out, "You have one hundred forty thousand dollars set aside.");
+    assert.equal(out, "You have a hundred and forty thousand dollars set aside.");
   });
 
   it("keeps the screen's abbreviation when the figure carries it", () => {
@@ -99,17 +101,17 @@ describe("spoken — the full register", () => {
   });
 
   it("says a whole percent without a decimal", () => {
-    assert.equal(spoken([fig(400, "percent")], "full"), "four percent");
+    assert.equal(spoken([fig(400, "percent")], "full"), "Four percent");
   });
 
   it("says a fractional percent digit by digit after the point", () => {
-    assert.equal(spoken([fig(425, "percent")], "full"), "four point two five percent");
+    assert.equal(spoken([fig(425, "percent")], "full"), "Four point two five percent");
   });
 
   it("mirrors formatMonths — whole years are years, not months", () => {
-    assert.equal(spoken([fig(11, "duration")], "full"), "eleven months");
-    assert.equal(spoken([fig(24, "duration")], "full"), "two years");
-    assert.equal(spoken([fig(1, "duration")], "full"), "one month");
+    assert.equal(spoken([fig(11, "duration")], "full"), "Eleven months");
+    assert.equal(spoken([fig(24, "duration")], "full"), "Two years");
+    assert.equal(spoken([fig(1, "duration")], "full"), "One month");
   });
 
   it("hedges an assumed figure, because a dashed rule cannot be spoken", () => {
@@ -130,7 +132,7 @@ describe("spoken — the full register", () => {
       "full",
     );
     assert.ok(!out.includes("about roughly"), out);
-    assert.match(out, /about one thousand four hundred fifty dollars/);
+    assert.match(out, /about fourteen hundred and fifty dollars/);
   });
 
   it("still hedges when the copy did not", () => {
@@ -194,6 +196,36 @@ describe("spoken — the discreet register", () => {
   it("elides each format with a phrase that fits its slot", () => {
     assert.match(spoken([text("Contributing "), fig(400, "percent")], "discreet"), /Contributing that much/);
     assert.match(spoken([text("Held "), fig(6, "count")], "discreet"), /Held that many/);
+  });
+});
+
+describe("spoken — said like a person, not read like a form", () => {
+  it("uses the money idiom for four figures", () => {
+    // "three thousand four hundred dollars" is how a form reads it aloud.
+    assert.match(spoken([fig(340_000, "currency")], "full"), /thirty-four hundred dollars/i);
+    assert.match(spoken([fig(145_000, "currency")], "full"), /fourteen hundred and fifty dollars/i);
+  });
+
+  it("keeps the plain form outside the money idiom's range", () => {
+    // 14,000 is not "a hundred and forty hundred".
+    assert.match(spoken([fig(1_400_000, "currency")], "full"), /fourteen thousand dollars/i);
+  });
+
+  it("does not let a hedge start a sentence in lower case", () => {
+    // The copy's capital belonged to the figure the hedge displaced, so the
+    // coach was mumbling mid-thought: "…of outgoings. roughly three months".
+    const out = spoken(
+      [
+        text("You have "),
+        fig(14_000_000, "currency"),
+        text(" set aside. "),
+        fig(3, "duration", "assumed"),
+        text(" is the floor."),
+      ],
+      "full",
+    );
+    assert.match(out, /\. Roughly three months is the floor\./);
+    assert.ok(!/\. roughly/.test(out), out);
   });
 });
 

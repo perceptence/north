@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Masthead, SKY_HEIGHT } from "@/components/north/Masthead";
 import { ProductNav } from "@/components/north/ProductNav";
+import { VoiceLauncher } from "@/components/north/VoiceLauncher";
 import { cn } from "@/lib/cn";
 import { Sky } from "@/components/north/Sky";
 
@@ -95,6 +96,11 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
               rail — so it never takes part in this column's flow. */}
           <div aria-hidden="true" className={SKY_HEIGHT} />
           <ProductNav />
+          {/* The floating way into voice mode — fixed like the nav, so it
+              belongs to the shell rather than to any screen's flow. Renders
+              nothing on desktop, without a profile, or where the browser
+              cannot both hear and speak. */}
+          <VoiceLauncher />
           {/* Matches the dissolve's height exactly, so the fade lives entirely
               above the first line and never washes anything readable. */}
           <div className="pt-7 md:pt-9">{children}</div>

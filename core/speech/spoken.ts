@@ -91,6 +91,14 @@ const SCALES: ReadonlyArray<readonly [number, string]> = [
  * `en-US` formatting everywhere else.
  */
 export function numberToWords(value: number): string {
+  const words = spellOut(value);
+  // A speaker says "a hundred", never "one hundred", when it opens a number.
+  return words.startsWith("one hundred")
+    ? words.replace(/^one hundred/, "a hundred")
+    : words;
+}
+
+function spellOut(value: number): string {
   if (!Number.isFinite(value)) return "";
   const n = Math.abs(Math.round(value));
 
@@ -103,15 +111,18 @@ export function numberToWords(value: number): string {
   if (n < 1000) {
     const hundreds = `${ONES[Math.floor(n / 100)]} hundred`;
     const rest = n % 100;
-    return rest === 0 ? hundreds : `${hundreds} ${numberToWords(rest)}`;
+    // "a hundred and forty thousand", not "one hundred forty thousand".
+    // Written English drops the "and"; SPOKEN English does not, and this
+    // string exists only to be spoken.
+    return rest === 0 ? hundreds : `${hundreds} and ${spellOut(rest)}`;
   }
 
   for (const [size, name] of SCALES) {
     if (n >= size) {
       const whole = Math.floor(n / size);
       const rest = n % size;
-      const head = `${numberToWords(whole)} ${name}`;
-      return rest === 0 ? head : `${head} ${numberToWords(rest)}`;
+      const head = `${spellOut(whole)} ${name}`;
+      return rest === 0 ? head : `${head} ${spellOut(rest)}`;
     }
   }
 
@@ -151,6 +162,15 @@ function currencyToWords(cents: number, abbreviate: boolean): string {
     body = `${decimalToWords(millions)} million dollars`;
   } else if (dollars === 1) {
     body = "one dollar";
+  } else if (dollars >= 1000 && dollars < 10_000) {
+    // The money idiom: "thirty-four hundred dollars", not "three thousand
+    // four hundred dollars". Nobody says the second one out loud.
+    const hundreds = Math.floor(dollars / 100);
+    const rest = dollars % 100;
+    body =
+      `${numberToWords(hundreds)} hundred` +
+      (rest === 0 ? "" : ` and ${numberToWords(rest)}`) +
+      " dollars";
   } else {
     body = `${numberToWords(dollars)} dollars`;
   }
@@ -233,6 +253,11 @@ function forSpeaking(text: string): string {
     // An elision can strand ", ," or ". ." against the copy's own punctuation.
     .replace(/,\s*,/g, ",")
     .replace(/\s*,\s*\./g, ".")
+    // A hedge inserted in front of a figure can land at the start of a
+    // sentence — "…of outgoings. roughly three months is the floor" — because
+    // the copy's capital belonged to the figure that got replaced. Restore
+    // the capital rather than leaving the coach mumbling mid-thought.
+    .replace(/(^|[.!?]\s+)([a-z])/g, (_, lead: string, c: string) => lead + c.toUpperCase())
     .trim();
 }
 

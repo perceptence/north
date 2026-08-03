@@ -13,37 +13,34 @@ import { SpeakMark } from "./ActionGlyphs";
 import { VoiceMode } from "./VoiceMode";
 
 /**
- * The way into voice mode, from anywhere in the product.
+ * The way into voice mode — a floating button, bottom right.
  *
- * ── WHY THE MASTHEAD, AND NOT A FLOATING BUTTON ───────────────────────────
- * The obvious answer to "make it always available" is a circular button
- * hovering above the content. docs/VOICE.md refuses exactly that — a
- * floating assistant is on the explicit no list, and it is the shape that
- * turns a coach into an intrusive chatbot.
+ * ── THIS OVERRIDES A DOCUMENTED REFUSAL, DELIBERATELY ─────────────────────
+ * docs/VOICE.md's refused list includes "a floating assistant", and the
+ * launcher lived in the masthead first on exactly that argument. The user
+ * overrode it: the mode should feel like a companion you can reach for from
+ * anywhere, and a corner button is the honest shape of that. What the
+ * refusal was actually protecting against survives — this button OPENS a
+ * mode; it never listens, never speaks, and never carries a conversation
+ * itself. The intrusive part of a floating assistant is the assistant, not
+ * the float.
  *
- * The masthead is already fixed on every product screen, and its own note
- * says it "kept only the thing that belongs to the app rather than the
- * screen". Talking to North is an app-level capability, not a property of
- * whichever tab you happen to be on — so it belongs in the chrome that is
- * already there rather than in a new object floating over the page.
- *
- * The dock could not take it: four destinations, hard cap (CLAUDE.md).
+ * ── THE FILL IS THE MODE'S OWN CENTRE ─────────────────────────────────────
+ * The same radial sky voice mode opens with, cropped to its light-teal
+ * centre — so the button is a keyhole view of the surface it opens, and
+ * pressing it reads as the glow expanding to full screen.
  *
  * ── WHERE IT DOES NOT APPEAR ──────────────────────────────────────────────
- * Arrival and onboarding sit outside the product shell and so have no
- * masthead — which is correct rather than incidental. There is nothing to
- * talk to a coach about before it knows anything about you, and the
- * onboarding conversation already has its own voice input.
+ * Desktop (`lg:hidden`): talking to your finances is a thing you do holding
+ * a device, not at a desk in an open-plan office. Without a profile: every
+ * answer comes from the engine, and the engine needs a situation to reason
+ * about. Where the browser cannot both hear and speak: progressive, like
+ * every voice control — never a button referring to a capability that isn't
+ * there. And on Arrival/onboarding, which sit outside the product shell.
  *
- * ── STILL PHONE AND TABLET ────────────────────────────────────────────────
- * `lg:hidden`, unchanged. "Available everywhere" was about SURFACES, not
- * about putting a microphone on the machine most likely to be in an
- * open-plan office.
- *
- * ── AND STILL NOTHING WITHOUT A PROFILE ───────────────────────────────────
- * Every answer comes from the engine, and the engine needs a situation to
- * reason about. No profile, no control — never a button that opens a
- * conversation with nothing to say.
+ * ── IT SITS ABOVE THE DOCK ────────────────────────────────────────────────
+ * `bottom-24` on mobile clears the floating dock pill; from `lg` the dock
+ * moves into the left rail, but the launcher is gone there anyway.
  */
 export function VoiceLauncher() {
   const hydrated = useHydrated();
@@ -74,14 +71,19 @@ export function VoiceLauncher() {
         onClick={() => setOpen(true)}
         aria-label="Talk to North"
         className={cn(
-          "type-meta hit-target inline-flex cursor-pointer items-center gap-2",
-          "rounded-full text-text-on-deep opacity-80 select-none",
-          "transition-opacity duration-[--motion-micro] hover:opacity-100",
-          "lg:hidden",
+          "fixed right-4 bottom-24 z-40 lg:hidden",
+          "flex size-14 cursor-pointer items-center justify-center rounded-full",
+          "text-text-on-deep shadow-sheet select-none",
+          "transition-transform duration-[--motion-micro] active:scale-95",
         )}
+        style={{
+          // Voice mode's own sky, cropped to its centre — the light teal
+          // glow, not the dark rim. Same tokens, same OKLab ramp.
+          background:
+            "radial-gradient(circle at 50% 35% in oklab, var(--sky-300) 0%, var(--sky-600) 78%)",
+        }}
       >
         <SpeakMark />
-        Talk
       </button>
 
       {open && (

@@ -64,6 +64,30 @@ export function speechSynthesisAvailable(): boolean {
 }
 
 /**
+ * Break a reading into sentences, so it is SPOKEN rather than recited.
+ *
+ * ── WHY THIS IS THE BIGGEST LEVER ─────────────────────────────────────────
+ * Handed one long string, a browser synthesiser applies one intonation
+ * contour to the whole thing and races between sentences with no breath.
+ * That is what makes it sound like a form being read out — the flatness is
+ * the tell far more than the voice's timbre is.
+ *
+ * Queued as separate utterances, each sentence gets its own contour, its own
+ * falling close, and the platform's natural inter-utterance gap. The letter
+ * from Insights — eight sentences — is the case that made this obvious.
+ *
+ * Splitting on terminators only, never on the em-dashes the copy uses for
+ * asides: `core/speech/spoken.ts` has already turned those into commas, and
+ * a pause there would break a clause in half.
+ */
+function intoSentences(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+}
+
+/**
  * Voices worth having, best first — matched as substrings against the
  * platform's voice names.
  *
@@ -143,7 +167,7 @@ function pickVoice(engine: SpeechSynthesis): SpeechSynthesisVoice | null {
 export function useSpeechSynthesis(): UseSpeechSynthesis {
   const [speaking, setSpeaking] = useState(false);
   const [pending, setPending] = useState(false);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const utterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   /**
@@ -167,6 +191,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
     const engine = synthesis();
     if (!engine) return;
     engine.cancel();
+    utterancesRef.current = [];
     setSpeaking(false);
     setPending(false);
   }, []);
@@ -178,39 +203,51 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
     // Queued, not replaced, is the platform default — so clear first.
     engine.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    if (voiceRef.current) utterance.voice = voiceRef.current;
-    // Just under conversational pace. A coach reading a considered sentence
-    // is not an assistant reading a notification, and the copy already
-    // carries its own pauses (core/speech/spoken.ts turns em-dashes into
-    // commas so the synthesiser breathes where the writing does).
-    utterance.rate = 0.98;
-    utterance.pitch = 1;
+    const sentences = intoSentences(text);
+    if (sentences.length === 0) return;
 
     const finish = () => {
       setSpeaking(false);
       setPending(false);
-      utteranceRef.current = null;
+      utterancesRef.current = [];
     };
-    // The honest signal: audio is out. Everything before this is `pending`.
-    utterance.onstart = () => {
-      setPending(false);
-      setSpeaking(true);
-    };
-    utterance.onend = finish;
-    // A synthesis error is silence, never an announcement. There is nothing
-    // the user did wrong (docs/UX-ARCHITECTURE.md §11).
-    utterance.onerror = finish;
 
-    utteranceRef.current = utterance;
+    const utterances = sentences.map((sentence, index) => {
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      if (voiceRef.current) utterance.voice = voiceRef.current;
+      // Just under conversational pace. A coach saying a considered sentence
+      // is not an assistant reading a notification.
+      utterance.rate = 0.98;
+      utterance.pitch = 1;
+
+      // Only the FIRST sentence starting means audio is out; only the LAST
+      // one ending means North has stopped. The ones between must not flip
+      // the state, or the listen loop would restart mid-answer and the
+      // microphone would hear the rest of it.
+      if (index === 0) {
+        utterance.onstart = () => {
+          setPending(false);
+          setSpeaking(true);
+        };
+      }
+      if (index === sentences.length - 1) {
+        utterance.onend = finish;
+      }
+      // A synthesis error is silence, never an announcement — but any
+      // sentence failing has to release the state, or the mode would sit in
+      // "speaking" forever (docs/UX-ARCHITECTURE.md §11).
+      utterance.onerror = finish;
+      return utterance;
+    });
+
+    utterancesRef.current = utterances;
     setPending(true);
-    engine.speak(utterance);
+    for (const utterance of utterances) engine.speak(utterance);
   }, []);
 
   useEffect(
     () => () => {
-      const utterance = utteranceRef.current;
-      if (utterance) {
+      for (const utterance of utterancesRef.current) {
         utterance.onstart = null;
         utterance.onend = null;
         utterance.onerror = null;
