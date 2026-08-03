@@ -112,6 +112,18 @@ export function VoiceMode({
 
   const amplitude = useMotionValue(0);
   const heardRef = useRef("");
+  /**
+   * Set the instant we start leaving, and checked by `onEnd`.
+   *
+   * Closing stops recognition, and stopping recognition FIRES `onEnd` — the
+   * same callback that composes an answer and says it out loud. Without this
+   * guard, tapping Done navigated back and then North started talking to an
+   * empty room, which is precisely the disclosure this whole design exists
+   * to prevent.
+   */
+  const leavingRef = useRef(false);
+  const leaveRef = useRef<(() => void) | null>(null);
+  const stopListeningRef = useRef<(() => void) | null>(null);
 
   // `pending` is the real gap between asking the synthesiser to speak and
   // audio actually starting — what the mark draws as thinking.
@@ -126,7 +138,7 @@ export function VoiceMode({
 
       const intent = routeIntent(said, scenarios);
       if (intent.kind === "stop") {
-        onClose();
+        leaveRef.current?.();
         return;
       }
       if (intent.kind === "repeat") {
@@ -157,9 +169,16 @@ export function VoiceMode({
       previousAt,
       speak,
       answer,
-      onClose,
     ],
   );
+
+  /** The only way out. Silences both halves BEFORE handing back. */
+  const leave = useCallback(() => {
+    leavingRef.current = true;
+    stopSpeaking();
+    stopListeningRef.current?.();
+    onClose();
+  }, [stopSpeaking, onClose]);
 
   const {
     available: canHear,
@@ -174,9 +193,24 @@ export function VoiceMode({
     onEnd: () => {
       const transcript = heardRef.current;
       heardRef.current = "";
+      // Leaving fires this too. Answering now would speak over a screen the
+      // user has already left.
+      if (leavingRef.current) return;
       answerNow(transcript);
     },
+    // Hands turn-taking to the platform's endpointing: recognition ends on a
+    // natural pause, which is what moves this out of "listening". With
+    // `continuous` it never ended and the mode sat listening forever.
+    continuous: false,
   });
+
+  // `leave` is defined before the recognition hook returns `stop`, so the
+  // reference is bridged rather than reordering the hook (which would put
+  // `answerNow` after its own consumer).
+  useEffect(() => {
+    stopListeningRef.current = stopListening;
+    leaveRef.current = leave;
+  }, [stopListening, leave]);
 
   useMicAmplitude(listening, amplitude);
 
@@ -207,11 +241,11 @@ export function VoiceMode({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") leave();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [leave]);
 
   const state = speaking ? "speaking" : pending ? "thinking" : "listening";
 
@@ -258,7 +292,7 @@ export function VoiceMode({
 
       <button
         type="button"
-        onClick={onClose}
+        onClick={leave}
         aria-label="Leave voice mode"
         className={cn(
           "type-meta hit-target absolute top-6 right-5 z-10 cursor-pointer rounded-full",

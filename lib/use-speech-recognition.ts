@@ -81,6 +81,20 @@ export interface UseSpeechRecognitionOptions {
    * external system changes," which is the sanctioned shape.
    */
   onEnd?: () => void;
+  /**
+   * Keep listening through pauses (default), or let the engine decide when
+   * the utterance ended.
+   *
+   * `true` is right for DICTATION, where a tap starts and a tap stops and
+   * pausing to think must not cut you off. It is wrong for a hands-free
+   * conversation: with `continuous`, recognition never ends on its own, so
+   * `onEnd` never fires and the caller sits in "listening" forever waiting
+   * for a turn that cannot arrive.
+   *
+   * `false` hands turn-taking to the platform's own endpointing — it stops
+   * after a natural pause, which is exactly the signal a conversation needs.
+   */
+  continuous?: boolean;
 }
 
 export interface UseSpeechRecognition {
@@ -94,6 +108,7 @@ export interface UseSpeechRecognition {
 export function useSpeechRecognition({
   onResult,
   onEnd,
+  continuous = true,
 }: UseSpeechRecognitionOptions): UseSpeechRecognition {
   const recognitionRef = useRef<Recognition | null>(null);
   // Read inside the closure without re-creating start() on every keystroke.
@@ -101,9 +116,13 @@ export function useSpeechRecognition({
   // after commit, not while React is figuring out what to commit.
   const onResultRef = useRef(onResult);
   const onEndRef = useRef(onEnd);
+  // Read inside `start`, which is deliberately identity-stable — so the
+  // flag travels by ref rather than re-creating the callback.
+  const continuousRef = useRef(continuous);
   useLayoutEffect(() => {
     onResultRef.current = onResult;
     onEndRef.current = onEnd;
+    continuousRef.current = continuous;
   });
   const [listening, setListening] = useState(false);
 
@@ -121,7 +140,7 @@ export function useSpeechRecognition({
 
     const recognition = new Ctor();
     recognition.lang = navigator.language || "en-US";
-    recognition.continuous = true;
+    recognition.continuous = continuousRef.current;
     recognition.interimResults = true;
 
     recognition.onresult = (event) => {
