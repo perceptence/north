@@ -105,8 +105,19 @@ const PREFERRED_VOICES = [
   "Microsoft Guy",
 ];
 
-/** Novelty and legacy voices that must never be chosen, even if they match. */
-const REJECTED = /albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|princess/i;
+/**
+ * Voices that must never be chosen, whatever else matches.
+ *
+ * Two groups, and the second is the one that matters. The obvious novelties
+ * (Zarvox, Bad News, Boing) would never be picked anyway. But macOS also
+ * ships CHARACTER voices — Grandma, Grandpa, Eddy, Flo, Rocko, Shelley — and
+ * those are downloadable in "(Premium)" and "(Enhanced)" form. Without them
+ * listed here, the generic `Premium` preference below would happily hand a
+ * financial coach the voice of a cartoon grandpa the moment someone
+ * installed one.
+ */
+const REJECTED =
+  /albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|princess|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley|bruce|agnes/i;
 
 function pickVoice(engine: SpeechSynthesis): SpeechSynthesisVoice | null {
   const voices = engine.getVoices().filter((v) => !REJECTED.test(v.name));
