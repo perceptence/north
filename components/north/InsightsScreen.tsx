@@ -13,7 +13,6 @@ import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
   composeLetter,
-  letterSegments,
   type ChangeKind,
   type Direction,
 } from "@/core/insights";
@@ -26,7 +25,6 @@ import {
   SignpostMark,
   StoryMark,
 } from "./ActionGlyphs";
-import { ReadAloud } from "./ReadAloud";
 import { ReadProse } from "./ReadProse";
 
 /**
@@ -212,12 +210,6 @@ export function InsightsScreen() {
         <div className="type-voice-lg text-text-primary">
           <ReadProse read={{ ...emptyActions, segments: letter.opening }} />
         </div>
-
-        {/* The WHOLE letter, not just the opening — a letter read aloud that
-            stops after its first line is a trailer. Each dispatch is joined
-            to the next with a real sentence break so the synthesiser pauses
-            between them rather than running the letter together. */}
-        <ReadAloud segments={letterSegments(letter)} className="pt-1" />
       </m.div>
 
       {/* The dispatches and the closing are ONE run of the letter, so the

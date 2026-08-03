@@ -50,7 +50,9 @@ Coach observes → surfaces ONE thing → you decide → coach tracks it → che
   Goals, each answering one question (see UX-ARCHITECTURE §12). Scenario is
   Navigator's full-screen answer *state*, not a destination. Decisions is a
   drill-down. The decision card appears ONLY when something needs you — the calm
-  day is cardless, and that absence is the message. Coach remains deferred.
+  day is cardless, and that absence is the message. **The coach you talk to is
+  Navigator**, not a fifth destination — it was always the "what would you like
+  to think through?" surface, so the conversation lives there.
 - **One primary action per screen.**
 - **Waterfall rules are data, and they are tested.** The engine is the product's
   intelligence; it never depends on a model call to produce an answer.

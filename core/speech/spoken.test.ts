@@ -54,6 +54,50 @@ describe("spoken — the full register", () => {
     assert.match(out, /one point five million dollars/);
   });
 
+  it("rounds to the SAME decimal the screen shows", () => {
+    // 147,000,000c abbreviates to "$1.5M" on screen. Speaking the unrounded
+    // 1.47 had the eye and the ear disagreeing about one figure — caught in
+    // the live conversation, not here.
+    const out = spoken(
+      [fig(147_000_000, "currency", "assumed", { abbreviate: true })],
+      "full",
+    );
+    assert.match(out, /one point five million dollars/);
+    assert.ok(!out.includes("four seven"), out);
+  });
+
+  it("hedges a range once, not at both ends", () => {
+    // "between roughly X and roughly Y" states one uncertainty twice; the
+    // width of the range is already how this product says it.
+    const out = spoken(
+      [
+        text("Between "),
+        fig(57_800_000, "currency", "assumed", { abbreviate: true }),
+        text(" and "),
+        fig(150_000_000, "currency", "assumed", { abbreviate: true }),
+        text(" by retirement."),
+      ],
+      "full",
+    );
+    assert.equal(out.match(/roughly/g)?.length, 1, out);
+  });
+
+  it("resumes hedging after the range closes", () => {
+    const out = spoken(
+      [
+        text("Between "),
+        fig(100, "duration", "assumed"),
+        text(" and "),
+        fig(200, "duration", "assumed"),
+        text(". The floor is "),
+        fig(3, "duration", "assumed"),
+        text("."),
+      ],
+      "full",
+    );
+    assert.equal(out.match(/roughly/g)?.length, 2, out);
+  });
+
   it("says a whole percent without a decimal", () => {
     assert.equal(spoken([fig(400, "percent")], "full"), "four percent");
   });

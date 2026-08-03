@@ -143,10 +143,12 @@ function currencyToWords(cents: number, abbreviate: boolean): string {
 
   let body: string;
   if (abbreviate && absolute >= 100_000_000) {
-    // Matches the screen's "$1.2M" — spoken as the same decimal, because a
-    // reader hearing "one point two million" and seeing "$1.2M" should be
-    // hearing the thing they are looking at.
-    body = `${decimalToWords(absolute / 100_000_000)} million dollars`;
+    // ONE decimal, exactly as `formatCurrency` abbreviates it. The reader is
+    // looking at "$1.5M" while hearing this, so speaking the unrounded 1.47
+    // would have the eye and the ear disagreeing about the same figure —
+    // which in a money product is the whole ballgame.
+    const millions = Number((absolute / 100_000_000).toFixed(1));
+    body = `${decimalToWords(millions)} million dollars`;
   } else if (dollars === 1) {
     body = "one dollar";
   } else {
@@ -182,14 +184,26 @@ function durationToWords(months: number): string {
  */
 const ALREADY_HEDGED = /\b(about|around|roughly|approximately|nearly|almost|up to)\s*$/i;
 
+/**
+ * The connector between the two ends of a range: "between X and Y", "X to Y".
+ *
+ * A range hedged at both ends — "between roughly X and roughly Y" — says the
+ * same uncertainty twice, when the WIDTH of the range is already the product's
+ * way of stating it (DESIGN-SYSTEM, HorizonBand: "the band's length IS the
+ * uncertainty"). One hedge opens the range; the far end inherits it.
+ */
+const RANGE_CONNECTOR = /^\s*(and|to|[–—-])\s*$/i;
+
 /** One figure segment, in the full register, with its hedge. */
 function figureToWords(
   segment: Extract<ReadSegment, { kind: "figure" }>,
   precedingText: string,
+  hedgeCarries: boolean,
 ): string {
-  const hedge = ALREADY_HEDGED.test(precedingText)
-    ? ""
-    : HEDGE[segment.confidence];
+  const hedge =
+    hedgeCarries || ALREADY_HEDGED.test(precedingText)
+      ? ""
+      : HEDGE[segment.confidence];
 
   switch (segment.format) {
     case "currency":
@@ -234,9 +248,17 @@ export function spoken(
 ): string {
   if (segments.length === 0) return "";
 
+  /** True once a figure has been hedged, until the range it opened closes. */
+  let hedgeCarries = false;
+
   const body = segments
     .map((segment, index) => {
-      if (segment.kind === "text") return segment.value;
+      if (segment.kind === "text") {
+        // A range connector keeps the previous hedge alive across it;
+        // anything else ends its reach.
+        if (!RANGE_CONNECTOR.test(segment.value)) hedgeCarries = false;
+        return segment.value;
+      }
       if (register !== "full") return ELISION[segment.format];
 
       // The hedge depends on what the copy just said, so a figure needs the
@@ -244,7 +266,12 @@ export function spoken(
       const previous = segments[index - 1];
       const precedingText =
         previous && previous.kind === "text" ? previous.value : "";
-      return figureToWords(segment, precedingText);
+
+      const said = figureToWords(segment, precedingText, hedgeCarries);
+      hedgeCarries =
+        hedgeCarries ||
+        (HEDGE[segment.confidence] !== "" && !ALREADY_HEDGED.test(precedingText));
+      return said;
     })
     .join("");
 

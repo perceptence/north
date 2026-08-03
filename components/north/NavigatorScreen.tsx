@@ -27,8 +27,6 @@ import { useHydrated } from "@/lib/use-hydrated";
 import {
   answerScenario,
   availableScenarios,
-  isDecisive,
-  matchQuestion,
   scenarioById,
   type ParamSet,
   type Scenario,
@@ -38,11 +36,12 @@ import {
   type Verdict,
 } from "@/core/navigator";
 import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
-import { useProfile } from "@/state/profile-store";
+import { useDecisions } from "@/state/decisions-store";
+import { usePreviousProfile, useProfile } from "@/state/profile-store";
 import { ActionLink, AssumedMark, BackMark } from "./ActionGlyphs";
+import { CoachConversation } from "./CoachConversation";
 import { ExplanationPanel } from "./ExplanationPanel";
 import { ReadProse } from "./ReadProse";
-import { SpokenField } from "./SpokenField";
 
 /**
  * The Navigator.
@@ -85,14 +84,12 @@ const VERDICT_CLASS: Record<Verdict, string> = {
 export function NavigatorScreen() {
   const router = useRouter();
   const profile = useProfile();
+  const previous = usePreviousProfile();
   const hydrated = useHydrated();
   const [now] = useState(() => new Date());
 
   const [selected, setSelected] = useState<ScenarioId | null>(null);
   const [params, setParams] = useState<ParamSet>({});
-  /** What is being typed, and what was actually submitted. */
-  const [draft, setDraft] = useState("");
-  const [asked, setAsked] = useState("");
 
   useEffect(() => {
     if (hydrated && !profile) router.replace("/start");
@@ -101,6 +98,14 @@ export function NavigatorScreen() {
   const scenarios = useMemo(
     () => (profile ? availableScenarios(profile) : []),
     [profile],
+  );
+
+  // The conversation answers from the whole engine, not just scenarios, so it
+  // needs the ledger and the same options every other surface evaluates with.
+  const decisions = useDecisions();
+  const options = useMemo(
+    () => ({ limits: ILLUSTRATIVE_LIMITS, now }),
+    [now],
   );
 
   // Recomputed on every parameter change. Cheap enough to do inline — the
@@ -126,32 +131,10 @@ export function NavigatorScreen() {
   const reset = () => {
     setSelected(null);
     setParams({});
-    setAsked("");
-    setDraft("");
   };
 
-  // Route what was typed. `asked` holds the submitted text so the screen can
-  // reflect the question back — being understood is half the answer.
-  const matches = asked ? matchQuestion(asked, scenarios) : [];
-
-  /**
-   * Route a question. `spokenText` comes from dictation finishing, where the
-   * transcript must be passed in rather than read back out of `draft` — the
-   * recognition engine's callback can land before the render that committed
-   * it. Callers with no argument use the typed draft.
-   *
-   * MUST be invoked as `submit()`, never passed directly as an event
-   * handler: a MouseEvent arriving in `spokenText` would reach `.trim()`.
-   */
-  const submit = (spokenText?: string) => {
-    const question = (spokenText ?? draft).trim();
-    if (!question) return;
-    setAsked(question);
-    const found = matchQuestion(question, scenarios);
-    // Only open straight through when one scenario wins clearly — answering
-    // the wrong question confidently is what makes a router feel stupid.
-    if (found.length > 0 && isDecisive(found)) choose(found[0].scenario.id);
-  };
+  // Routing now lives in `core/coach` and runs inside the conversation —
+  // matchQuestion is still the scenario half of it, called from there.
 
   if (answer) {
     return (
@@ -181,62 +164,24 @@ export function NavigatorScreen() {
           What would you like to think through?
         </Text>
 
-        {/* The door. Anything typed here is routed to a scenario the engine
-            can actually compute — never answered by improvisation. */}
-        <SpokenField
-          value={draft}
-          onChange={setDraft}
-          label="Ask North a question in your own words"
-          onSubmit={() => submit()}
-          // Speak a question and it routes itself — the typed path still
-          // needs its button, and both land in the same `submit`.
-          onSpeechEnd={(transcript) => submit(transcript)}
-          action={
-            <Button
-              variant="primary"
-              disabled={!draft.trim()}
-              onClick={() => submit()}
-            >
-              Think it through
-            </Button>
-          }
+        {/* Navigator IS the conversation now, rather than a box that jumps to
+            an answer page. It was always the coach-question surface — and the
+            dock is capped at four destinations with "Coach" explicitly
+            deferred (CLAUDE.md), so this is where a coach you talk to belongs
+            without inventing a fifth tab.
+
+            The refusal and the which-one-did-you-mean prompt moved INTO the
+            thread, where they read as the coach answering rather than as the
+            page reporting an error. */}
+        <CoachConversation
+          profile={profile}
+          decisions={decisions}
+          options={options}
+          scenarios={scenarios}
+          previousProfile={previous?.profile ?? null}
+          previousAt={previous?.at ?? null}
+          onOpenScenario={choose}
         />
-
-        {/* Routed, but not confidently enough to open — so it asks. */}
-        {asked && matches.length > 0 && !isDecisive(matches) && (
-          <div className={cn("flex flex-col border-l border-line-hairline pl-4", RHYTHM.heading)}>
-            <Text variant="body" tone="secondary" measure>
-              That could be a couple of different questions. Which one did you
-              mean?
-            </Text>
-            <div className="flex flex-col items-start gap-2">
-              {matches.slice(0, 3).map((match) => (
-                <button
-                  key={match.scenario.id}
-                  type="button"
-                  onClick={() => choose(match.scenario.id)}
-                  className="type-body hit-target cursor-pointer rounded-chip text-left text-text-primary underline decoration-dotted decoration-signal-coach underline-offset-4"
-                >
-                  {match.scenario.question}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Nothing matched. North says what it can't do rather than guessing —
-            the refusal is the honest half of the feature. */}
-        {asked && matches.length === 0 && (
-          <div className={cn("flex flex-col border-l border-line-hairline pl-4", RHYTHM.pair)}>
-            <Text variant="body" tone="secondary" measure>
-              That one North can&rsquo;t reason about honestly — it works from
-              your situation, not from markets or specific investments.
-            </Text>
-            <Text variant="meta" tone="tertiary" measure>
-              Here&rsquo;s what it can think through with you.
-            </Text>
-          </div>
-        )}
       </div>
 
       {/* The curated set, as a real table of contents rather than a stack of

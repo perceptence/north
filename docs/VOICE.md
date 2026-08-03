@@ -1,9 +1,11 @@
 # North — Voice
 
-**Status: all four phases built (§7).** Voice input in onboarding (§9) and
-Navigator, and North speaks when asked — discreet by default, full register
-in the story (§10). Nothing here uses a model or a network call: the router
-is deterministic and local, and every spoken sentence is composed by `core/`.
+**Status: built, and REDIRECTED (§11).** Phases 1–2 stand: voice input in
+onboarding and Navigator. Phases 3–4 shipped as "Read this to me" and were
+then removed — a page narrator is not a coach. What replaced them is a
+one-on-one conversation on Navigator (§11). Nothing here uses a model or a
+network call: the router is deterministic and local, and every sentence
+North says is composed by `core/`.
 
 A plan for making North something you *talk to* rather than something you read.
 Researched against how state-of-the-art voice agents are built in 2026, then
@@ -498,3 +500,70 @@ the one thing here still unheard.
 this work. Every other mark in `ActionGlyphs.tsx` was chosen by the user
 from candidates, and this one should get the same treatment before it counts
 as locked.
+
+---
+
+## 11. The redirect — a coach, not a narrator *(July 2026)*
+
+Phases 3 and 4 were built to this document's own spec and then taken out.
+The spec was wrong, and the review that caught it was one sentence:
+
+> **"The screen reader is not what I wanted. More like an agent the user can
+> talk to and get answers. Like talking to a human coach one on one."**
+
+That is right, and §1 of this very document should have caught it: *"North
+already is a conversation."* "Read this to me" narrates a page you are
+already looking at. It adds a voice; it does not add a coach.
+
+### What replaced it
+
+**Navigator is the conversation.** It was always the surface that asks *"What
+would you like to think through?"*, and the dock is capped at four
+destinations, so a coach you talk to belongs there rather than in a fifth
+tab (CLAUDE.md).
+
+You ask in your own words, by voice or by typing. `core/coach/intent.ts`
+routes the transcript to a typed `Intent`; `core/coach/respond.ts` answers it
+from the same engine every screen uses — `evaluate()` for how you're doing,
+`summariseLedger()` for your record, `composeScene()` for goals and the
+horizon, `answerScenario()` for a decision. The answer appears in the thread
+as real `Figure`s and is spoken back.
+
+**The modality of the question sets the modality of the answer.** Speak, and
+North speaks. Type, and it answers in text and stays silent. That is what
+keeps "silent by default" (§3.2) true without making a conversation feel
+deaf: starting to talk *is* the asking, and someone who never made a sound
+never triggers one.
+
+**Still discreet.** The spoken half elides figures by default — they are in
+the thread, on screen, carrying their confidence marks — with "Say the
+numbers too" on the conversation itself. The privacy argument in §3 did not
+change; only the surface it applies to did.
+
+### What it can and cannot do
+
+It answers: how you're doing, why this rung, what you've decided, what you're
+working toward, where you're heading, and the five scenarios. It refuses
+markets and specific investments out loud, because the engine cannot reason
+about them honestly. **That refusal is the product, not a gap** — and it is
+what makes a talking money coach safe to ship without a model.
+
+### Two things caught only by talking to it
+
+Both were invisible to the unit tests and obvious within a minute of real use:
+
+1. **The ear and the eye disagreed about a number.** The screen abbreviated
+   to "$1.5M"; speech said "one point four seven million", because
+   `spoken()` rounded to two decimals where `formatCurrency` rounds to one.
+   In a money product that is the whole ballgame. Now both round identically.
+2. **A range was hedged at both ends** — "between roughly X and roughly Y" —
+   which states one uncertainty twice, when the width of the range is
+   already how this product expresses it. One hedge opens a range; the far
+   end inherits it.
+
+### What is still true from the earlier phases
+
+`spoken()` and its two registers survive intact and are now the coach's
+voice rather than a page reader's. So do the recognition and synthesis
+hooks, `TurnGlyph`'s listening states, and the onboarding voice matcher.
+Phase 3's core was not wasted work — it was pointed at the wrong surface.

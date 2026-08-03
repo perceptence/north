@@ -31,7 +31,6 @@ import { useProfile } from "@/state/profile-store";
 import { CorrectionTurn } from "./CorrectionTurn";
 import { ActionLink, HorizonMark, LedgerMark } from "./ActionGlyphs";
 import { DerivationSheet } from "./DerivationSheet";
-import { ReadAloud } from "./ReadAloud";
 import { LadderPanel } from "./LadderPanel";
 import { ReadProse } from "./ReadProse";
 
@@ -248,15 +247,6 @@ export function TodayScreen() {
                   lead
                 />
               </div>
-
-              {/* Directly under the read, so what "this" refers to is never
-                  in question. Discreet by default: it says the verdict and
-                  leaves your balance on the screen where you are already
-                  looking (docs/VOICE.md §3.3). */}
-              <ReadAloud
-                segments={evaluation.current.read.segments}
-                className="pt-1"
-              />
             </div>
 
             {/* Position on the ladder, in the compact form — the typographic
