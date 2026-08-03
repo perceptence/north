@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Button,
   TRANSITION,
   Text,
   m,
@@ -16,16 +15,9 @@ import type { SituationProfile } from "@/core/profile/types";
 import { spoken } from "@/core/speech";
 import type { EvaluateOptions, ReadSegment } from "@/core/waterfall";
 import { cn } from "@/lib/cn";
-import { useHydrated } from "@/lib/use-hydrated";
 import { useMicAmplitude } from "@/lib/use-mic-amplitude";
-import {
-  speechRecognitionAvailable,
-  useSpeechRecognition,
-} from "@/lib/use-speech-recognition";
-import {
-  speechSynthesisAvailable,
-  useSpeechSynthesis,
-} from "@/lib/use-speech-synthesis";
+import { useSpeechRecognition } from "@/lib/use-speech-recognition";
+import { useSpeechSynthesis } from "@/lib/use-speech-synthesis";
 import { ReadProse } from "./ReadProse";
 import { VoiceGlyph } from "./VoiceGlyph";
 
@@ -48,10 +40,11 @@ import { VoiceGlyph } from "./VoiceGlyph";
  * and drifts through figures on a slow cadence while North speaks.
  *
  * ── PHONE AND TABLET ONLY ─────────────────────────────────────────────────
- * The caller gates this below `lg`. Talking to your finances is a thing you
- * do holding a device, not at a desk in an open-plan office — and the
- * surface that would be most exposed is exactly the one where the entry
- * point is hidden.
+ * `VoiceLauncher` gates the entry below `lg`. Talking to your finances is a
+ * thing you do holding a device, not at a desk in an open-plan office — and
+ * the surface that would be most exposed is exactly the one where the way in
+ * never appears. It is reachable from every product screen via the masthead,
+ * which is chrome rather than a button floating over the content.
  *
  * ── THE SCREEN IS STILL THE RECORD ────────────────────────────────────────
  * What you said and what North answered stay on screen as real `Figure`s
@@ -60,32 +53,6 @@ import { VoiceGlyph } from "./VoiceGlyph";
  * deaf and hard-of-hearing users. The glyph is the theatre; the transcript
  * is the truth.
  */
-
-/**
- * The way in — the only one.
- *
- * Hidden from `lg` up, and hidden entirely where the browser cannot listen.
- * Progressive as ever: no capability, no control, and never a disabled
- * button referring to something that isn't there.
- *
- * A secondary Button rather than an `ActionLink`, because entering a mode is
- * not a quiet tertiary action — but still not the primary, which belongs to
- * "Think it through" on the typed path.
- */
-export function VoiceEntry({ onOpen }: { onOpen: () => void }) {
-  const hydrated = useHydrated();
-  const canHear = hydrated && speechRecognitionAvailable();
-  const canSpeak = hydrated && speechSynthesisAvailable();
-  if (!canHear || !canSpeak) return null;
-
-  return (
-    <div className="lg:hidden">
-      <Button variant="secondary" onClick={onOpen}>
-        Talk to North
-      </Button>
-    </div>
-  );
-}
 
 export interface VoiceModeProps {
   profile: SituationProfile;
@@ -305,8 +272,13 @@ export function VoiceMode({
       </button>
 
       {/* The mark, centred and large. It IS the state: breathing on your own
-          voice while listening, drifting between figures while North talks. */}
-      <div className="relative flex flex-1 flex-col items-center justify-center px-6">
+          voice while listening, drifting between figures while North talks.
+
+          `shrink-0`, so a long answer can never squeeze the glyph out of the
+          layout — the letter is the longest thing North says and it did
+          exactly that, collapsing the mark and running under the Done
+          control. The transcript below scrolls instead. */}
+      <div className="relative flex shrink-0 flex-col items-center justify-center px-6 pt-[16dvh] pb-8">
         <VoiceGlyph
           state={state}
           amplitude={amplitude}
@@ -331,7 +303,11 @@ export function VoiceMode({
       {/* The record. Numbers must be SEEN — a range and its confidence mark
           cannot survive being spoken, and a voice-only path would shut out
           anyone who cannot hear it. */}
-      <div className="relative flex min-h-[38dvh] flex-col justify-end gap-5 px-6 pb-12">
+      {/* Its OWN scroll region: `flex-1 min-h-0` is what actually bounds a
+          flex child — without `min-h-0` a long child refuses to shrink and
+          overflows its parent instead of scrolling, which is the bug that
+          put the whole Insights letter on top of the glyph. */}
+      <div className="relative flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-12">
         {heard && (
           <Text variant="voice-md" tone="inverse" measure as="p">
             <span className="italic opacity-60">{heard}</span>

@@ -1,8 +1,9 @@
 import { Wordmark } from "@/components/nds";
 import { cn } from "@/lib/cn";
+import { VoiceLauncher } from "./VoiceLauncher";
 
 /**
- * The app bar — the mark, and nothing else.
+ * The app bar — the mark, and the way into voice mode.
  *
  * ── HOW IT GOT HERE ───────────────────────────────────────────────────────
  * The shell used to spend TWO rows on chrome: a band of sky holding a 13px
@@ -19,6 +20,10 @@ import { cn } from "@/lib/cn";
  *
  * So the labels went back into the page, where a letter puts its dateline, and
  * the bar kept only the thing that belongs to the app rather than the screen.
+ * That test is also what later earned `VoiceLauncher` its place here: talking
+ * to North is an app-level capability, not a property of whichever tab you
+ * are on. It is the only thing allowed to join the mark, and only because it
+ * passes the same test.
  * Content still starts at 84px, and each screen's `h1` is now what the screen
  * actually SAYS rather than what it is filed under.
  */
@@ -34,8 +39,21 @@ export const SKY_HEIGHT = "h-16 md:h-20";
 
 export function Masthead() {
   return (
-    <div className={cn("flex items-center text-text-on-deep", SKY_HEIGHT)}>
+    <div
+      className={cn(
+        "flex items-center justify-between text-text-on-deep",
+        SKY_HEIGHT,
+      )}
+    >
       <Wordmark height={13} strokeWidth={2} />
+
+      {/* The one thing allowed to join the mark here, and only because it is
+          the same KIND of thing: something that belongs to the app rather
+          than to whichever screen you are on. Voice mode is reachable from
+          every product surface without a floating button hovering over the
+          content — the shape docs/VOICE.md explicitly refuses. It renders
+          nothing on desktop, and nothing before there is a profile. */}
+      <VoiceLauncher />
     </div>
   );
 }
