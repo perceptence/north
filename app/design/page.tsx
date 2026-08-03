@@ -895,7 +895,7 @@ export default function DesignGallery() {
                 Or borrow a story and watch it work
               </ActionLink>
               <ActionLink icon={<SpeakMark />} onClick={() => undefined}>
-                Read this to me
+                Say the numbers too
               </ActionLink>
             </div>
           </Specimen>

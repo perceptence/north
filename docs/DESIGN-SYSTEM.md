@@ -630,6 +630,13 @@ world, but it must first read in the reader's.*
   spreadsheet's (add a row). Replaced the bare plus.
 - **`ReleaseMark` — the wind.** Gusts curling away: released to the weather,
   which the sky already owns. Kind rather than punitive — let go, not deleted.
+- **`SpeakMark` — the coach's dot, speaking.** `CoachPresence`'s own mark
+  with speech trailing off it, so North's voice is tied to the thing that
+  already means North is present rather than to a new object. A CATEGORY
+  mark, not an action one: it sits on both *Stop* and *Say the numbers too*,
+  two controls governing one thing. The rules are ragged and there are two —
+  the reviewed candidate had three near-even ones, which at 16px read as a
+  bullet followed by a hamburger. Uneven lengths are what make it speech.
 - **`DirectionMark` (Insights) — two ticks on a ground line.** Before and
   after; up means the second reading stands taller. A comparison drawn as a
   comparison, in the rung indicator's language. Not a chevron (every
@@ -638,7 +645,11 @@ world, but it must first read in the reader's.*
 Rejected along the way, recorded so they aren't re-proposed: bare dashes
 (hamburger menu), a minus (deletion), abstract domes (illegible small),
 balloon/bird/kite/feather (draw badly at 16px), diagonal arrows (legible but
-every dashboard's voice).
+every dashboard's voice). For the voice specifically: a speaker cone and
+radiating arcs (the category's two most tired shapes), a hanging quote (fills
+in and reads as two blobs at 16px), a transcript's speaker colon (reads as a
+definition list), and a written line lifting off the page (reads as a trend
+arrow, which this product refuses).
 
 #### The gutter bleed — a pattern, not a one-off *(July 2026)*
 

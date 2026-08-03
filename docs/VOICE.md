@@ -496,10 +496,10 @@ string handed to `speechSynthesis.speak` on Today, Insights and the story;
 the audio itself was never played. What a synthesiser makes of the text is
 the one thing here still unheard.
 
-**One thing deliberately left unreviewed:** `SpeakMark` was drawn to unblock
-this work. Every other mark in `ActionGlyphs.tsx` was chosen by the user
-from candidates, and this one should get the same treatment before it counts
-as locked.
+**`SpeakMark` has since been reviewed** and redrawn — the coach's own
+presence dot with speech trailing off it, chosen from four candidates
+(DESIGN-SYSTEM, the action marks). The version described above, a hanging
+quote, lost on legibility: the curves fill in at 16px.
 
 ---
 

@@ -222,26 +222,32 @@ export function OpenBookMark() {
 }
 
 /**
- * Read this to me — the hanging quote, spoken.
+ * North's spoken voice — the coach, speaking.
  *
- * NOT a speaker cone and not radiating arcs: those are the category's two
- * most tired shapes, and neither is drawn in this product's hand. The
- * composer already opens with a hanging quotation mark meaning *speech being
- * written down* (`SpokenField`), so a reading is that same mark pointed the
- * other way — North's turn to talk. The pair of strokes is the quote; the
- * short rule beneath is the line being read.
+ * Chosen in review (July 2026) over a hanging quote, a transcript's speaker
+ * colon, and a written line lifting off the page. NOT a speaker cone and not
+ * radiating arcs: the category's two most tired shapes, and neither drawn in
+ * this product's hand.
  *
- * NOTE: drawn, not reviewed. Every other mark in this file was chosen by the
- * user from candidates; this one was authored to unblock Phase 3 and should
- * get the same treatment before it is considered locked.
+ * `CoachPresence`'s own dot — the mark that already means North is present —
+ * with speech trailing off it. The voice is tied to the thing that already
+ * represents the coach, rather than to a new object.
+ *
+ * The two rules are DELIBERATELY RAGGED and there are two of them, not
+ * three. The candidate drawn for review had three near-even rules, which at
+ * 16px read as a bullet followed by a hamburger — a list, not a voice.
+ * Uneven lengths are what make it speech.
+ *
+ * It is a CATEGORY mark, not an action mark: it sits on both "Stop" and "Say
+ * the numbers too", which are two controls governing one thing — whether and
+ * how North is speaking.
  */
 export function SpeakMark() {
   return (
     <Mark>
-      <path d="M5.4 3.4 C4 4.4 3.4 5.8 3.4 7.4 H6.2 V4.2 H3.9" />
-      <path d="M11.6 3.4 C10.2 4.4 9.6 5.8 9.6 7.4 H12.4 V4.2 H10.1" />
-      <path d="M3.4 11.4 H12.6" />
-      <path d="M3.4 13.6 H8.6" />
+      <circle cx="3.2" cy="8" r="1.6" fill="currentColor" stroke="none" />
+      <path d="M7.2 6.2 H13.6" />
+      <path d="M7.2 9.8 H11.2" />
     </Mark>
   );
 }
