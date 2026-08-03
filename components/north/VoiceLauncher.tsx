@@ -30,6 +30,17 @@ import { VoiceMode } from "./VoiceMode";
  * centre — so the button is a keyhole view of the surface it opens, and
  * pressing it reads as the glow expanding to full screen.
  *
+ * Held at the LIGHT end of that ramp deliberately. Carrying the mode's dark
+ * rim into a 56px button made it a heavy navy dot sitting on warm paper —
+ * the one loudest object on a calm screen, which is the opposite of what a
+ * standing invitation should be. sky-300 into sky-600 keeps the same three
+ * tokens and the same OKLab ramp, just the half of it that stays quiet.
+ *
+ * ── AND IT SAYS WHAT IT IS ────────────────────────────────────────────────
+ * A bare mark in a corner is a puzzle. The word is what makes it an offer
+ * rather than a guess — the same reason every `ActionLink` in the product
+ * carries a label rather than trusting its glyph alone.
+ *
  * ── WHERE IT DOES NOT APPEAR ──────────────────────────────────────────────
  * Desktop (`lg:hidden`): talking to your finances is a thing you do holding
  * a device, not at a desk in an open-plan office. Without a profile: every
@@ -72,18 +83,19 @@ export function VoiceLauncher() {
         aria-label="Talk to North"
         className={cn(
           "fixed right-4 bottom-24 z-40 lg:hidden",
-          "flex size-14 cursor-pointer items-center justify-center rounded-full",
-          "text-text-on-deep shadow-sheet select-none",
+          "type-label inline-flex h-13 cursor-pointer items-center gap-2.5",
+          "rounded-full px-5 text-text-on-deep shadow-sheet select-none",
           "transition-transform duration-[--motion-micro] active:scale-95",
         )}
         style={{
-          // Voice mode's own sky, cropped to its centre — the light teal
-          // glow, not the dark rim. Same tokens, same OKLab ramp.
+          // The light half of voice mode's own ramp — see the note above on
+          // why the dark rim does not belong on a 56px button.
           background:
-            "radial-gradient(circle at 50% 35% in oklab, var(--sky-300) 0%, var(--sky-600) 78%)",
+            "radial-gradient(circle at 50% 20% in oklab, var(--sky-300) 0%, var(--sky-600) 120%)",
         }}
       >
         <SpeakMark />
+        Talk
       </button>
 
       {open && (

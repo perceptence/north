@@ -38,13 +38,41 @@ export interface CoachContext {
   previousAt?: string | null;
 }
 
-/** The honest refusal. Names the limit rather than guessing. */
+/**
+ * What this coach can actually be asked.
+ *
+ * The first thing anyone says to a coach they have just met is some form of
+ * "what can you do" — and a refusal is the worst possible answer to it. It
+ * used to be exactly that, because there was no intent for the question.
+ *
+ * Written as an OFFER rather than a menu: each line is a question in the
+ * user's own words, so it doubles as a script for what to say next.
+ */
+const CAPABILITIES: ReadSegment[] = [
+  text(
+    "I work from your situation — everything I say comes from what you've " +
+      "told me and what the engine works out from it. Ask me how you're " +
+      "doing, or what you should focus on. What you're working toward, and " +
+      "whether it's on track. What you've decided with me before. What's " +
+      "changed lately. Or think a decision through out loud — buying a " +
+      "home, a career break, putting more away, taking a pay cut, clearing " +
+      "debt first.",
+  ),
+];
+
+/**
+ * The honest refusal.
+ *
+ * Shorter than it was, and it leads with what it CAN do rather than a
+ * paragraph of apology. The old version listed every capability inline,
+ * which made a refusal read as a wall — and it was firing on 41% of
+ * perfectly answerable questions, so most people met it first.
+ */
 const REFUSAL: ReadSegment[] = [
   text(
-    "That one I can't reason about honestly — I work from your situation, " +
-      "not from markets or specific investments. Ask me how you're doing, " +
-      "what you're working toward, what you've decided, or think a decision " +
-      "through with me.",
+    "That one I can't answer honestly — I work from your situation, not " +
+      "from markets or particular investments. Ask me what you can ask, and " +
+      "I'll tell you.",
   ),
 ];
 
@@ -147,6 +175,9 @@ export function respond(intent: Intent, context: CoachContext): CoachReply {
       }
       return { segments: scene.headline };
     }
+
+    case "capabilities":
+      return { segments: CAPABILITIES };
 
     case "changes": {
       const letter = composeLetter(

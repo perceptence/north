@@ -32,6 +32,11 @@ export type Intent =
   | { kind: "horizon" }
   /** "What's changed?" — the letter, which is what Insights already is. */
   | { kind: "changes" }
+  /**
+   * "What can you do?" — the first thing anyone asks a coach they have just
+   * met, and the one question a refusal is the worst possible answer to.
+   */
+  | { kind: "capabilities" }
   /** "Say that again." Handled by the caller, which holds the last turn. */
   | { kind: "repeat" }
   /** "Stop." Also the caller's to act on. */

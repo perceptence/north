@@ -115,6 +115,50 @@ describe("routeIntent — scenarios still route", () => {
   });
 });
 
+/**
+ * The regression guard that matters most.
+ *
+ * A survey of 31 ordinary phrasings once refused 12 of them — 41% of
+ * answerable questions met "I can't reason about that honestly", including
+ * every form of "what can you do". These are those phrasings. The suite is
+ * asymmetric on purpose: it asserts the ANSWERABLE ones never fall to
+ * `unknown`, and separately that the two genuinely un-answerable ones always
+ * do. Widening the terms must never cost the refusal.
+ */
+describe("routeIntent — the phrasings people actually use", () => {
+  const answerable = [
+    "what can you do", "what can I ask", "help", "what do you know about me",
+    "how am I doing", "am I doing ok", "am I doing alright",
+    "how are things looking", "how's my money", "what's my situation",
+    "give me an update", "what should I focus on", "what's the priority",
+    "why that one", "what have I decided", "what did I commit to",
+    "show me my record", "what am I saving for", "how are my goals",
+    "am I on track for my goals", "how much will I have",
+    "where will I end up", "what's changed", "anything new", "catch me up",
+    "can I buy a house", "should I quit my job", "should I save more",
+  ];
+
+  for (const q of answerable) {
+    it(`answers "${q}"`, () => {
+      assert.notEqual(route(q).kind, "unknown", `refused: ${q}`);
+    });
+  }
+
+  it("still refuses what it genuinely cannot reason about", () => {
+    for (const q of ["should I buy nvidia", "what's bitcoin doing"]) {
+      assert.equal(route(q).kind, "unknown", `should have refused: ${q}`);
+    }
+  });
+
+  it("answers the first question anyone asks", () => {
+    // This one was the whole reason for the sweep: a coach that refuses
+    // "what can you do" has failed before the conversation starts.
+    for (const q of ["what can you do", "what can I ask", "help"]) {
+      assert.equal(route(q).kind, "capabilities", q);
+    }
+  });
+});
+
 describe("routeIntent — it can say no", () => {
   it("refuses a markets question rather than guessing a topic", () => {
     assert.equal(route("should I buy nvidia stock").kind, "unknown");
@@ -184,7 +228,7 @@ describe("respond — every answer comes from the engine", () => {
     assert.ok(reply.segments.every((s) => s.kind === "text"));
     assert.match(
       reply.segments.map((s) => (s.kind === "text" ? s.value : "")).join(""),
-      /can't reason about honestly/,
+      /can't answer honestly/,
     );
   });
 

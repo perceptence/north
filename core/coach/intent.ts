@@ -44,17 +44,43 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "come again",
     "one more time",
   ],
+  capabilities: [
+    "what can you do",
+    "what can i ask",
+    "what do you know",
+    "what should i ask",
+    "how does this work",
+    "how do you work",
+    "what are you",
+    "who are you",
+    "help",
+    "options",
+    "examples",
+  ],
   standing: [
     "how am i doing",
+    "how am i doing today",
     "where do i stand",
     "how are things",
+    "how are things looking",
     "what should i do",
     "what do i do",
+    "what should i focus on",
+    "what should i work on",
     "what now",
     "my situation",
+    "hows my money",
+    "how is my money",
+    "my money",
+    "give me an update",
+    "an update",
+    "update me",
     "how am i",
     "am i ok",
     "am i okay",
+    "am i alright",
+    "am i fine",
+    "am i doing well",
     "am i on track",
     "whats up",
     "what is up",
@@ -86,6 +112,11 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "my history",
     "ledger",
     "commitments",
+    "what did i commit to",
+    "what i committed",
+    "my commitments",
+    "what have i promised",
+    "my track record",
   ],
   goals: [
     "what am i working toward",
@@ -107,9 +138,12 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "since we last",
     "whats new",
     "what is new",
+    "anything new",
+    "anything changed",
     "lately",
     "recently",
     "catch me up",
+    "bring me up to speed",
   ],
   horizon: [
     "where am i heading",
@@ -120,6 +154,9 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "the horizon",
     "how much will i have",
     "what will i have",
+    "where will i end up",
+    "where does this end",
+    "how much will i end up with",
     "in the end",
     "by the time",
   ],
@@ -143,13 +180,54 @@ function normalize(input: string): string {
     .trim();
 }
 
-/** Sum of matched term weights — phrases beat single words. */
+/**
+ * How well a query matches one intent's terms.
+ *
+ * TWO passes, because exact substring alone was refusing 41% of perfectly
+ * ordinary questions. "am I doing ok" does not CONTAIN "am i ok", so it
+ * scored zero against `standing` and fell through to the refusal — the worst
+ * possible answer to a question the engine answers perfectly well.
+ *
+ *   · Exact phrase — the strong signal. A phrase beats a word, because "how
+ *     am i doing" is decisive where "doing" alone is noise.
+ *   · Loose — EVERY word of a multi-word term present somewhere in the
+ *     query, in any order. Catches re-orderings and interjected filler
+ *     ("am I doing ok", "how are things looking") at a lower weight, so it
+ *     never outranks a real phrase hit.
+ *
+ * ── WHY EVERY WORD, RATHER THAN THE INTERESTING ONES ──────────────────────
+ * The first attempt dropped stopwords first and required the remainder. That
+ * was much worse than the bug it fixed: with "what", "do", "i" and "my"
+ * removed, most terms collapsed to ONE content word, so "should I buy
+ * nvidia" satisfied "what should i do" on the strength of "should" alone —
+ * and North confidently answered a markets question it must refuse.
+ *
+ * Requiring the whole term keeps the loose pass honest: it forgives ORDER
+ * and EXTRA words, never missing ones. "am I doing ok" ⊇ {am, i, ok} passes;
+ * "should I buy nvidia" ⊉ {what, should, i, do} does not.
+ */
 function score(text: string, terms: string[]): number {
+  const queryWords = new Set(text.split(" "));
   let total = 0;
+
   for (const term of terms) {
-    if (!text.includes(term)) continue;
-    total += term.includes(" ") ? 3 : 1;
+    if (text.includes(term)) {
+      total += term.includes(" ") ? 3 : 1;
+      continue;
+    }
+
+    // Single words are already settled by the exact pass — a lone word
+    // either appears or it does not, and testing it loosely is the same
+    // test twice.
+    // Three DISTINCT words minimum. Two-word terms are made of the
+    // commonest words in the language, so loose-matching them means
+    // matching almost any sentence — and the exact pass already covers
+    // them.
+    const words = new Set(term.split(" "));
+    if (words.size < 3) continue;
+    if ([...words].every((w) => queryWords.has(w))) total += 2;
   }
+
   return total;
 }
 
@@ -178,9 +256,20 @@ export function routeIntent(transcript: string, available: Scenario[]): Intent {
   const scenarios = matchQuestion(transcript, available);
   const scenarioWon = scenarios.length > 0 && isDecisive(scenarios);
 
-  // 3 · Topics.
+  // 3 · Topics. `capabilities` sits here rather than with the control words
+  //     because "what can you do" is a real question, not a command — but it
+  //     must be able to beat a scenario, or "what can I ask about a house"
+  //     opens the house scenario instead of explaining itself.
   const topics = (
-    ["standing", "ladder", "decisions", "goals", "horizon", "changes"] as const
+    [
+      "capabilities",
+      "standing",
+      "ladder",
+      "decisions",
+      "goals",
+      "horizon",
+      "changes",
+    ] as const
   )
     .map((kind) => ({ kind, value: score(text, TERMS[kind]) }))
     .filter((t) => t.value > 0)
