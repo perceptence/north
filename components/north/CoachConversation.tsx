@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 import { RHYTHM, Button, Text, TRANSITION, m } from "@/components/nds";
-import { respond, routeIntent, type CoachReply } from "@/core/coach";
+import { respond, type CoachReply } from "@/core/coach";
+import { resolveIntent } from "@/lib/route-intent";
 import type { Scenario, ScenarioId } from "@/core/navigator";
 import { spoken, type SpeechRegister } from "@/core/speech";
 import type { Decision } from "@/core/decisions";
@@ -109,21 +110,35 @@ export function CoachConversation({
    * render which recorded it.
    */
   const ask = useCallback(
-    (question: string, aloud: boolean) => {
+    async (question: string, aloud: boolean) => {
       const said = question.trim();
       if (!said) return;
 
-      const intent = routeIntent(said, scenarios);
+      // ── THE QUESTION GOES UP FIRST, BEFORE THE AWAIT ─────────────────────
+      // Clearing the field alone was not enough. Routing can now take up to
+      // the model's budget, and for that whole beat the typed question had
+      // left the input but not yet arrived in the thread — so the screen
+      // showed no trace of what had just been asked. On a surface with no
+      // spinner (docs/UX-ARCHITECTURE.md §11), the user's own words ARE the
+      // acknowledgement, and they have to land immediately.
+      setDraft("");
+      setTurns((current) => [
+        ...current,
+        { id: nextId.current++, from: "you", said },
+      ]);
+
+      // Awaited, but never blocking on the network for an answer — the local
+      // route is already decided inside `resolveIntent`, and the model only
+      // ever gets a fixed budget to improve on it. See lib/route-intent.ts.
+      const intent = await resolveIntent(said, scenarios);
 
       if (intent.kind === "stop") {
         stop();
-        setDraft("");
         return;
       }
 
       if (intent.kind === "repeat") {
         if (aloud) say(lastReply.current);
-        setDraft("");
         return;
       }
 
@@ -136,9 +151,9 @@ export function CoachConversation({
       });
 
       lastReply.current = reply.segments;
+      // The "you" turn is already on screen — appended before the await above.
       setTurns((current) => [
         ...current,
-        { id: nextId.current++, from: "you", said },
         {
           id: nextId.current++,
           from: "north",
@@ -146,7 +161,6 @@ export function CoachConversation({
           opens: reply.opens,
         },
       ]);
-      setDraft("");
       if (aloud) say(reply.segments);
     },
     [scenarios, profile, decisions, options, previousProfile, previousAt, say, stop],

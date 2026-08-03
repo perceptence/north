@@ -84,6 +84,46 @@ describe("spoken — the full register", () => {
     assert.equal(out.match(/roughly/g)?.length, 1, out);
   });
 
+  it("drops a number's own 'and' inside a range, so it has exactly one", () => {
+    // "Between roughly five hundred AND seventy-eight thousand dollars AND
+    // one point five million" — the number's internal "and" and the range's
+    // land in one breath, and the listener back-tracks. Caught by reading
+    // the real horizon answer aloud.
+    const out = spoken(
+      [
+        text("Between "),
+        fig(57_800_000, "currency", "assumed"),
+        text(" and "),
+        fig(84_900_000, "currency", "assumed"),
+        text(" by retirement."),
+      ],
+      "full",
+    );
+    assert.match(out, /five hundred seventy-eight thousand dollars/, out);
+    assert.match(out, /eight hundred forty-nine thousand dollars/, out);
+    // Exactly one "and" in the sentence: the range's own.
+    assert.equal(out.match(/\band\b/g)?.length, 1, out);
+  });
+
+  it("still says 'and' inside a number standing on its own", () => {
+    // The range rule must not cost the idiom everywhere else — "a hundred
+    // and forty thousand" is how a person says it.
+    const out = spoken([fig(14_000_000, "currency")], "full");
+    assert.equal(out, "A hundred and forty thousand dollars");
+  });
+
+  it("says 'one hundred' after a determiner, never 'a hundred'", () => {
+    // "Your a hundred and forty thousand dollars" — the idiom carries an
+    // implicit article, so a determiner in front produces two. This is the
+    // hero's own standing answer, and it was ungrammatical rather than
+    // robotic: no prosody survives "Your a hundred".
+    for (const lead of ["Your ", "The other ", "That ", "My "]) {
+      const out = spoken([text(lead), fig(14_000_000, "currency"), text(" in cash.")], "full");
+      assert.ok(!/\ba hundred/i.test(out), out);
+      assert.match(out, /one hundred and forty thousand dollars/, out);
+    }
+  });
+
   it("resumes hedging after the range closes", () => {
     const out = spoken(
       [

@@ -276,6 +276,44 @@ This also means the existing `matchQuestion()` keyword router
 (`core/navigator/match.ts`) is the **fallback**, not the primary — and the
 product still works with the model switched off entirely.
 
+#### 5.0 Built. Here is where each piece sits.
+
+| File | Job |
+|---|---|
+| `core/coach/intent.ts` | The deterministic route, and still the answer whenever nothing else is available. Rewritten in the same change set that added the model seam — the default was inverted and the refusal list rebuilt; see §5.2. |
+| `core/coach/parse-intent.ts` | The gate. Turns an untrusted value into an `Intent` or returns `null`. Pure, in `core/`, run on **both** sides of the network. |
+| `app/api/intent/route.ts` | The only model call. Forced tool use, so a sentence is not a shape it can return. Holds the key. |
+| `lib/route-intent.ts` | The seam callers use. Local route first, model on a budget, local route on anything unexpected. |
+
+Four properties are worth stating plainly, because each one is a rule this
+product already had and none of them bent to fit a model in:
+
+- **The engine never depends on a model call** (CLAUDE.md). Literally true:
+  delete `app/api/intent/` and every question is still answered. `resolveIntent`
+  computes the local route *before* it touches the network, so the model can
+  only ever improve on an answer that already exists.
+- **No spinner** (UX-ARCHITECTURE §11). There is nothing to wait for — the wait
+  is optional by construction. Voice mode does draw the beat, as the thinking
+  figure, because there routing is genuinely happening and the alternative is
+  reopening the microphone mid-thought.
+- **The model never sees the money.** The request carries the transcript and the
+  *ids* of the scenarios this person can be offered. No balances, no income, no
+  goals, no decision history — none of it is needed to classify a question.
+- **The refusal is not delegated.** `outOfScope()` runs on the client first, so
+  a markets question is never sent. A model asked nicely to refuse investment
+  advice is not a control; a request that is never made is.
+
+**What it buys is precision, not coverage.** Since the default was inverted the
+keyword router answers nearly everything — but it answers much of it with
+`standing`, which is the honest fallback when no term matches. The model is what
+turns *"did I keep my promises"* into `decisions` and *"how long until I'm
+okay"* into `horizon`. Better routing of questions that were already being
+answered, which is exactly why it is allowed to be optional.
+
+Failure is a `204` in every case — no key, no network, a bad tool call, a
+hallucinated scenario id, a blown budget. There is no error path, because there
+is no error: 204 means *use yours*, and yours is already in hand.
+
 ### 5.1 `spoken()` — a new pure function in core
 
 `ReadSegment[]` is written to be read. Speech needs different rules, and they
@@ -549,6 +587,90 @@ working toward, where you're heading, and the five scenarios. It refuses
 markets and specific investments out loud, because the engine cannot reason
 about them honestly. **That refusal is the product, not a gap** — and it is
 what makes a talking money coach safe to ship without a model.
+
+### The refusal had to be inverted before it was true
+
+Shipped, the refusal fired constantly — and almost always wrongly. The router
+recognised phrasings from term lists and refused everything else, which meant
+the lists were carrying a job no list can do: enumerate every way a person
+might phrase a question. A survey of 29 phrasings written blind against the
+lists refused **25** of them: "so where am I at", "am I behind", "what's the
+damage", "give it to me straight". Every one is a question the engine answers
+well.
+
+Two rounds of widening the lists moved that number and did not fix it, because
+the problem was never coverage. It was **polarity**. The router refused on
+*absence of recognition*, so an unanticipated phrasing and an out-of-scope
+question were indistinguishable to it.
+
+So the default is now an answer, and the refusal fires on **positive evidence**
+of a subject North does not do — tickers, indices, crypto, instruments, market
+timing. That set is closed, because it is defined by the product's scope rather
+than by English, and it is the only list that has to be complete. A question
+matching no topic and no out-of-scope term falls back to `standing`, which is
+the question behind almost every vague one.
+
+This does not soften the posture; it aims it. The same 29 now refuse 5 — every
+one correctly, including noise. And the fallback is safe for the reason
+everything else here is safe: `standing` is composed by the engine, so the
+worst case is a true reading of something adjacent to what was asked. **A coach
+reframing beats a coach refusing.** `core/coach/coach.test.ts` guards both
+directions, and the unrehearsed set is in the suite precisely because a list
+tested against its own phrasings only proves it matches itself.
+
+Two related misroutes came out of the same probe, both silent failures: "when
+can I stop working" routed to `stop` — North going quiet on a retirement
+question — and "do I have enough" matched the `enough` control word. Control
+words now require an utterance of three words or fewer, because a command is
+short and a question is not.
+
+### The prosody work was wrong, and listening is what settled it
+
+For several rounds this hook chunked a reading into sentences, then into
+clauses, each spoken as its own utterance with its own rate, pitch, and a
+measured silence between them. The reasoning was that a synthesiser applies
+one intonation contour per utterance, so splitting would buy each sentence its
+own contour and its own breath.
+
+It was reasoning, not evidence, and it was backwards. Four treatments were
+rendered through the product's actual voice — plain, slower, breath-between-
+sentences, and a full clause-level contour — and compared. **The plain one
+won**, clearly, against every shaped version. Samantha already models
+paragraph-level prosody; chunking threw that away and substituted a cruder
+hand-rolled version, then added a platform gap between every pair of
+utterances on top.
+
+Two defects the split was itself causing:
+
+- **A doubled pause at every full stop.** Each chunk kept its terminal
+  punctuation, so the voice paused for the period *and* the platform inserted
+  an inter-utterance gap. This was in the shipped product, not just in the
+  test renders.
+- **Flatter delivery, not richer.** A clause spoken alone gets a clause's
+  contour — flat and unresolved — where the same clause inside a sentence gets
+  the sentence's shape.
+
+So `speak()` now hands over the whole reading as one utterance and leaves
+`rate` and `pitch` at the voice's own defaults. **Anyone adding prosody
+shaping here should render it and listen to it against the plain version
+first** — it is the only test that has ever been informative about this file.
+
+Two things were verified rather than assumed while making that change:
+
+- A **1312-character single utterance runs to completion** in Chrome on macOS
+  (started 71ms, ended 68.9s, no error), so the long-utterance truncation bug
+  some platforms have does not apply here and no keepalive is needed. *Not*
+  verified on iOS Safari or Android Chrome, which is where voice mode actually
+  runs — the launcher is `lg:hidden`.
+- **Pitch is continuous in this synth** and rate is quantized into coarse
+  buckets, which is why rate-shaping demos read as lurching. Moot now, but it
+  is the reason not to trust a rate-based fix here later.
+
+The real ceiling is the voice file, not the shaping: no machine ships with a
+neural voice installed, and Samantha (Compact) is a concatenative synth from
+around 2009. `PREFERRED_VOICES` picks up an Enhanced or Premium voice the
+moment one exists on the system, and that one download is worth more than
+anything this file can do.
 
 ### Two things caught only by talking to it
 

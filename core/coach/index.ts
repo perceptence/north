@@ -6,7 +6,8 @@
  * screens use.
  */
 
-export { routeIntent } from "./intent.ts";
+export { outOfScope, routeIntent } from "./intent.ts";
+export { parseIntent } from "./parse-intent.ts";
 export { respond } from "./respond.ts";
 export type { CoachContext } from "./respond.ts";
 export type { CoachReply, Intent, IntentKind } from "./types.ts";

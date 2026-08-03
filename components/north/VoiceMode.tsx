@@ -8,7 +8,8 @@ import {
   useMotionValue,
   useReducedMotion,
 } from "@/components/nds";
-import { respond, routeIntent } from "@/core/coach";
+import { respond } from "@/core/coach";
+import { resolveIntent } from "@/lib/route-intent";
 import type { Decision } from "@/core/decisions";
 import type { Scenario } from "@/core/navigator";
 import type { SituationProfile } from "@/core/profile/types";
@@ -76,6 +77,8 @@ export function VoiceMode({
   const reduce = useReducedMotion();
   const [heard, setHeard] = useState("");
   const [answer, setAnswer] = useState<ReadSegment[]>([]);
+  /** Working out what was asked — see `answerNow`. */
+  const [routing, setRouting] = useState(false);
 
   const amplitude = useMotionValue(0);
   const heardRef = useRef("");
@@ -99,11 +102,32 @@ export function VoiceMode({
 
   /** Answer a finished utterance, then say it back. */
   const answerNow = useCallback(
-    (transcript: string) => {
+    async (transcript: string) => {
       const said = transcript.trim();
       if (!said) return;
 
-      const intent = routeIntent(said, scenarios);
+      // ── ROUTING IS NOW A REAL BEAT, SO IT HAS TO BE DRAWN ────────────────
+      // With a model in front of the keyword router this can take up to its
+      // budget. Without `routing`, the mode would fall back to LISTENING
+      // during the wait — the microphone reopening while North is still
+      // working out what was asked, which is the exact "stuck in listening"
+      // failure this mode was rebuilt to fix.
+      //
+      // This is not an invented delay. The gap is real work happening, which
+      // is the only condition under which this product draws one at all
+      // (docs/UX-ARCHITECTURE.md §11).
+      setRouting(true);
+      let intent;
+      try {
+        intent = await resolveIntent(said, scenarios);
+      } finally {
+        setRouting(false);
+      }
+
+      // The user may have left while it was routing — same disclosure risk
+      // as answering after Done, and the same guard.
+      if (leavingRef.current) return;
+
       if (intent.kind === "stop") {
         leaveRef.current?.();
         return;
@@ -163,7 +187,7 @@ export function VoiceMode({
       // Leaving fires this too. Answering now would speak over a screen the
       // user has already left.
       if (leavingRef.current) return;
-      answerNow(transcript);
+      void answerNow(transcript);
     },
     // Hands turn-taking to the platform's endpointing: recognition ends on a
     // natural pause, which is what moves this out of "listening". With
@@ -191,10 +215,10 @@ export function VoiceMode({
    * the answer and try to route it.
    */
   useEffect(() => {
-    if (!canHear || listening || speaking || pending) return;
+    if (!canHear || listening || speaking || pending || routing) return;
     const timer = window.setTimeout(start, 400);
     return () => window.clearTimeout(timer);
-  }, [canHear, listening, speaking, pending, start]);
+  }, [canHear, listening, speaking, pending, routing, start]);
 
   /** Leaving must silence both halves — a mode you left that is still
    *  talking is the exact failure this design exists to prevent. */
@@ -214,7 +238,12 @@ export function VoiceMode({
     return () => document.removeEventListener("keydown", onKey);
   }, [leave]);
 
-  const state = speaking ? "speaking" : pending ? "thinking" : "listening";
+  // Two distinct real waits draw the same figure: working out what was asked,
+  // and the synthesiser's own start-up gap. To the person in the room they
+  // are one beat — North considering — and splitting them into two marks
+  // would be narrating machinery.
+  const thinking = routing || pending;
+  const state = speaking ? "speaking" : thinking ? "thinking" : "listening";
 
   return (
     <div

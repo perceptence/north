@@ -90,15 +90,29 @@ const SCALES: ReadonlyArray<readonly [number, string]> = [
  * No "and" before the tens — American convention, matching the product's
  * `en-US` formatting everywhere else.
  */
-export function numberToWords(value: number): string {
-  const words = spellOut(value);
+export function numberToWords(value: number, joined = true): string {
+  const words = spellOut(value, joined);
   // A speaker says "a hundred", never "one hundred", when it opens a number.
   return words.startsWith("one hundred")
     ? words.replace(/^one hundred/, "a hundred")
     : words;
 }
 
-function spellOut(value: number): string {
+/**
+ * `joined` is the internal "and" — "five hundred AND seventy-eight thousand".
+ *
+ * True everywhere except inside a range, where the number's own "and" and the
+ * range's own "and" land in the same breath and the sentence stops parsing:
+ *
+ *   "Between roughly five hundred and seventy-eight thousand dollars and
+ *    one point five million dollars by retirement"
+ *
+ * Read that aloud and the first "and" sounds like the range's. A listener
+ * hears "between five hundred… and seventy-eight thousand" and has to
+ * back-track. Dropping the internal one is what a person does: *"between five
+ * hundred seventy-eight thousand and one and a half million."*
+ */
+function spellOut(value: number, joined = true): string {
   if (!Number.isFinite(value)) return "";
   const n = Math.abs(Math.round(value));
 
@@ -114,15 +128,18 @@ function spellOut(value: number): string {
     // "a hundred and forty thousand", not "one hundred forty thousand".
     // Written English drops the "and"; SPOKEN English does not, and this
     // string exists only to be spoken.
-    return rest === 0 ? hundreds : `${hundreds} and ${spellOut(rest)}`;
+    if (rest === 0) return hundreds;
+    return joined
+      ? `${hundreds} and ${spellOut(rest, joined)}`
+      : `${hundreds} ${spellOut(rest, joined)}`;
   }
 
   for (const [size, name] of SCALES) {
     if (n >= size) {
       const whole = Math.floor(n / size);
       const rest = n % size;
-      const head = `${spellOut(whole)} ${name}`;
-      return rest === 0 ? head : `${head} ${spellOut(rest)}`;
+      const head = `${spellOut(whole, joined)} ${name}`;
+      return rest === 0 ? head : `${head} ${spellOut(rest, joined)}`;
     }
   }
 
@@ -147,7 +164,11 @@ function decimalToWords(value: number): string {
 }
 
 /** Integer cents, spoken. Mirrors `formatCurrency`'s abbreviation rule. */
-function currencyToWords(cents: number, abbreviate: boolean): string {
+function currencyToWords(
+  cents: number,
+  abbreviate: boolean,
+  joined = true,
+): string {
   const negative = cents < 0;
   const absolute = Math.abs(cents);
   const dollars = Math.round(absolute / 100);
@@ -168,11 +189,11 @@ function currencyToWords(cents: number, abbreviate: boolean): string {
     const hundreds = Math.floor(dollars / 100);
     const rest = dollars % 100;
     body =
-      `${numberToWords(hundreds)} hundred` +
-      (rest === 0 ? "" : ` and ${numberToWords(rest)}`) +
+      `${numberToWords(hundreds, joined)} hundred` +
+      (rest === 0 ? "" : `${joined ? " and " : " "}${numberToWords(rest, joined)}`) +
       " dollars";
   } else {
-    body = `${numberToWords(dollars)} dollars`;
+    body = `${numberToWords(dollars, joined)} dollars`;
   }
 
   return negative ? `minus ${body}` : body;
@@ -219,23 +240,52 @@ function figureToWords(
   segment: Extract<ReadSegment, { kind: "figure" }>,
   precedingText: string,
   hedgeCarries: boolean,
+  inRange: boolean,
 ): string {
   const hedge =
     hedgeCarries || ALREADY_HEDGED.test(precedingText)
       ? ""
       : HEDGE[segment.confidence];
 
+  // Inside a range the number drops its own "and", or it collides with the
+  // range's. See `spellOut`.
+  const joined = !inRange;
+
   switch (segment.format) {
     case "currency":
-      return hedge + currencyToWords(segment.value, segment.abbreviate ?? false);
+      return (
+        hedge + currencyToWords(segment.value, segment.abbreviate ?? false, joined)
+      );
     case "percent":
       return hedge + percentToWords(segment.value);
     case "duration":
       return hedge + durationToWords(segment.value);
     case "count":
-      return hedge + numberToWords(segment.value);
+      return hedge + numberToWords(segment.value, joined);
   }
 }
+
+/**
+ * "Your a hundred and forty thousand dollars" — the one place the "a hundred"
+ * idiom is wrong.
+ *
+ * `numberToWords` opens a number with "a hundred" because that is what a
+ * person says: *"a hundred and forty thousand dollars is a lot."* But the
+ * idiom carries an implicit article, so putting a determiner in front of it
+ * produces two — and the engine's copy does exactly that, because it writes
+ * "Your ⟨figure⟩ in cash" and "The other ⟨figure⟩ is sitting still" without
+ * knowing how the figure will be spoken.
+ *
+ * Caught only by reading real engine output aloud, never by a fixture, and it
+ * is worth being blunt about what it was: not a robotic voice, an
+ * ungrammatical sentence. No amount of prosody survives "Your a hundred".
+ *
+ * Repaired here rather than in `numberToWords` because the number cannot see
+ * its own context — and repaired for every caller at once, so the next rule
+ * that writes "the ⟨figure⟩" cannot reintroduce it.
+ */
+const DETERMINED_HUNDRED =
+  /\b(your|my|our|their|his|her|its|the|that|this|these|those|another|other|each|every|first|next|last|remaining|same|both|all)\s+a\s+hundred\b/gi;
 
 /**
  * Punctuation a speaker can hear.
@@ -258,6 +308,7 @@ function forSpeaking(text: string): string {
     // the copy's capital belonged to the figure that got replaced. Restore
     // the capital rather than leaving the coach mumbling mid-thought.
     .replace(/(^|[.!?]\s+)([a-z])/g, (_, lead: string, c: string) => lead + c.toUpperCase())
+    .replace(DETERMINED_HUNDRED, "$1 one hundred")
     .trim();
 }
 
@@ -292,7 +343,17 @@ export function spoken(
       const precedingText =
         previous && previous.kind === "text" ? previous.value : "";
 
-      const said = figureToWords(segment, precedingText, hedgeCarries);
+      // A figure is inside a range when a bare connector sits on either side
+      // of it — "Between ⟨low⟩ and ⟨high⟩ by retirement". Both ends need to
+      // know, because both would otherwise contribute a competing "and".
+      const next = segments[index + 1];
+      const inRange =
+        (!!next && next.kind === "text" && RANGE_CONNECTOR.test(next.value)) ||
+        (!!previous &&
+          previous.kind === "text" &&
+          RANGE_CONNECTOR.test(previous.value));
+
+      const said = figureToWords(segment, precedingText, hedgeCarries, inRange);
       hedgeCarries =
         hedgeCarries ||
         (HEDGE[segment.confidence] !== "" && !ALREADY_HEDGED.test(precedingText));

@@ -24,6 +24,27 @@ import type { Intent, IntentKind } from "./types.ts";
  * a decisive scenario match wins over topic keywords — "should I buy a house"
  * mentions no topic word but is unambiguously the home scenario. Topics are
  * checked last and only settle what a scenario did not claim.
+ *
+ * ── THE DEFAULT IS AN ANSWER, NOT A REFUSAL ───────────────────────────────
+ * This router used to refuse anything it did not recognise, which made the
+ * term lists carry an impossible job: they had to enumerate every way a
+ * person might phrase a question, or the coach said "I can't". A survey of 29
+ * unrehearsed phrasings refused 25 of them — "so where am I at", "am I
+ * behind", "what's the damage" — every one of which the engine answers
+ * perfectly well.
+ *
+ * The lists cannot win that race. **What CAN be enumerated is the small,
+ * closed set of things North must refuse** — markets, securities, tickers,
+ * crypto — because that set is defined by the product's scope rather than by
+ * English. So the polarity is inverted: refuse on POSITIVE EVIDENCE of
+ * out-of-scope, and otherwise answer. Anything that reads like a person
+ * asking about their own money, and matches no topic, falls back to
+ * `standing` — the coach's honest default, and a true answer composed from
+ * the engine either way.
+ *
+ * The refusal is not weakened by this; it is made accurate. It still fires,
+ * out loud, for exactly the questions docs/UX-ARCHITECTURE.md §4.5 says it
+ * must — and no longer for the twenty ordinary ones standing next to them.
  */
 
 /**
@@ -34,16 +55,10 @@ import type { Intent, IntentKind } from "./types.ts";
  * Multi-word phrases score higher, because "how am i doing" is decisive where
  * "doing" alone is noise.
  */
-const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
-  stop: ["stop", "be quiet", "never mind", "nevermind", "cancel", "shut up", "enough"],
-  repeat: [
-    "say that again",
-    "again",
-    "repeat",
-    "what did you say",
-    "come again",
-    "one more time",
-  ],
+const TERMS: Record<
+  Exclude<IntentKind, "scenario" | "unknown" | "stop" | "repeat">,
+  string[]
+> = {
   capabilities: [
     "what can you do",
     "what can i ask",
@@ -53,8 +68,9 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "how do you work",
     "what are you",
     "who are you",
+    "what are my options",
+    "my options",
     "help",
-    "options",
     "examples",
   ],
   standing: [
@@ -97,6 +113,7 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "the ladder",
     "rung",
     "priority",
+    "first",
     "order",
     "why are you asking",
     "after this",
@@ -152,6 +169,8 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "long term",
     "long run",
     "the horizon",
+    "stop working",
+    "when can i stop",
     "how much will i have",
     "what will i have",
     "where will i end up",
@@ -161,6 +180,178 @@ const TERMS: Record<Exclude<IntentKind, "scenario" | "unknown">, string[]> = {
     "by the time",
   ],
 };
+
+/**
+ * ── A COMMAND IS THE WHOLE UTTERANCE, NOT A WORD INSIDE ONE ───────────────
+ *
+ * Control words used to be scored like topics, with the same substring test.
+ * That is wrong in a way that took a review running the real code to see: a
+ * topic is a thing your sentence is ABOUT, so containing its words is
+ * evidence; a command is a thing your sentence IS, so containing its words is
+ * evidence of nothing.
+ *
+ * The bug it produced was as bad as this file gets. "enough" was a stop term,
+ * matched as a substring, so **"is that enough?"** — the single most natural
+ * follow-up to a figure the coach has just read aloud, and arguably the
+ * question this whole product exists to answer — routed to `stop`. On the
+ * typed surface the question vanished with no reply; in voice mode it called
+ * `leave()` and closed the mode outright. A word-count guard did not help,
+ * because the question is itself three words. "should i cancel" did the same,
+ * and "against" contains "again" so it routed to `repeat`.
+ *
+ * So commands are now matched as EXACT utterances, after stripping the
+ * politeness a person wraps around one. "Please stop talking now" is a
+ * command; "is that enough" is a question that happens to share a word with
+ * one. Nothing containing a command can be a command.
+ */
+const FILLER = new Set([
+  "please", "ok", "okay", "north", "hey", "just", "now", "thanks",
+  "alright", "right", "um", "uh", "er",
+]);
+
+const STOP_COMMANDS = new Set([
+  "stop", "stop it", "stop talking", "stop reading", "stop speaking",
+  "be quiet", "quiet", "silence",
+  "never mind", "nevermind", "forget it", "leave it",
+  "cancel", "shut up", "hush",
+  "thats enough", "enough of that", "that will do",
+]);
+
+const REPEAT_COMMANDS = new Set([
+  "again", "say that again", "say it again", "repeat", "repeat that",
+  "what did you say", "come again", "one more time", "sorry what", "pardon",
+  "i missed that", "didnt catch that",
+]);
+
+/**
+ * The command this utterance IS, or null because it is a question.
+ *
+ * Checked both as spoken and with the filler removed, so "stop" and "please
+ * stop now" are the same command and "is that enough" is neither.
+ */
+function command(text: string): "stop" | "repeat" | null {
+  const stripped = text
+    .split(" ")
+    .filter((word) => !FILLER.has(word))
+    .join(" ");
+
+  for (const candidate of [text, stripped]) {
+    if (STOP_COMMANDS.has(candidate)) return "stop";
+    if (REPEAT_COMMANDS.has(candidate)) return "repeat";
+  }
+  return null;
+}
+
+/**
+ * The only list that has to be complete — and the only one that CAN be.
+ *
+ * These are the subjects North refuses, and the set is closed because it is
+ * defined by the product's scope (docs/FOUNDATION.md §9: coaching, never
+ * investment advice), not by how people phrase things. A person can ask "how
+ * am I doing" in five hundred ways; there is only one way to be asking about
+ * a ticker.
+ *
+ * Deliberately narrow in one direction: no "interest rates", no "inflation",
+ * no "the fed" — those act ON the user's situation, which the engine reasons
+ * about, and refusing them would be refusing the product.
+ *
+ * ── SUBJECTS ONLY. NEVER PHRASINGS. ───────────────────────────────────────
+ * The first version broke this rule and was wrong in both directions at once,
+ * which a review caught by running the code rather than reading it:
+ *
+ *   TOO NARROW — it had "the market" but not bare "markets", no `invest`
+ *     vocabulary at all, and only two issuer names. So "how are markets doing
+ *     today", "what's a good investment right now", "how should I invest my
+ *     savings" and "should I buy apple" all escaped the refusal and were
+ *     answered with a full reading of the user's own finances. Truthful, and
+ *     an answer to a question nobody asked.
+ *
+ *   TOO BROAD — it also contained "options", "shares", "what do you think of"
+ *     and "should i invest in", none of which name a subject. "options" is
+ *     ALSO a `capabilities` term nine lines up, and since the refusal is
+ *     checked first, "what are my options?" — the product's own help question,
+ *     which the refusal copy explicitly invites — was answered with the
+ *     investment-advice refusal.
+ *
+ * The rule that keeps this honest: **every entry must name a thing, not a way
+ * of asking.** "should i invest in my 401k" is a contribution question this
+ * engine answers; "how should I invest my savings" is asset allocation, which
+ * it must not. The difference is the object, so that is what is listed.
+ */
+const OUT_OF_SCOPE = [
+  // Instruments and asset classes.
+  "stock", "stocks", "share price", "ticker", "tickers", "equities",
+  "etf", "etfs", "index fund", "index funds", "mutual fund", "mutual funds",
+  "hedge fund", "which fund", "what fund",
+  "bonds", "commodities", "derivatives", "futures", "forex", "gold", "silver",
+  // Crypto.
+  "bitcoin", "crypto", "cryptocurrency", "ethereum", "solana", "nft",
+  // Markets and indices. Bare "market"/"markets" as well as the determined
+  // forms — their absence is what let "are markets up" through.
+  "market", "markets", "stock market", "nasdaq", "dow", "dow jones",
+  // Both renderings of S&P: `normalize` turns the ampersand into a space, but
+  // DICTATION writes it out as a word — "how's the S and P 500 doing" was the
+  // one markets question that still escaped after the first repair.
+  "s p", "s p 500", "s and p", "s and p 500", "sp 500", "sp500",
+  "ftse", "nifty", "sensex",
+  // Named issuers. Not a registry — the shape of the question. A coach asked
+  // about a specific company is being asked to pick a security whichever
+  // company it is.
+  "nvidia", "tesla", "apple", "amazon", "google", "microsoft", "netflix",
+  // Allocation and picking, named as the SUBJECT rather than as an opener.
+  // "invest my"/"invest it", never bare "invest in" — the latter refuses
+  // "should I invest in my 401k", which is the contribute-more scenario.
+  "invest my", "investing my", "invest it", "invest that",
+  "how to invest", "where to invest", "what to invest",
+  "good investment", "best investment", "investment advice", "investments",
+  "asset allocation", "portfolio", "my returns", "rate of return",
+  // Timing and picking.
+  "day trading", "time the market", "buy the dip", "p e ratio", "valuation",
+];
+
+/**
+ * Words that mark an utterance as a person asking about themselves.
+ *
+ * Not a topic list and never scored — the ONLY job is to tell a question
+ * apart from noise, so "so where am I at" gets an answer and "asdfgh qwerty"
+ * gets the honest "I didn't follow". Question words and first-person markers
+ * are all that takes, and both are closed sets in English.
+ */
+const ASKING = new Set([
+  // Question words, straight and contracted — the apostrophe is stripped by
+  // `normalize`, so both forms have to be listed or "where's" reads as a word
+  // the set has never seen.
+  "what", "whats", "how", "hows", "when", "whens", "where", "wheres",
+  "why", "whys", "which", "who", "whos",
+  "should", "shall", "can", "could", "would", "will", "do", "does", "did",
+  "is", "are", "am", "was", "were", "have", "has", "any", "anything",
+  // First person — an utterance about themselves is a question for the coach
+  // whether or not it is shaped like one ("I'm worried about money").
+  "i", "im", "ive", "id", "me", "my", "mine", "we", "our", "us",
+  // Addressed to someone.
+  "tell", "give", "show", "explain", "help", "need", "want",
+]);
+
+/** True if `term` appears in `text` as whole words, never mid-word. */
+function hasTerm(text: string, term: string): boolean {
+  const at = ` ${text} `.indexOf(` ${term} `);
+  return at !== -1;
+}
+
+/**
+ * Is this a subject North refuses, on the evidence?
+ *
+ * Exported because the refusal must be decidable WITHOUT the model. When
+ * routing runs behind a network call (`lib/route-intent.ts`), this is checked
+ * first and a match short-circuits — so a markets question is never sent
+ * anywhere, and no model is ever in a position to be talked into answering
+ * one. A model asked nicely to refuse investment advice is not a control; a
+ * request that is never made is.
+ */
+export function outOfScope(transcript: string): boolean {
+  const text = normalize(transcript);
+  return OUT_OF_SCOPE.some((term) => hasTerm(text, term));
+}
 
 /**
  * Lowercase, strip punctuation, collapse whitespace.
@@ -238,25 +429,36 @@ function score(text: string, terms: string[]): number {
  * scenario hidden for this profile — the debt question for someone with no
  * debt — can never be routed to.
  *
- * Returns `{ kind: "unknown" }` freely. **A coach that pretends every
- * question is one of its topics is worse than one that names its limits**,
- * and the refusal is a real part of the product's posture
- * (docs/UX-ARCHITECTURE.md §4.5).
+ * Returns `{ kind: "unknown" }` on evidence, not on absence. **A coach that
+ * pretends every question is one of its topics is worse than one that names
+ * its limits** (docs/UX-ARCHITECTURE.md §4.5) — but a coach that refuses
+ * every question it did not anticipate is worse than both, and that is what
+ * the previous default made this. See the header note.
  */
 export function routeIntent(transcript: string, available: Scenario[]): Intent {
   const text = normalize(transcript);
   if (text.length < 2) return { kind: "unknown" };
 
-  // 1 · Control words. "stop" is never a question about anything.
-  if (score(text, TERMS.stop) > 0) return { kind: "stop" };
-  if (score(text, TERMS.repeat) > 0) return { kind: "repeat" };
+  const words = text.split(" ");
 
-  // 2 · A scenario, when one wins clearly. Deliberately reuses the Navigator's
+  // 1 · Commands, matched as the WHOLE utterance. See `command()` for why
+  //     containment is the wrong test here — "is that enough" and "when can I
+  //     stop working" are questions, not instructions to go quiet.
+  const control = command(text);
+  if (control) return { kind: control };
+
+  // 2 · The refusal, on positive evidence — BEFORE any matching, so a
+  //     markets question can never be talked into a topic by the words
+  //     standing around it ("should I buy nvidia" shares three words with
+  //     "what should I do").
+  if (OUT_OF_SCOPE.some((term) => hasTerm(text, term))) return { kind: "unknown" };
+
+  // 3 · A scenario, when one wins clearly. Deliberately reuses the Navigator's
   //     own matcher — one definition of what a scenario question sounds like.
   const scenarios = matchQuestion(transcript, available);
   const scenarioWon = scenarios.length > 0 && isDecisive(scenarios);
 
-  // 3 · Topics. `capabilities` sits here rather than with the control words
+  // 4 · Topics. `capabilities` sits here rather than with the control words
   //     because "what can you do" is a real question, not a command — but it
   //     must be able to beat a scenario, or "what can I ask about a house"
   //     opens the house scenario instead of explaining itself.
@@ -293,5 +495,21 @@ export function routeIntent(transcript: string, available: Scenario[]): Intent {
     return { kind: "scenario", id: scenarios[0].scenario.id };
   }
 
+  // 5 · Nothing matched, and nothing said this was out of scope. So it is a
+  //     question about this person's money phrased in a way no list
+  //     anticipated — which is the normal case, not the exception.
+  //
+  //     `standing` is the right default because it is the answer to the
+  //     question behind almost every vague one: "am I behind", "what's the
+  //     damage", "should I be worried", "give it to me straight" are all
+  //     asking where they stand. And it is composed from the engine like
+  //     every other answer, so the worst case is a true reading of something
+  //     adjacent to what was asked — a coach reframing, not a coach refusing.
+  if (words.some((word) => ASKING.has(word))) {
+    return { kind: "standing" };
+  }
+
+  // Not a question and not about them. Silence, a misfire of the microphone,
+  // or a sentence meant for someone else in the room.
   return { kind: "unknown" };
 }

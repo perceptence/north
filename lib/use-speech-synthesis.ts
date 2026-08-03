@@ -64,28 +64,43 @@ export function speechSynthesisAvailable(): boolean {
 }
 
 /**
- * Break a reading into sentences, so it is SPOKEN rather than recited.
+ * ── ONE UTTERANCE, WHOLE READING. THE SYNTH'S OWN PROSODY WINS. ───────────
  *
- * ── WHY THIS IS THE BIGGEST LEVER ─────────────────────────────────────────
- * Handed one long string, a browser synthesiser applies one intonation
- * contour to the whole thing and races between sentences with no breath.
- * That is what makes it sound like a form being read out — the flatness is
- * the tell far more than the voice's timbre is.
+ * This block used to chunk the reading into sentences, and then into clauses,
+ * each spoken as its own utterance with its own rate, pitch, and a measured
+ * silence between them. The argument was that a browser synthesiser applies
+ * ONE intonation contour to a whole string, so splitting it would give each
+ * sentence its own contour and its own breath.
  *
- * Queued as separate utterances, each sentence gets its own contour, its own
- * falling close, and the platform's natural inter-utterance gap. The letter
- * from Insights — eight sentences — is the case that made this obvious.
+ * That argument was wrong, and it was settled by listening rather than by
+ * reasoning. Four prosody treatments were rendered through this exact voice
+ * and compared against the plain one: the plain one won, clearly. Handing the
+ * whole reading over at once is BETTER, because Samantha already models
+ * paragraph-level prosody — the fall into a full stop, the lift out of it,
+ * the pace across a clause — and chunking replaced all of that with my own
+ * cruder version, plus a platform gap between every pair of utterances.
  *
- * Splitting on terminators only, never on the em-dashes the copy uses for
- * asides: `core/speech/spoken.ts` has already turned those into commas, and
- * a pause there would break a clause in half.
+ * Two defects the split was actually causing, both of which are now gone:
+ *
+ *   · **A doubled pause at every full stop.** Each chunk kept its terminal
+ *     punctuation, so the voice paused for the period AND the platform added
+ *     an inter-utterance gap on top.
+ *   · **Flatter delivery, not richer.** A clause spoken alone gets a clause's
+ *     contour — flat and unresolved — where the same clause inside a sentence
+ *     gets the sentence's shape.
+ *
+ * So there is deliberately no chunking here, no rate override, and no pitch
+ * override: `rate` and `pitch` are left at 1, which means "this voice's own
+ * default", which is what won. **If you are about to add prosody shaping
+ * here, render it and listen to it against the plain version first.** That is
+ * the only test that has ever been informative about this file.
+ *
+ * The real ceiling is the voice, not the shaping. A stock machine has no
+ * neural voice installed, and Samantha (Compact) is a concatenative synth
+ * from around 2009. `PREFERRED_VOICES` below picks up an Enhanced or Premium
+ * voice the moment one exists on the system, and that single download is
+ * worth more than everything this file could do.
  */
-function intoSentences(text: string): string[] {
-  return text
-    .split(/(?<=[.!?])\s+/)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-}
 
 /**
  * Voices worth having, best first — matched as substrings against the
@@ -159,9 +174,23 @@ function pickVoice(engine: SpeechSynthesis): SpeechSynthesisVoice | null {
     if (found) return found;
   }
 
-  // Nothing preferred: a local voice still beats a remote one for latency,
-  // and the default is usually first among locals.
-  return pool.find((v) => v.localService) ?? pool[0];
+  // ── NOTHING PREFERRED IS THE COMMON CASE, SO IT HAS TO BE CHOSEN WELL ────
+  // No machine ships with a neural voice installed; on a stock Mac this
+  // branch is what actually runs, every time. It used to be
+  // `pool.find(localService) ?? pool[0]` — the FIRST English voice in an
+  // array nobody sorted. That happened to be Samantha here and looked fine,
+  // but the same line hands another machine Daniel (en-GB) or Karen (en-AU)
+  // for a US-English product, on nothing but array order.
+  //
+  // The OS default is the honest fallback: it is the voice this person has
+  // already chosen for everything else their computer says, and picking it
+  // means North sounds like the rest of their machine rather than like a
+  // stranger the array happened to put first.
+  return (
+    pool.find((v) => v.default) ??
+    pool.find((v) => v.localService) ??
+    pool[0]
+  );
 }
 
 export function useSpeechSynthesis(): UseSpeechSynthesis {
@@ -169,6 +198,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
   const [pending, setPending] = useState(false);
   const utterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  /** Bumped by every speak/stop, so a scheduled clause knows it is stale. */
+  const chainRef = useRef(0);
 
   /**
    * Voices load asynchronously and are often EMPTY on first call — the
@@ -190,63 +221,68 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
   const stop = useCallback(() => {
     const engine = synthesis();
     if (!engine) return;
+    // Bumped so a cancelled utterance's own `onend` — which several browsers
+    // fire on `cancel()` — cannot clear state belonging to whatever is
+    // spoken next.
+    chainRef.current += 1;
     engine.cancel();
     utterancesRef.current = [];
     setSpeaking(false);
     setPending(false);
   }, []);
 
+  /**
+   * Speak a reading — the whole thing, as one utterance.
+   *
+   * See the note at the top of this file for why there is no chunking here.
+   * Short version: it was tried, rendered, and listened to, and the plain
+   * reading won. `rate` and `pitch` are left alone for the same reason.
+   *
+   * `chainRef` is a generation counter, so a stale `onend` from an utterance
+   * that has been cancelled cannot clear the state of the one that replaced
+   * it. Two answers speaking over each other is precisely the disclosure this
+   * hook exists to prevent.
+   */
   const speak = useCallback((text: string) => {
     const engine = synthesis();
-    if (!engine || text.trim().length === 0) return;
+    const body = text.trim();
+    if (!engine || body.length === 0) return;
 
     // Queued, not replaced, is the platform default — so clear first.
     engine.cancel();
 
-    const sentences = intoSentences(text);
-    if (sentences.length === 0) return;
+    const generation = (chainRef.current += 1);
+    const current = () => chainRef.current === generation;
+
+    const utterance = new SpeechSynthesisUtterance(body);
+    if (voiceRef.current) utterance.voice = voiceRef.current;
 
     const finish = () => {
+      if (!current()) return;
       setSpeaking(false);
       setPending(false);
       utterancesRef.current = [];
     };
 
-    const utterances = sentences.map((sentence, index) => {
-      const utterance = new SpeechSynthesisUtterance(sentence);
-      if (voiceRef.current) utterance.voice = voiceRef.current;
-      // Just under conversational pace. A coach saying a considered sentence
-      // is not an assistant reading a notification.
-      utterance.rate = 0.98;
-      utterance.pitch = 1;
+    utterance.onstart = () => {
+      if (!current()) return;
+      setPending(false);
+      setSpeaking(true);
+    };
+    utterance.onend = finish;
+    // A synthesis error is silence, never an announcement — but it still has
+    // to release the state, or the mode would sit in "speaking" forever
+    // (docs/UX-ARCHITECTURE.md §11).
+    utterance.onerror = finish;
 
-      // Only the FIRST sentence starting means audio is out; only the LAST
-      // one ending means North has stopped. The ones between must not flip
-      // the state, or the listen loop would restart mid-answer and the
-      // microphone would hear the rest of it.
-      if (index === 0) {
-        utterance.onstart = () => {
-          setPending(false);
-          setSpeaking(true);
-        };
-      }
-      if (index === sentences.length - 1) {
-        utterance.onend = finish;
-      }
-      // A synthesis error is silence, never an announcement — but any
-      // sentence failing has to release the state, or the mode would sit in
-      // "speaking" forever (docs/UX-ARCHITECTURE.md §11).
-      utterance.onerror = finish;
-      return utterance;
-    });
-
-    utterancesRef.current = utterances;
+    utterancesRef.current = [utterance];
     setPending(true);
-    for (const utterance of utterances) engine.speak(utterance);
+    engine.speak(utterance);
   }, []);
 
   useEffect(
     () => () => {
+      chainRef.current += 1;
       for (const utterance of utterancesRef.current) {
         utterance.onstart = null;
         utterance.onend = null;

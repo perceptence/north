@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# — except the template, which documents the one optional key and holds no
+#   secret. A key checked in is a breach; a key nobody knows to set is a
+#   feature that silently never turns on.
+!.env.example
 
 # vercel
 .vercel
