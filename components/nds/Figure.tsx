@@ -56,6 +56,21 @@ export interface FigureProps {
    * prose already says what the rule would have said.
    */
   unruled?: boolean;
+  /**
+   * This figure sits on the deep sky rather than on paper.
+   *
+   * `CONFIDENCE_CLASS` and `OPENABLE_CLASS` are ink tokens, chosen and
+   * contrast-measured against warm paper. Voice mode is the first surface in
+   * the product to render figures ON the atmosphere, where that ink is dark
+   * text on a dark ground — a real contrast failure, not a stylistic one.
+   * This swaps to the `on-deep` tokens the design system already reserves
+   * for exactly this (CLAUDE.md: text on the sky uses the on-deep tokens).
+   *
+   * The confidence GRAMMAR survives the move: an assumed figure keeps its
+   * dashed rule and an openable one keeps its dotted rule, both drawn in
+   * `text-on-deep` instead of ink.
+   */
+  onDeep?: boolean;
   className?: string;
 }
 
@@ -123,6 +138,7 @@ export function Figure({
   interrogable = false,
   onInterrogate,
   unruled = false,
+  onDeep = false,
   className,
 }: FigureProps) {
   const formatted = format({ value, format: kind, abbreviate });
@@ -151,13 +167,24 @@ export function Figure({
   // keeps its dotted rule regardless, because that rule marks a door rather
   // than a degree of certainty — hiding it would leave a button with no
   // affordance at all.
+  // On the sky, the same grammar drawn in the on-deep tokens: openable keeps
+  // its dotted rule, assumed keeps its dashed one, and neither is dark ink on
+  // a dark ground.
+  const onDeepClass = interrogable
+    ? "text-text-on-deep underline decoration-dotted decoration-text-on-deep decoration-1 underline-offset-4"
+    : !unruled && confidence === "assumed"
+      ? "text-text-on-deep-dim underline decoration-dashed decoration-text-on-deep-dim decoration-1 underline-offset-4"
+      : "text-text-on-deep";
+
   const shared = cn(
     contextClass,
-    interrogable
-      ? OPENABLE_CLASS
-      : unruled
-        ? "text-text-primary"
-        : CONFIDENCE_CLASS[confidence],
+    onDeep
+      ? onDeepClass
+      : interrogable
+        ? OPENABLE_CLASS
+        : unruled
+          ? "text-text-primary"
+          : CONFIDENCE_CLASS[confidence],
     className,
   );
 

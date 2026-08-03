@@ -1,11 +1,13 @@
 # North — Voice
 
-**Status: built, and REDIRECTED (§11).** Phases 1–2 stand: voice input in
-onboarding and Navigator. Phases 3–4 shipped as "Read this to me" and were
-then removed — a page narrator is not a coach. What replaced them is a
-one-on-one conversation on Navigator (§11). Nothing here uses a model or a
+**Status: built (§11, §12).** Voice input in onboarding; a typed coach
+conversation on Navigator; and a full-screen VOICE MODE on phone and tablet
+— enter it, talk, and North talks back (§12). Nothing here uses a model or a
 network call: the router is deterministic and local, and every sentence
 North says is composed by `core/`.
+
+**§3.2's first rule — "voice is never a mode" — has been deliberately
+reversed.** See §12 for why the reason behind it survives the reversal.
 
 A plan for making North something you *talk to* rather than something you read.
 Researched against how state-of-the-art voice agents are built in 2026, then
@@ -567,3 +569,73 @@ Both were invisible to the unit tests and obvious within a minute of real use:
 voice rather than a page reader's. So do the recognition and synthesis
 hooks, `TurnGlyph`'s listening states, and the onboarding voice matcher.
 Phase 3's core was not wasted work — it was pointed at the wrong surface.
+
+---
+
+## 12. Voice mode — the reversal *(July 2026)*
+
+> **"See how ChatGPT does it. When you click on voice mode, the orb comes up
+> and then it's just a one on one conversation."**
+
+The typed conversation (§11) was right about *what* North answers and wrong
+about how talking to it should FEEL. A composer with a mic beside it is a
+form you can dictate into. It is not a conversation, and no amount of
+correct answers makes it one.
+
+### The rule that changed, and the reason that didn't
+
+§3.2 rule 1 said **voice is never a mode** — no state you enter and have to
+leave. That rule existed for one reason: to stop North disclosing your
+balance to a room you did not choose.
+
+A full-screen mode you deliberately enter, obviously occupy, and leave with
+one tap serves that reason BETTER than ambient speech does. Nothing can
+start by surprise. There is never a question about whether North is
+listening. And the exposure is bounded by a surface you can see you are in.
+
+So the letter of the rule is reversed and its purpose is intact. Rules 2 and
+3 are untouched: the typed conversation on Navigator remains the visible
+twin, so nothing is ever voice-only, and North still makes no sound until
+you enter the mode.
+
+### What it is
+
+**Full screen, phone and tablet only.** Hidden from `lg` up — talking to
+your finances is something you do holding a device, not at a desk in an
+open-plan office, and the surface most likely to be overheard is exactly the
+one where the entry point never appears.
+
+**The glyph is the voice, not an orb.** Every voice product ships a pulsing
+sphere. North already owns a mark of six hairline strokes on a uniform
+skeleton that morphs between figures on a spring — a voice visualiser that
+predates the feature. Two states, as asked: **listening**, where the mark
+breathes on your real microphone level, and **speaking**, where it drifts
+between figures on a slow cadence. Continuous movement either way.
+
+**The sky goes radial.** Every other surface wears the atmosphere as a band
+at the top, because there is a page under it to sit on. Here there is no
+page, so the sky gathers around the mark instead — same three tokens, same
+OKLab interpolation, so every contrast figure still holds.
+
+**Full register here, and only here.** Entering a spoken conversation on
+purpose is choosing to hear it; eliding the figures now would be protecting
+someone from the thing they asked for. Everywhere else stays discreet.
+
+**The loop runs itself.** Listen → answer → listen again, which is the
+"always listening" the plan refused — but scoped to a mode entered on
+purpose and left with one tap, which is a different thing from a product
+that listens whenever it is open. It never re-opens the microphone while
+North is mid-sentence, or the mic would hear the answer and try to route it.
+Saying "stop" leaves.
+
+### The bug this surfaced
+
+**Figures were dark ink on a dark sky.** `Figure`'s confidence classes are
+ink tokens, contrast-measured against warm paper — and voice mode is the
+first surface in the product to render figures ON the atmosphere. Caught by
+looking at it, not by a test.
+
+`Figure` gained `onDeep`, which swaps to the `on-deep` tokens the design
+system already reserves for text on the sky. The confidence GRAMMAR survives
+the move: an assumed figure keeps its dashed rule and an openable one keeps
+its dotted rule, both drawn in `on-deep` instead of ink.

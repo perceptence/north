@@ -40,6 +40,7 @@ import { useDecisions } from "@/state/decisions-store";
 import { usePreviousProfile, useProfile } from "@/state/profile-store";
 import { ActionLink, AssumedMark, BackMark } from "./ActionGlyphs";
 import { CoachConversation } from "./CoachConversation";
+import { VoiceEntry, VoiceMode } from "./VoiceMode";
 import { ExplanationPanel } from "./ExplanationPanel";
 import { ReadProse } from "./ReadProse";
 
@@ -90,6 +91,7 @@ export function NavigatorScreen() {
 
   const [selected, setSelected] = useState<ScenarioId | null>(null);
   const [params, setParams] = useState<ParamSet>({});
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   useEffect(() => {
     if (hydrated && !profile) router.replace("/start");
@@ -173,6 +175,15 @@ export function NavigatorScreen() {
             The refusal and the which-one-did-you-mean prompt moved INTO the
             thread, where they read as the coach answering rather than as the
             page reporting an error. */}
+        {/* Voice mode is its own full-screen surface, entered from here and
+            nowhere else — the conversation below stays the typed twin, so
+            nothing is ever voice-only (docs/VOICE.md §3.2, rule 2).
+
+            `lg:hidden`: talking to your finances is something you do holding
+            a device, not at a desk in an open-plan office. The surface most
+            likely to be overheard is the one where this never appears. */}
+        <VoiceEntry onOpen={() => setVoiceOpen(true)} />
+
         <CoachConversation
           profile={profile}
           decisions={decisions}
@@ -183,6 +194,18 @@ export function NavigatorScreen() {
           onOpenScenario={choose}
         />
       </div>
+
+      {voiceOpen && (
+        <VoiceMode
+          profile={profile}
+          decisions={decisions}
+          options={options}
+          scenarios={scenarios}
+          previousProfile={previous?.profile ?? null}
+          previousAt={previous?.at ?? null}
+          onClose={() => setVoiceOpen(false)}
+        />
+      )}
 
       {/* The curated set, as a real table of contents rather than a stack of
           plain links: each row states the question and what it turns on. */}

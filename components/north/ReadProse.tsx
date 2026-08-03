@@ -50,6 +50,8 @@ export interface ReadProseProps {
    * states the uncertainty — see `Figure`'s `unruled`.
    */
   unruled?: boolean;
+  /** These segments sit on the deep sky — see `Figure`'s `onDeep`. */
+  onDeep?: boolean;
 }
 
 /**
@@ -94,6 +96,7 @@ export function ReadProse({
   staged = false,
   lead = false,
   unruled = false,
+  onDeep = false,
 }: ReadProseProps) {
   // One counter across both blocks, so the staged delays stay in reading
   // order rather than restarting at the body.
@@ -122,6 +125,7 @@ export function ReadProse({
             onInterrogate ? () => onInterrogate(segment) : undefined
           }
           unruled={unruled}
+          onDeep={onDeep}
         />
       );
 
