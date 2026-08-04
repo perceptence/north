@@ -623,6 +623,8 @@ screen.
 | O3 | **The ladder** | The rung indicator | All seven rungs, and why this one is yours |
 | O4 | **Navigator's working** | A scenario answer | The reasoning behind the answer, so you can disagree with it |
 | O5 | **Correction** | O1 or O2 | The coach re-asks about one field |
+| O6 | **Behind a dispatch** | An Insights entry | The reasoning behind one letter dispatch, composed live from the same engine |
+| O7 | **Membership** | A locked thing, or the masthead's PLUS wordlet | Plus proposed, managed, and ended in one room — see [MEMBERSHIP.md](MEMBERSHIP.md) |
 
 O1 wears `Sheet`'s plain label header; O2–O4 wear `ExplanationPanel`'s
 eyebrow-and-thesis header. Both are the same component underneath

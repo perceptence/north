@@ -22,6 +22,7 @@ import {
   formatPercent,
   type FigureFormat,
 } from "@/core/money";
+import { canOpenScenario, scenarioTier } from "@/core/membership";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
@@ -37,9 +38,11 @@ import {
 } from "@/core/navigator";
 import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
 import { useDecisions } from "@/state/decisions-store";
+import { useMembership } from "@/state/membership-store";
 import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import { ActionLink, AssumedMark, BackMark } from "./ActionGlyphs";
 import { CoachConversation } from "./CoachConversation";
+import { MembershipSheet } from "./MembershipSheet";
 import { ExplanationPanel } from "./ExplanationPanel";
 import { ReadProse } from "./ReadProse";
 
@@ -90,6 +93,9 @@ export function NavigatorScreen() {
 
   const [selected, setSelected] = useState<ScenarioId | null>(null);
   const [params, setParams] = useState<ParamSet>({});
+  const membership = useMembership();
+  /** Plus, proposed at the moment a locked thing was reached for. */
+  const [proposing, setProposing] = useState(false);
 
   useEffect(() => {
     if (hydrated && !profile) router.replace("/start");
@@ -124,6 +130,14 @@ export function NavigatorScreen() {
   const scenario: Scenario | null = selected ? scenarioById(selected) : null;
 
   const choose = (id: ScenarioId) => {
+    // The gate. The coach's spoken VERDICT on any question stays free — the
+    // engine answers everyone identically — but the simulator with its
+    // sliders is Plus for the elective scenarios. Reaching for a locked one
+    // proposes Plus at exactly that moment, never as an interstitial.
+    if (!canOpenScenario(membership.tier, id)) {
+      setProposing(true);
+      return;
+    }
     setSelected(id);
     setParams(scenarioById(id).defaults);
   };
@@ -220,6 +234,16 @@ export function NavigatorScreen() {
                 <span className="type-voice-md flex-1 text-text-secondary transition-colors duration-[--motion-micro] group-hover:text-text-primary">
                   {s.question}
                 </span>
+                {/* Honest labelling, not a dark pattern: a locked row says so
+                    where it sits, quietly, instead of springing the sheet as
+                    a surprise. The word, not a padlock — North has no icon
+                    library, and a lock draws a jail on a product whose whole
+                    register is an open ledger. */}
+                {membership.tier === "free" && scenarioTier(s.id) === "plus" && (
+                  <span className="type-overline shrink-0 text-text-tertiary">
+                    Plus
+                  </span>
+                )}
                 <span
                   aria-hidden="true"
                   className="type-meta shrink-0 text-text-tertiary transition-transform duration-[--motion-micro] group-hover:translate-x-0.5"
@@ -237,6 +261,8 @@ export function NavigatorScreen() {
         running it through the same rules that produce Today — not by generating
         an opinion.
       </Text>
+
+      <MembershipSheet open={proposing} onClose={() => setProposing(false)} />
     </div>
   );
 }

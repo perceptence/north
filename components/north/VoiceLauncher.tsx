@@ -7,9 +7,12 @@ import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import { speechRecognitionAvailable } from "@/lib/use-speech-recognition";
 import { speechSynthesisAvailable } from "@/lib/use-speech-synthesis";
+import { voiceIncluded } from "@/core/membership";
 import { useDecisions } from "@/state/decisions-store";
+import { useMembership } from "@/state/membership-store";
 import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import { SpeakMark } from "./ActionGlyphs";
+import { MembershipSheet } from "./MembershipSheet";
 import { VoiceMode } from "./VoiceMode";
 
 /**
@@ -72,6 +75,15 @@ export function VoiceLauncher() {
   const previous = useBaselineProfile(now);
   const decisions = useDecisions();
   const [open, setOpen] = useState(false);
+  const membership = useMembership();
+  /**
+   * Voice is Plus. The launcher still shows on free — hiding it would make
+   * the mode undiscoverable — and the tap is answered instantly by the
+   * proposal sheet, which names the typed coach as the free way in. What
+   * would be a dark pattern is a SLOW or misleading answer; an immediate
+   * honest one is just the product saying what it holds.
+   */
+  const [proposing, setProposing] = useState(false);
 
   const options = useMemo(
     () => ({ limits: ILLUSTRATIVE_LIMITS, now }),
@@ -91,7 +103,9 @@ export function VoiceLauncher() {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() =>
+          voiceIncluded(membership.tier) ? setOpen(true) : setProposing(true)
+        }
         aria-label="Talk to North"
         className={cn(
           "fixed right-4 bottom-24 z-40 lg:hidden",
@@ -109,6 +123,8 @@ export function VoiceLauncher() {
         <SpeakMark />
         Talk
       </button>
+
+      <MembershipSheet open={proposing} onClose={() => setProposing(false)} />
 
       {open && (
         <VoiceMode

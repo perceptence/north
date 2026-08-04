@@ -45,6 +45,7 @@ import {
 import { AssumptionsPanel } from "@/components/north/AssumptionsPanel";
 import { InsightSheet } from "@/components/north/InsightSheet";
 import { LadderPanel } from "@/components/north/LadderPanel";
+import { MembershipSheet } from "@/components/north/MembershipSheet";
 import { DirectionMark } from "@/components/north/InsightsScreen";
 import { Sky } from "@/components/north/Sky";
 import { SpokenField } from "@/components/north/SpokenField";
@@ -141,7 +142,7 @@ export default function DesignGallery() {
   const [glyphTurn, setGlyphTurn] = useState<TurnId>("openingConcern");
   const [spoken, setSpoken] = useState("");
   const [offered, setOffered] = useState("");
-  const [sheet, setSheet] = useState<null | "derivation" | "assumptions" | "ladder" | "behind">(null);
+  const [sheet, setSheet] = useState<null | "derivation" | "assumptions" | "ladder" | "behind" | "membership">(null);
   const [pending, setPending] = useState(false);
   const [deposit, setDeposit] = useState(6_000_000);
 
@@ -742,6 +743,19 @@ export default function DesignGallery() {
             </Button>
             <InsightSheet
               detail={sheet === "behind" ? BEHIND_SPECIMEN : null}
+              onClose={() => setSheet(null)}
+            />
+          </Specimen>
+
+          <Specimen
+            name="MembershipSheet"
+            note="Plus proposed, managed, and ended in one room — the same sheet from every entry point, so manage is never a different place than the one that sold it to you. Opened contextually (a locked scenario row, the voice launcher on free, a second goal), never as an interstitial; managed from the masthead's PLUS wordlet, which shows only to members — status, never an ad. The honesty line (NEVER_GATED) ships from core with the rules it describes, and the rules' tests assert it still tells the truth. Ending is one tap, runs to period end, and 'Keep Plus' undoes it in place: no confirmation dialog, no retention flow. The state shown depends on the live membership store — flip it with the tier toggle on /preview."
+          >
+            <Button variant="secondary" onClick={() => setSheet("membership")}>
+              Open the room
+            </Button>
+            <MembershipSheet
+              open={sheet === "membership"}
               onClose={() => setSheet(null)}
             />
           </Specimen>

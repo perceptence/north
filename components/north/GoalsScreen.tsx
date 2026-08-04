@@ -15,6 +15,7 @@ import {
   TRANSITION,
   m,
 } from "@/components/nds";
+import { goalLimit } from "@/core/membership";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import { composeScene } from "@/core/goals";
@@ -26,6 +27,7 @@ import {
 import { toAnswer, visibleTurns, type Answers } from "@/core/onboarding/script";
 import type { Goal } from "@/core/profile/types";
 import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
+import { useMembership } from "@/state/membership-store";
 import { saveProfile, useProfile } from "@/state/profile-store";
 import {
   ActionLink,
@@ -36,6 +38,7 @@ import {
   ReleaseMark,
 } from "./ActionGlyphs";
 import { AssumptionsPanel } from "./AssumptionsPanel";
+import { MembershipSheet } from "./MembershipSheet";
 import { ReadProse } from "./ReadProse";
 
 /**
@@ -66,6 +69,9 @@ export function GoalsScreen() {
   const hydrated = useHydrated();
   const [now] = useState(() => new Date());
   const [capturing, setCapturing] = useState(false);
+  const membership = useMembership();
+  /** A second goal is Plus; reaching for it proposes, right there. */
+  const [proposing, setProposing] = useState(false);
   /** Index of the goal being adjusted, or null. */
   const [adjusting, setAdjusting] = useState<number | null>(null);
   const [sheet, setSheet] = useState(false);
@@ -187,7 +193,11 @@ export function GoalsScreen() {
               <SectionHeading>What you&rsquo;re working toward</SectionHeading>
               <ActionLink
                 icon={<SignpostMark />}
-                onClick={() => setCapturing(true)}
+                onClick={() =>
+                  (profile.goals?.length ?? 0) < goalLimit(membership.tier)
+                    ? setCapturing(true)
+                    : setProposing(true)
+                }
               >
                 Name another
               </ActionLink>
@@ -308,6 +318,8 @@ export function GoalsScreen() {
           projection={scene.projection}
         />
       )}
+
+      <MembershipSheet open={proposing} onClose={() => setProposing(false)} />
     </div>
   );
 }

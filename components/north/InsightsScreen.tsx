@@ -18,8 +18,10 @@ import {
   type ChangeKind,
   type Direction,
 } from "@/core/insights";
+import { storyIncluded } from "@/core/membership";
 import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
 import { useDecisions } from "@/state/decisions-store";
+import { useMembership } from "@/state/membership-store";
 import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import {
   ActionLink,
@@ -28,6 +30,7 @@ import {
   StoryMark,
 } from "./ActionGlyphs";
 import { InsightSheet } from "./InsightSheet";
+import { MembershipSheet } from "./MembershipSheet";
 import { ReadProse } from "./ReadProse";
 
 /**
@@ -237,6 +240,9 @@ export function InsightsScreen() {
   /** The dispatch whose reasoning is open. `null` is closed — one piece of
    *  state, not a boolean plus a payload that can disagree with it. */
   const [openBehind, setOpenBehind] = useState<Behind | null>(null);
+  const membership = useMembership();
+  /** The story replay is Plus; the letter itself never is. */
+  const [proposing, setProposing] = useState(false);
 
   useEffect(() => {
     if (hydrated && !profile) router.replace("/start");
@@ -403,7 +409,11 @@ export function InsightsScreen() {
         {previous && !letter.quiet && (
           <ActionLink
             icon={<StoryMark />}
-            onClick={() => router.push("/story")}
+            onClick={() =>
+              storyIncluded(membership.tier)
+                ? router.push("/story")
+                : setProposing(true)
+            }
           >
             Watch how you got here
           </ActionLink>
@@ -432,6 +442,7 @@ export function InsightsScreen() {
       {/* The room behind whichever dispatch was opened. One instance, driven
           by which detail is held — not one sheet per entry. */}
       <InsightSheet detail={openBehind} onClose={() => setOpenBehind(null)} />
+      <MembershipSheet open={proposing} onClose={() => setProposing(false)} />
     </div>
   );
 }

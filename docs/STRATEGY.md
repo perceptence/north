@@ -26,8 +26,17 @@ sections 8 and 9 are derived entirely from it:
 | Ship, then learn from users | **Ship something legible without a walkthrough** |
 
 The practical filter for every feature: *does a reviewer see it, and does seeing
-it change what they think of the work?* Auth doesn't. Billing doesn't. Account
-linking doesn't. A projection that admits its own uncertainty does.
+it change what they think of the work?* Auth doesn't. Account linking doesn't.
+A projection that admits its own uncertainty does.
+
+*(August 2026 amendment: billing moved sides. A visible, calm subscription
+surface — proposed without dark patterns, cancelled in one tap — is itself a
+piece of design a reviewer sees and judges, and monetisation UX done in this
+register is rare enough to be signal. See [MEMBERSHIP.md](MEMBERSHIP.md). The
+auth exclusion stands, sharpened: identity is a first name and a consent
+record, because everything lives on-device and an account would break the
+privacy promise the coach now makes out loud in onboarding. Email and
+passwords wait for a server that gives them something honest to do.)*
 
 ### The audience: demo first, code second
 
@@ -390,7 +399,9 @@ anywhere in the product.
 - **Fixture data only.** No account linking, no network dependency. The fixture
   layer sits behind the same typed interface a real provider would.
 - **No auth, no persistence beyond `localStorage`.** Neither produces portfolio
-  signal; both produce real engineering cost.
+  signal; both produce real engineering cost. *(Amended August 2026: membership
+  state joins the localStorage stores — see [MEMBERSHIP.md](MEMBERSHIP.md) —
+  and identity remains a name and a consent record, never credentials.)*
 - **The reasoning is deterministic, and the rules are data.** The Waterfall is
   an ordered rule set over a typed profile — same situation, same answer, every
   time. It can be reasoned about, it can be tested, and it cannot fail live in

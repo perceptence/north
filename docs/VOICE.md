@@ -1,6 +1,8 @@
 # North — Voice
 
-**Status: built (§11, §12).** Voice input in onboarding; a typed coach
+**Status: built (§11, §12). Full-screen voice mode is a Plus feature as of
+August 2026 — the typed coach stays free, so nothing sayable is gated, only
+the saying of it aloud (see MEMBERSHIP.md).** Voice input in onboarding; a typed coach
 conversation on Navigator; and a full-screen VOICE MODE on phone and tablet
 — enter it, talk, and North talks back (§12). **Every sentence North says is
 composed by `core/`**, and the deterministic local router answers every

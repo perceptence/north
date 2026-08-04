@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { Masthead, SKY_HEIGHT } from "@/components/north/Masthead";
+import { Masthead } from "@/components/north/Masthead";
 import { ProductNav } from "@/components/north/ProductNav";
 import { VoiceLauncher } from "@/components/north/VoiceLauncher";
 import { cn } from "@/lib/cn";
-import { Sky } from "@/components/north/Sky";
+import { Sky, SKY_HEIGHT } from "@/components/north/Sky";
 
 /**
  * The product shell.

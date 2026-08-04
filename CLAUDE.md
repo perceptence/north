@@ -10,6 +10,8 @@ Premium AI financial coaching. Read these before making decisions:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — folders, state, data models, motion
 - [docs/WATERFALL.md](docs/WATERFALL.md) — the engine's rules and every assumption
 - [docs/BACKLOG.md](docs/BACKLOG.md) — future items, explicitly out of MVP scope
+- [docs/MEMBERSHIP.md](docs/MEMBERSHIP.md) — Free/Plus: the judgment is never
+  paywalled, the time is; gates live at the surface, never in the engine
 - [docs/VOICE.md](docs/VOICE.md) — voice mode: **built** — voice input in
   onboarding, a typed coach on Navigator, and a full-screen voice mode on
   phone and tablet

@@ -1,6 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import {
+  clearMembership,
+  seedMembership,
+  useMembership,
+} from "@/state/membership-store";
 
 /**
  * The journeys, as a panel — and deliberately NOT part of the product.
@@ -122,6 +127,44 @@ export function DemoPanel({
       <p className="type-meta text-text-on-deep/55 text-center">
         {JOURNEYS.find((j) => j.id === active)?.note ?? ""}
       </p>
+
+      <TierToggle />
     </nav>
+  );
+}
+
+/**
+ * The tier, flippable from outside the experience — so a reviewer sees both
+ * sides of every gate without walking the subscribe flow, and so the flow
+ * itself can be walked from a known state.
+ */
+function TierToggle() {
+  const membership = useMembership();
+  return (
+    <div className="flex items-center gap-2">
+      <span className="type-overline text-text-on-deep/55">Tier</span>
+      {(["free", "plus"] as const).map((tier) => {
+        const current = membership.tier === tier;
+        return (
+          <button
+            key={tier}
+            type="button"
+            aria-pressed={current}
+            onClick={() =>
+              tier === "plus" ? seedMembership({ tier: "plus", since: new Date().toISOString(), renewsAt: new Date(Date.now() + 30 * 86_400_000).toISOString() }) : clearMembership()
+            }
+            className={cn(
+              "type-overline cursor-pointer rounded-full border px-3 py-1",
+              "transition-colors duration-[--motion-micro]",
+              current
+                ? "border-transparent bg-text-on-deep/90 text-surface-deep"
+                : "border-text-on-deep/25 text-text-on-deep/70 hover:text-text-on-deep",
+            )}
+          >
+            {tier === "plus" ? "Plus" : "Free"}
+          </button>
+        );
+      })}
+    </div>
   );
 }
