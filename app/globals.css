@@ -463,9 +463,28 @@
     animation: field-breathe 7s ease-in-out infinite;
   }
 
-  /* Measure cap — sets the column, not the viewport (§4.2) */
+  /**
+   * Measure cap — and THE COLUMN IS THE MEASURE.
+   *
+   * This was `34ch`, one number worn by five type sizes. `ch` scales with
+   * font-size, so that single class resolved to 655px on `type-voice-xl`
+   * (no effect at all, the column is 600) and 293px on `type-meta` — half
+   * the column. Same class, same page, wildly different line lengths: a
+   * heading spanning the full column above a caption ragging at halfway,
+   * with empty paper beside it, for no reason a reader could infer.
+   *
+   * The column was already designed to be the measure (DESIGN-SYSTEM §6.1:
+   * never wider than 600px, desktop gets whitespace rather than density),
+   * and at 600px it lands on ~62 characters of body and ~35 of the coach's
+   * largest serif — a good measure at BOTH ends. A second, size-relative
+   * cap inside it could only ever make things narrower and inconsistent.
+   *
+   * So the cap is the column itself. Inside the column it is a no-op, which
+   * is the honest answer; outside one — prose dropped into a full-bleed
+   * container — it still stops a line from running the width of a desktop.
+   */
   .measure {
-    max-width: 34ch;
+    max-width: var(--container-column);
   }
 
   /* Range input.
