@@ -25,16 +25,28 @@ import { VoiceMode } from "./VoiceMode";
  * itself. The intrusive part of a floating assistant is the assistant, not
  * the float.
  *
- * ── THE FILL IS THE MODE'S OWN CENTRE ─────────────────────────────────────
- * The same radial sky voice mode opens with, cropped to its light-teal
- * centre — so the button is a keyhole view of the surface it opens, and
- * pressing it reads as the glow expanding to full screen.
+ * ── IT WEARS THE PRODUCT, NOT THE MODE ────────────────────────────────────
+ * This was a teal radial gradient — a keyhole view of the surface it opens,
+ * so pressing it would read as the glow expanding to full screen. Nice idea,
+ * wrong object. It made this the ONLY gradient-filled control in the product,
+ * and the fill it used was the atmosphere, which the system defines as
+ * GROUND, never a control (docs/VISUAL-DIRECTION.md — the sky is ground, not
+ * signal). A floating pill in a ground colour, sitting inches from a dock in
+ * paper and hairline, read as a control borrowed from a different app.
  *
- * Held at the LIGHT end of that ramp deliberately. Carrying the mode's dark
- * rim into a 56px button made it a heavy navy dot sitting on warm paper —
- * the one loudest object on a calm screen, which is the opposite of what a
- * standing invitation should be. sky-300 into sky-600 keeps the same three
- * tokens and the same OKLab ramp, just the half of it that stays quiet.
+ * So it wears what every other quiet control in the product wears: paper, a
+ * hairline edge, ink. The same material as the dock it floats beside, and the
+ * same pill language as "Or say it" in the composer.
+ *
+ * It is deliberately NOT ink-filled. An ink pill is the *primary action*
+ * (CLAUDE.md), and this is persistent chrome — it would have competed with
+ * whatever the screen itself is asking, on every screen, forever. Standing
+ * invitations are quiet.
+ *
+ * And it is deliberately not the dock's ACTIVE-item treatment either, or a
+ * fifth thing in paper beside four destinations starts to look like a fifth
+ * destination — which the four-item cap exists to prevent. The mark and the
+ * offset keep it legible as an action rather than a place.
  *
  * ── AND IT SAYS WHAT IT IS ────────────────────────────────────────────────
  * A bare mark in a corner is a puzzle. The word is what makes it an offer
@@ -84,15 +96,15 @@ export function VoiceLauncher() {
         className={cn(
           "fixed right-4 bottom-24 z-40 lg:hidden",
           "type-label inline-flex h-13 cursor-pointer items-center gap-2.5",
-          "rounded-full px-5 text-text-on-deep shadow-sheet select-none",
-          "transition-transform duration-[--motion-micro] active:scale-95",
+          "rounded-full px-5 select-none",
+          // The dock's exact material, because it floats beside the dock and
+          // two pieces of floating chrome in different materials is the thing
+          // that read as borrowed.
+          "border border-line-hairline bg-surface-raised/95 shadow-sheet backdrop-blur",
+          "text-text-primary",
+          "transition-[transform,background-color] duration-[--motion-micro]",
+          "hover:bg-surface-raised active:scale-95",
         )}
-        style={{
-          // The light half of voice mode's own ramp — see the note above on
-          // why the dark rim does not belong on a 56px button.
-          background:
-            "radial-gradient(circle at 50% 20% in oklab, var(--sky-300) 0%, var(--sky-600) 120%)",
-        }}
       >
         <SpeakMark />
         Talk
