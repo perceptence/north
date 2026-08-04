@@ -71,14 +71,47 @@ async function toSquareDataUrl(file: File): Promise<string | undefined> {
   return canvas.toDataURL("image/jpeg", 0.82);
 }
 
+/**
+ * The stand-in portrait, while there is no real one.
+ *
+ * ── THIS IS SCAFFOLDING, AND IT IS MARKED AS SUCH ─────────────────────────
+ * An account with no uploaded picture used to draw its initials. That is the
+ * correct end state — a face this person did not choose is not their face —
+ * but it makes every demo account look like a placeholder, which is the one
+ * thing a portfolio build cannot afford. So until avatars are real, an
+ * account without a picture borrows a stock portrait.
+ *
+ * Keyed on the account id, NOT random per render: a face that changes when
+ * you navigate is worse than initials. Same account, same person, every time.
+ *
+ * The initials survive underneath as the offline fallback — this is the only
+ * outbound request the product makes, and it must be allowed to fail without
+ * leaving a hole where someone's face goes.
+ */
+const STOCK_PORTRAIT = (id: string, px: number) =>
+  `https://i.pravatar.cc/${px}?u=${encodeURIComponent(id)}`;
+
 export function AvatarMark({
   account,
   size = 40,
 }: {
-  account: Pick<Account, "name" | "avatar">;
+  /**
+   * `id` is optional because ONE caller has no account yet: the signup
+   * form's live preview. It gets initials, and that is deliberate — a
+   * stranger's face appearing in the picture slot before you have chosen a
+   * picture would read as North having decided what you look like.
+   */
+  account: Pick<Account, "name" | "avatar"> & { id?: string };
   size?: number;
 }) {
+  const [failed, setFailed] = useState(false);
   const label = initials(account.name);
+  // Their own picture first, always. The stand-in only fills a saved
+  // account's vacancy.
+  const src =
+    account.avatar ??
+    (account.id && !failed ? STOCK_PORTRAIT(account.id, size * 2) : undefined);
+
   return (
     <span
       aria-hidden="true"
@@ -89,11 +122,12 @@ export function AvatarMark({
         "type-label text-text-secondary select-none",
       )}
     >
-      {account.avatar ? (
+      {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={account.avatar}
+          src={src}
           alt=""
+          onError={() => setFailed(true)}
           className="h-full w-full object-cover"
         />
       ) : (
