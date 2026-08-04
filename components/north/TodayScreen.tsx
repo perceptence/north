@@ -22,7 +22,10 @@ import {
   profileWhen,
   recollect,
   settledRungIds,
+  WHEN_OPTIONS,
+  whenToDate,
 } from "@/core/decisions";
+import type { WhenChoice } from "@/core/decisions";
 import { CORRECTABLE } from "@/core/onboarding/correction";
 import { agePhrase, staleAnswer } from "@/core/profile/freshness";
 import type { TurnId } from "@/core/onboarding/script";
@@ -172,6 +175,8 @@ export function TodayScreen() {
    * on Today that North raised on its own clock, so it needs its own latch.
    */
   const [correcting, setCorrecting] = useState<TurnId | null>(null);
+  /** Whether North is asking WHEN an already-done action happened. */
+  const [dating, setDating] = useState(false);
 
   // Reaching Today without a profile is not an error — it is a route
   // (docs/UX-ARCHITECTURE.md §9, ER5).
@@ -214,12 +219,22 @@ export function TodayScreen() {
    * updates, which is the whole loop in one tap.
    */
   const alreadyDone = useCallback(
-    (rungId: Parameters<typeof appendDecision>[0]["rungId"], read: Read) => {
+    (
+      rungId: Parameters<typeof appendDecision>[0]["rungId"],
+      read: Read,
+      when: WhenChoice,
+      at: Date,
+    ) => {
       appendDecision({
         rungId,
         summary: read.action.commit,
         outcome: "held",
         amountCents: amountFrom(read),
+        // Dated by the answer, not the clock. Without this an action taken in
+        // March entered the ledger dated today, and the ledger, its month
+        // grouping and the letter's "since last time" window all read
+        // chronologically.
+        decidedAt: whenToDate(when, at).toISOString(),
       });
     },
     [],
@@ -650,12 +665,7 @@ export function TodayScreen() {
                     That is the loop closing where it actually happens. */}
                 <ActionLink
                   icon={<BehindMark />}
-                  onClick={() =>
-                    alreadyDone(
-                      evaluation.current!.rung.id,
-                      evaluation.current!.read,
-                    )
-                  }
+                  onClick={() => setDating(true)}
                 >
                   I&rsquo;ve already done this
                 </ActionLink>
@@ -776,6 +786,51 @@ export function TodayScreen() {
             onCancel={closeQuestion}
           />
         )}
+      </Sheet>
+
+      {/* ── WHEN DID YOU DO IT? ──────────────────────────────────────────
+          Four taps, not a calendar. A date picker is a form control and
+          forms are refused everywhere here but signup; onboarding already
+          shows how this product gets a precise-enough fact without one.
+          Nobody remembers the date they moved money — they remember roughly
+          how long ago, which is exactly the precision the ledger needs.
+
+          Answering records the decision AND closes this, so the catch-up
+          that follows ("tell me what changed") is the next thing on screen
+          rather than a second question stacked on this one. */}
+      <Sheet
+        open={dating}
+        onClose={() => setDating(false)}
+        title={
+          <h2 className="type-label text-text-tertiary">When did you do it?</h2>
+        }
+      >
+        <div className={cn("flex flex-col items-start", RHYTHM.heading)}>
+          <Text variant="voice-md" tone="secondary" measure>
+            Roughly is fine — it only decides where this sits in your record.
+          </Text>
+          <div className={cn("flex w-full flex-col items-start", RHYTHM.pair)}>
+            {WHEN_OPTIONS.map((option) => (
+              <Button
+                key={option.id}
+                variant="secondary"
+                onClick={() => {
+                  if (evaluation.current) {
+                    alreadyDone(
+                      evaluation.current.rung.id,
+                      evaluation.current.read,
+                      option.id,
+                      now,
+                    );
+                  }
+                  setDating(false);
+                }}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
       </Sheet>
 
       <LadderPanel

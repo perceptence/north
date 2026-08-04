@@ -15,6 +15,8 @@ export {
   committedOn,
 } from "./callback.ts";
 export { catchUpDue } from "./catch-up.ts";
+export { WHEN_OPTIONS, whenToDate } from "./when.ts";
+export type { WhenChoice, WhenOption } from "./when.ts";
 export { profileWhen, recollect } from "./recollection.ts";
 export { ledgerMonths } from "./timeline.ts";
 export type { LedgerMonth } from "./timeline.ts";
