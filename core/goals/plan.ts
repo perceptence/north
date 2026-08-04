@@ -110,3 +110,29 @@ export function planGoals(
     totalMonthlyNeedCents,
   };
 }
+
+/**
+ * The soonest goal the monthly surplus does not keep up with, if any.
+ *
+ * Deliberately NOT `planGoals().primary`, which is the soonest goal that is
+ * not yet fully SAVED — a different and much weaker condition. A goal being
+ * incomplete is not a problem; that is what a goal IS until its date. A goal
+ * being under-funded per month is. `primary` is left alone because the Goals
+ * screen means the other thing by it: which goal is currently being funded
+ * first.
+ *
+ * It lives here rather than inside the waterfall because two callers now ask
+ * the question — the rung that speaks for the goal, and the derivation that
+ * explains that rung's figure — and the two must never disagree about which
+ * goal is being discussed.
+ */
+export function shortfall(
+  profile: SituationProfile,
+  surplus: Cents,
+): PlannedGoal | null {
+  return (
+    planGoals(profile, surplus).goals.find(
+      (g) => !g.funded && g.monthlyShortCents > 0,
+    ) ?? null
+  );
+}

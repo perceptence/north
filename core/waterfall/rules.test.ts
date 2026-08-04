@@ -5,6 +5,7 @@ import type { SituationProfile } from "../profile/types.ts";
 import { derive, THRESHOLDS } from "./derive.ts";
 import { ILLUSTRATIVE_LIMITS, totalTaxAdvantagedCents } from "./limits.ts";
 import { RUNGS, rungById, WATERFALL_LENGTH } from "./rules.ts";
+import { explain, type DerivationKey } from "../derivation/explain.ts";
 import type { RungContext } from "./types.ts";
 
 const NOW = new Date("2026-07-27T00:00:00.000Z");
@@ -397,4 +398,94 @@ describe("emphasis — the big number lives inside the sentence", () => {
     assert.ok(emphasized && emphasized.kind === "figure");
     assert.equal(emphasized.label, "of cash above the floor");
   });
+});
+
+/**
+ * ── THE PAIRING THAT WAS NEVER CHECKED ────────────────────────────────────
+ * A figure marked `interrogable` is a promise: tap this and North shows its
+ * working. `TodayScreen` keeps that promise by passing `segment.explains` to
+ * the derivation sheet — and passing `null` when a segment declares none,
+ * which silently drops the reader into the twelve-row fallback table.
+ *
+ * Two rungs shipped that way: the debt balance and the goal's monthly need.
+ * Both are the headline figure of the rung they belong to, so on those two
+ * rungs tapping the number the coach was talking about produced exactly the
+ * spreadsheet `core/derivation` exists to replace.
+ *
+ * Nothing in code said so. This does.
+ */
+describe("every interrogable figure has its working", () => {
+  /** One profile per rung, crafted so that rung is the one that speaks. */
+  const SPEAKING: ReadonlyArray<[Parameters<typeof rungById>[0], SituationProfile]> = [
+    ["liquidity", profile({ liquidCents: stated(100_000) })],
+    ["match", profile({ retirementBps: stated(0), employerMatchBps: stated(500) })],
+    [
+      "high-interest-debt",
+      profile({
+        obligations: stated([
+          { kind: "card", balanceCents: 4_000_000, rateBps: 2_200 },
+        ]),
+      }),
+    ],
+    ["tax-advantaged", profile({ retirementBps: stated(400) })],
+    [
+      "goal",
+      profile({
+        goals: [
+          stated({
+            label: "A deposit",
+            targetCents: 50_000_000,
+            savedCents: 0,
+            withinMonths: 12,
+          }),
+        ],
+      }),
+    ],
+  ];
+
+  for (const [id, p] of SPEAKING) {
+    test(`${id}: every interrogable figure names a derivation`, () => {
+      const ctx = ctxFor(p);
+      const interrogable = rungById(id)
+        .read(ctx)
+        .segments.filter((s) => s.kind === "figure" && s.interrogable);
+
+      // Each rung that speaks should offer at least one way in; a read with
+      // no interrogable figure is a number with nowhere to go.
+      assert.ok(
+        interrogable.length > 0,
+        `${id} offers nothing to interrogate`,
+      );
+
+      for (const segment of interrogable) {
+        assert.ok(
+          segment.kind === "figure" && segment.explains,
+          `${id}: "${segment.kind === "figure" ? segment.label : ""}" is interrogable but declares no explains key`,
+        );
+      }
+    });
+
+    test(`${id}: each declared key actually explains something`, () => {
+      const ctx = ctxFor(p);
+      for (const segment of rungById(id).read(ctx).segments) {
+        if (segment.kind !== "figure" || !segment.explains) continue;
+
+        const working = explain(
+          segment.explains as DerivationKey,
+          p,
+          ctx.facts,
+          { limits: ILLUSTRATIVE_LIMITS, now: NOW },
+        );
+
+        // A key the switch does not handle returns undefined, which is the
+        // failure this catches — not a crash, just a blank sheet.
+        assert.ok(working, `${id}: no working for "${segment.explains}"`);
+        assert.ok(working.title.length > 0, `${id}: ${segment.explains} has no title`);
+        assert.ok(
+          working.result.length > 0,
+          `${id}: ${segment.explains} lands on nothing`,
+        );
+      }
+    });
+  }
 });

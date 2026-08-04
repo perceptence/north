@@ -1,26 +1,9 @@
 import { derived } from "../confidence.ts";
-import { planGoals, type PlannedGoal } from "../goals/plan.ts";
+import { shortfall } from "../goals/plan.ts";
 import type { Cents } from "../money.ts";
-import type { SituationProfile } from "../profile/types.ts";
 import { fig, from, text } from "../prose.ts";
 import { THRESHOLDS } from "./derive.ts";
 import type { Read, Rung, RungContext } from "./types.ts";
-
-/**
- * The soonest goal the monthly surplus does not keep up with, if any.
- *
- * Deliberately NOT `planGoals().primary`, which is the soonest goal that is
- * not yet fully saved — a different and much weaker condition. See rung 5's
- * note. `primary` is left alone because the Goals screen means the other
- * thing by it: which goal is currently being funded first.
- */
-function shortfall(profile: SituationProfile, surplus: Cents): PlannedGoal | null {
-  return (
-    planGoals(profile, surplus).goals.find(
-      (g) => !g.funded && g.monthlyShortCents > 0,
-    ) ?? null
-  );
-}
 
 /**
  * The seven rungs, in order.
@@ -143,6 +126,7 @@ const highInterestDebt: Rung = {
         fig(obligation.balanceCents, "currency", confidence, {
           label: `of ${obligation.kind} debt`,
           interrogable: true,
+          explains: "costliestObligation",
         }),
         text(" at "),
         fig(obligation.rateBps, "percent", confidence, {
@@ -265,6 +249,7 @@ const goal: Rung = {
         fig(primary.monthlyNeedCents, "currency", derived(primary.confidence), {
           label: "a month to land on time",
           interrogable: true,
+          explains: "goalMonthlyNeed",
         }),
         text(" a month to land in "),
         fig(withinMonths, "duration", primary.confidence, { label: "from now" }),

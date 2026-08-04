@@ -1,5 +1,7 @@
+import { derived } from "../confidence.ts";
+import { shortfall } from "../goals/plan.ts";
 import type { TurnId } from "../onboarding/script.ts";
-import type { SituationProfile } from "../profile/types.ts";
+import type { ObligationKind, SituationProfile } from "../profile/types.ts";
 import { fig, from, text } from "../prose.ts";
 import { totalTaxAdvantagedCents } from "../waterfall/limits.ts";
 import { THRESHOLDS } from "../waterfall/derive.ts";
@@ -56,7 +58,24 @@ export type DerivationKey =
   | "unusedTaxAdvantaged"
   | "monthlySurplus"
   | "monthlyIncome"
-  | "annualRetirement";
+  | "annualRetirement"
+  | "costliestObligation"
+  | "goalMonthlyNeed";
+
+/**
+ * Every figure a read marks `interrogable` MUST name one of these keys.
+ *
+ * Two did not, and the consequence was invisible in code and obvious in use:
+ * the debt rung's balance ("You're carrying $40,000…") and the goal rung's
+ * monthly need. `TodayScreen` passes `segment.explains ?? null`, and a null
+ * key drops the sheet into the twelve-row fallback table — so on two of the
+ * five rungs, tapping the number the coach was talking about produced
+ * exactly the spreadsheet this module was written to replace. The rungs a
+ * person in trouble actually lands on were the two that fell through.
+ *
+ * `rules.test.ts` now asserts the pairing, so a new interrogable figure
+ * cannot ship without its working.
+ */
 
 export interface DerivationStep {
   /** One line of the working, with its figure inside the sentence. */
@@ -308,8 +327,155 @@ export function explain(
           text("."),
         ],
       };
+
+    /**
+     * The balance the debt rung speaks about.
+     *
+     * The interesting question here is not the arithmetic — there is none —
+     * but WHICH debt this is and why the figure is marked assumed when the
+     * user picked the amount themselves. Both have honest answers, and both
+     * were previously unreachable: the rate is North's, and the rate is what
+     * chooses the debt.
+     */
+    case "costliestObligation": {
+      const worst = facts.costliestObligation.value;
+
+      // Unreachable from the rung, which only speaks when a debt exists.
+      // Total rather than relying on that.
+      if (worst === null) {
+        return {
+          title: "Expensive debt",
+          steps: [],
+          result: [
+            text("Nothing you told us about is charging serious interest."),
+          ],
+        };
+      }
+
+      return {
+        title: "The debt that comes first",
+        steps: [
+          {
+            segments: [
+              text(`You told us ${DEBT_WORD[worst.kind]} is charging you serious interest, with about `),
+              fig(worst.balanceCents, "currency", profile.obligations.confidence, {
+                label: "on it",
+              }),
+              text(" on it."),
+            ],
+            from: "expensiveDebt",
+          },
+          {
+            segments: [
+              text("You did not tell us its rate, so North assumes "),
+              fig(worst.rateBps, "percent", "assumed", { label: "a year" }),
+              text(
+                " a year for that kind of debt. That guess is the reason this " +
+                  "figure is marked as an assumption even though the amount is " +
+                  "yours.",
+              ),
+            ],
+          },
+          {
+            segments: [
+              text("Anything at or above "),
+              fig(THRESHOLDS.highInterestBps, "percent", "assumed", {
+                label: "a year",
+              }),
+              text(
+                " a year costs more, reliably, than investing is expected to " +
+                  "return.",
+              ),
+            ],
+          },
+        ],
+        result: [
+          text("So this is the balance to clear first — "),
+          fig(worst.balanceCents, "currency", facts.costliestObligation.confidence, {
+            label: "to clear first",
+          }),
+          text(
+            ". Where you carry more than one debt the RATE decides the order, " +
+              "never the size: a larger mortgage at a low rate is not what " +
+              "comes first.",
+          ),
+        ],
+      };
+    }
+
+    /**
+     * What the nearest under-funded goal asks for each month.
+     *
+     * Read against `shortfall`, the same query the rung used to choose which
+     * goal it is speaking for — one definition, so the sentence and the read
+     * above it can never be about different goals.
+     */
+    case "goalMonthlyNeed": {
+      const primary = shortfall(profile, facts.monthlySurplus.value);
+
+      if (primary === null) {
+        return {
+          title: "What this goal asks",
+          steps: [],
+          result: [text("Nothing is waiting on funding.")],
+        };
+      }
+
+      const { goal } = primary;
+
+      return {
+        title: `What ${goal.label} asks each month`,
+        steps: [
+          {
+            segments: [
+              text(`${goal.label} needs `),
+              fig(goal.targetCents, "currency", primary.confidence, {
+                label: "in total",
+              }),
+              text(" in total, and "),
+              fig(goal.savedCents, "currency", primary.confidence, {
+                label: "already saved",
+              }),
+              text(" is already there."),
+            ],
+          },
+          {
+            segments: [
+              text("That leaves "),
+              fig(primary.gapCents, "currency", primary.confidence, {
+                label: "still to find",
+              }),
+              text(" to find, and "),
+              fig(goal.withinMonths, "duration", primary.confidence, {
+                label: "to find it in",
+              }),
+              text(" to find it in."),
+            ],
+          },
+        ],
+        result: [
+          text("Spread evenly that is "),
+          fig(primary.monthlyNeedCents, "currency", derived(primary.confidence), {
+            label: "a month",
+          }),
+          text(
+            " a month — rounded UP to a clean fifty, because a target that " +
+              "rounds down is one you can hit every month and still miss.",
+          ),
+        ],
+      };
+    }
   }
 }
+
+/** How the coach names a kind of debt in a sentence. */
+const DEBT_WORD: Record<ObligationKind, string> = {
+  card: "a credit card",
+  auto: "a car loan",
+  student: "a student loan",
+  mortgage: "a mortgage",
+  other: "something",
+};
 
 /** The floor in months, exposed so a caller can name it without recomputing. */
 export const LIQUIDITY_FLOOR = {
