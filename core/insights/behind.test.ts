@@ -5,12 +5,14 @@ import { behind } from "./behind.ts";
 import { composeLetter } from "./letter.ts";
 import type { LetterEntry } from "./letter.ts";
 import {
+  FIXTURE_ASOF,
   FIXTURE_NOW,
   SQUEEZED,
   UNADVISED_EARNER,
 } from "../../data/fixtures/personas.ts";
 import { ILLUSTRATIVE_LIMITS } from "../waterfall/limits.ts";
 import type { Decision } from "../decisions/types.ts";
+import type { SituationProfile } from "../profile/types.ts";
 import type { ReadSegment } from "../waterfall/types.ts";
 
 const OPTIONS = { limits: ILLUSTRATIVE_LIMITS, now: FIXTURE_NOW };
@@ -31,6 +33,30 @@ const DECISIONS: Decision[] = [
     decidedAt: "2026-07-20T00:00:00.000Z",
   } as Decision,
 ];
+
+/**
+ * The hero, plus a named goal.
+ *
+ * `UNADVISED_EARNER` has none, and a `goal` dispatch honestly returns null
+ * without one — which is correct behaviour and exactly why the goal case
+ * needs its own profile rather than being asserted against a fixture that
+ * cannot produce it.
+ */
+const WITH_GOAL: SituationProfile = {
+  ...UNADVISED_EARNER,
+  goals: [
+    {
+      value: {
+        label: "a sabbatical",
+        targetCents: 4_000_000,
+        withinMonths: 24,
+        savedCents: 500_000,
+      },
+      confidence: "stated",
+      asOf: FIXTURE_ASOF,
+    },
+  ],
+} as SituationProfile;
 
 const said = (segments: ReadSegment[]) =>
   segments.map((s) => (s.kind === "text" ? s.value : "⟨fig⟩")).join("");
@@ -62,6 +88,9 @@ describe("what is behind a dispatch", () => {
       assert.ok(detail, `nothing behind a "${e.kind}" dispatch`);
       assert.ok(detail.thesis.length > 0, e.kind);
       assert.ok(detail.sections.length > 0, `${e.kind} opened onto nothing`);
+      // The words on the surface that say it opens at all. Without one the
+      // dispatch is a tap target nobody knows is there.
+      assert.ok(detail.cue.length > 0, `${e.kind} has no cue`);
     }
   });
 
@@ -175,6 +204,29 @@ describe("what is behind a dispatch", () => {
       );
       assert.ok(detail.goesLabel, `${kind}: a door with no label`);
       assert.ok(!detail.goesLabel!.includes("/"), `${kind}: label is a path`);
+    }
+  });
+});
+
+describe("the cue on the surface", () => {
+  /**
+   * Named per kind, not one phrase reused four times. "See the working" is
+   * true of the buffer and meaningless of the record — a cue that does not
+   * describe what is actually behind it is a label, not an offer.
+   */
+  it("says something different for each kind", () => {
+    const cues = (["buffer", "ladder", "record", "goal"] as const)
+      .map((kind) =>
+        behind(entry(kind), SQUEEZED, WITH_GOAL, DECISIONS, OPTIONS),
+      )
+      .filter((d) => d !== null)
+      .map((d) => d!.cue);
+
+    assert.equal(cues.length, 4, "a kind stopped opening");
+    assert.equal(new Set(cues).size, 4, `two kinds share a cue: ${cues.join(" / ")}`);
+    // A phrase you could tap, not a heading. Every one names an action.
+    for (const cue of cues) {
+      assert.match(cue, /^See /, cue);
     }
   });
 });

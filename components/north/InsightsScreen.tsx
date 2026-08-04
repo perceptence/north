@@ -79,7 +79,7 @@ function BehindButton({
       type="button"
       disabled={!detail}
       onClick={() => detail && onOpen(detail)}
-      aria-label={detail ? `${detail.eyebrow}` : undefined}
+      aria-label={detail ? `${detail.cue}: ${detail.eyebrow}` : undefined}
       className={cn(
         "group flex w-full flex-col text-left",
         RHYTHM.pair,
@@ -87,6 +87,30 @@ function BehindButton({
       )}
     >
       {children}
+
+      {/* ── THE CUE ───────────────────────────────────────────────────────
+          The dotted rule on the label was doing this job alone, and it was
+          too quiet to read as an invitation — it says "there is more behind
+          this" to someone already looking for it, which is not the same as
+          telling a first-time reader the dispatch opens at all.
+
+          A SPAN, not an ActionLink: the whole dispatch is already the
+          button, and a button inside a button is invalid. It borrows
+          ActionLink's appearance — mono-quiet text under the product's one
+          dotted "there is more here" rule — without claiming its
+          interaction.
+
+          And no mark. `SpeakMark` taught this lesson on the offers list:
+          the same glyph repeated down the side of four entries is four
+          copies of one word. ActionLink's icon is optional for exactly this
+          case. */}
+      {detail && (
+        <span className="type-meta pt-1 text-text-tertiary transition-colors duration-[--motion-micro] group-hover:text-text-secondary">
+          <span className="underline decoration-signal-coach decoration-dotted decoration-1 underline-offset-4">
+            {detail.cue}
+          </span>
+        </span>
+      )}
     </button>
   );
 }
@@ -302,7 +326,7 @@ export function InsightsScreen() {
                 >
                 <div className="flex items-center gap-2.5">
                   <EntryMark kind={entry.kind} direction={entry.direction} />
-                  <span className="type-label text-text-primary group-enabled:underline group-enabled:decoration-signal-coach group-enabled:decoration-dotted group-enabled:decoration-1 group-enabled:underline-offset-4">
+                  <span className="type-label text-text-primary">
                     {entry.label}
                   </span>
                   {whenWord(entry.at, now) && (

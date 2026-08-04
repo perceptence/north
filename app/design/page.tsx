@@ -77,6 +77,7 @@ const ROUTE_SPECIMEN = [
 const BEHIND_SPECIMEN = {
   eyebrow: "Behind the buffer",
   thesis: "How many months your cash actually covers, and how it got there.",
+  cue: "See the working",
   sections: [
     {
       heading: "The working",

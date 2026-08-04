@@ -45,6 +45,15 @@ export interface Behind {
   eyebrow: string;
   /** The one sentence the room exists for, in the coach's voice. */
   thesis: string;
+  /**
+   * What the dispatch says about itself on the surface — the words that make
+   * it visibly openable.
+   *
+   * Named per kind rather than one phrase reused four times, because "see the
+   * working" is true of the buffer and meaningless of the record. A cue that
+   * does not describe what is actually behind it is a label, not an offer.
+   */
+  cue: string;
   sections: BehindSection[];
   /**
    * Where to act on it. A NAME, not a URL — `core/` does not know this app's
@@ -114,6 +123,7 @@ export function behind(
       return {
         eyebrow: "Behind the buffer",
         thesis: "How many months your cash actually covers, and how it got there.",
+        cue: "See the working",
         sections,
         goes: "today",
         goesLabel: "See it on Today",
@@ -172,6 +182,7 @@ export function behind(
       return {
         eyebrow: "Behind the ladder",
         thesis: "The order everything is in, and why this rung comes first.",
+        cue: "See the whole ladder",
         sections,
         goes: "today",
         goesLabel: "See where you stand on Today",
@@ -214,6 +225,7 @@ export function behind(
       return {
         eyebrow: "Behind the record",
         thesis: "What you have actually decided, and what came of it.",
+        cue: "See what is in it",
         sections,
         goes: "decisions",
         goesLabel: "Open your record",
@@ -231,6 +243,7 @@ export function behind(
       return {
         eyebrow: "Behind the goal",
         thesis: `What ${primary.goal.label.toLowerCase()} actually asks of you.`,
+        cue: "See what it asks",
         sections: [
           {
             heading: "The pacing",
