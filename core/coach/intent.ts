@@ -478,8 +478,13 @@ export function routeIntent(
   //     so "why" then "tell me more" both deepen the same answer instead of
   //     recursing into nothing.
   if (last && last.kind !== "unknown" && CONTINUATIONS.has(stripFiller(text))) {
-    const of = last.kind === "elaborate" ? last.of : last.kind;
-    return { kind: "elaborate", of };
+    // Continuing an elaboration goes DEEPER on the same subject rather than
+    // restarting it — asking "why" and then "tell me more" must not land on
+    // the same layer twice.
+    if (last.kind === "elaborate") {
+      return { kind: "elaborate", of: last.of, depth: last.depth + 1 };
+    }
+    return { kind: "elaborate", of: last.kind, depth: 1 };
   }
 
   // 3 · The refusal, on positive evidence — BEFORE any matching, so a

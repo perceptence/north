@@ -105,7 +105,12 @@ export function offers(
   answered: Intent | null,
   context: OfferContext,
 ): string[] {
-  const justAnswered = answered?.kind;
+  // An elaboration is not its own subject — it is a deeper layer of whatever
+  // came before it. Excluding `"elaborate"` excludes nothing, so the thread
+  // "how am I doing?" → "why?" came back offering "How am I doing?", which is
+  // the exact failure this filter exists to prevent, displaced by one turn.
+  const justAnswered =
+    answered?.kind === "elaborate" ? answered.of : answered?.kind;
   return OFFERS.filter((o) => o.kind !== justAnswered)
     .filter((o) => o.applies(context))
     .slice(0, MOST)

@@ -45,7 +45,19 @@ export type Intent =
    * elaborating. A continuation means nothing on its own, which is exactly
    * why it used to fall through to the default and return the same read.
    */
-  | { kind: "elaborate"; of: IntentKind }
+  | {
+      kind: "elaborate";
+      of: IntentKind;
+      /**
+       * How many times in a row they have asked to go deeper.
+       *
+       * Without it, "why" and then "tell me more" both landed on layer one
+       * and said the same thing twice — the exact repetition this intent was
+       * added to stop, one level down. There are a finite number of honest
+       * layers, and past the last one the coach says so rather than looping.
+       */
+      depth: number;
+    }
   /** "Say that again." Handled by the caller, which holds the last turn. */
   | { kind: "repeat" }
   /** "Stop." Also the caller's to act on. */

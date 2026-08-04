@@ -62,6 +62,23 @@ export async function resolveIntent(
   if (outOfScope(transcript)) return local;
   if (local.kind === "stop" || local.kind === "repeat") return local;
 
+  // ── AND SO IS A CONTINUATION ────────────────────────────────────────────
+  // "Why" means nothing without the turn before it, and the turn before it is
+  // the one thing this request deliberately does not send (see "three things
+  // never reach the network" — the model gets the transcript and nothing
+  // else). So the model is being asked to classify a bare "why" or "go on"
+  // with none of the context that gives it meaning, and it will answer
+  // something, and that something outranks a local match that was made
+  // against a closed set of continuation phrases AND the previous intent.
+  //
+  // Left in, this quietly undid the elaboration entirely on any install with
+  // a key: "how am I doing" → the read, "why" → routed fresh, back to the
+  // read. Exactly the repetition `elaborate` was added to remove, restored by
+  // the router that was supposed to be an improvement. There is nothing here
+  // for a model to get more right and a whole conversational thread for it to
+  // drop.
+  if (local.kind === "elaborate") return local;
+
   // A controller rather than `AbortSignal.timeout`, so the timer is CLEARED
   // once an answer is in hand. Left to expire, it fires against a request
   // that already settled — harmless, but it leaves a stray abort in the

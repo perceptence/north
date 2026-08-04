@@ -267,29 +267,78 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
         };
       }
 
-      const scenarioId = SCENARIO_BEHIND_RUNG[current.rung.id];
-      if (scenarioId) {
-        const scenario = scenarioById(scenarioId);
-        const answer = answerScenario(
-          scenario,
-          profile,
-          scenario.defaults,
-          options,
-        );
+      /**
+       * ── LAYER ONE: WHAT TO DO ─────────────────────────────────────────
+       * The what-if that models acting on this rung, run against their real
+       * numbers — a verdict AND its tradeoff. Where no scenario models the
+       * rung, the rung's own recommended action.
+       */
+      if (intent.depth <= 1) {
+        const scenarioId = SCENARIO_BEHIND_RUNG[current.rung.id];
+        if (scenarioId) {
+          const scenario = scenarioById(scenarioId);
+          const answer = answerScenario(
+            scenario,
+            profile,
+            scenario.defaults,
+            options,
+          );
+          return {
+            segments: [
+              text(`${answer.recommendation.headline} ${answer.recommendation.tradeoff}`),
+            ],
+            // The full what-if, with its sliders — "what if the deposit were
+            // bigger" is a thing you drag, not a thing you say.
+            opens: scenarioId,
+          };
+        }
+
         return {
           segments: [
-            text(`${answer.recommendation.headline} ${answer.recommendation.tradeoff}`),
+            text(`${current.read.action.commit}. `),
+            ...current.read.segments,
           ],
-          // The full what-if, with its sliders — "what if the deposit were
-          // bigger" is a thing you drag, not a thing you say.
-          opens: scenarioId,
+          goes: TO_TODAY,
         };
       }
 
+      /**
+       * ── LAYER TWO: WHAT IT UNLOCKS ────────────────────────────────────
+       * "Why this one first" has a concrete answer, and it is the rung
+       * waiting behind it. Naming what comes next is the part that makes
+       * the ordering feel like a plan rather than an opinion — and it is
+       * information the first layer genuinely did not contain.
+       */
+      if (intent.depth === 2) {
+        const next = evaluation.ladder.find(
+          (rung) => rung.index > current.rung.index && !rung.satisfied,
+        );
+        return {
+          segments: [
+            text(
+              next
+                ? `It comes first because the ladder is ordered, and ${current.rung.label} sits above ${next.label}. Clear this one and ${next.label} is what I’d ask about next.`
+                : `It comes first because it is the last one left — everything below ${current.rung.label} is already settled. Clear it and there is nothing else I’d ask you for.`,
+            ),
+          ],
+          goes: TO_LADDER,
+        };
+      }
+
+      /**
+       * ── AND THEN AN HONEST END ────────────────────────────────────────
+       * There are two layers under a read and no more. A coach that keeps
+       * producing paragraphs because it was asked again is padding, which
+       * is the failure this whole intent exists to remove — repeating twice
+       * at layer one was the bug, and repeating forever at layer three
+       * would be the same bug wearing a different number.
+       */
       return {
         segments: [
-          text(`${current.read.action.commit}. `),
-          ...current.read.segments,
+          text(
+            "That is the whole of it. Every figure behind it is on Today — " +
+              "tap any number in the read and I will show you the working.",
+          ),
         ],
         goes: TO_TODAY,
       };

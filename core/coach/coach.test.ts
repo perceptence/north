@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { outOfScope, routeIntent } from "./intent.ts";
 import { parseIntent } from "./parse-intent.ts";
 import { respond } from "./respond.ts";
+import { offers } from "./offers.ts";
 import {
   FIXTURE_ASOF,
   FIXTURE_NOW,
@@ -15,6 +16,7 @@ import {
   availableScenarios,
 } from "../navigator/scenarios.ts";
 import { ILLUSTRATIVE_LIMITS } from "../waterfall/limits.ts";
+import { evaluate } from "../waterfall/evaluate.ts";
 import type { Field } from "../confidence.ts";
 import type { SituationProfile } from "../profile/types.ts";
 import type { Decision } from "../decisions/types.ts";
@@ -325,6 +327,22 @@ describe("routeIntent — continuations", () => {
     assert.equal(twice.kind === "elaborate" && twice.of, "standing");
   });
 
+  /**
+   * The bug this depth counter was added for.
+   *
+   * `of` alone made "why" and "tell me more" the SAME intent, so the second
+   * one composed the first one's answer again — the coach repeating itself
+   * one level down, which is the exact failure `elaborate` existed to fix.
+   */
+  it("counts how many times you have asked, so a second ask can differ", () => {
+    const once = after("why", { kind: "standing" });
+    const twice = after("tell me more", once);
+    const thrice = after("go on", twice);
+    assert.equal(once.kind === "elaborate" && once.depth, 1);
+    assert.equal(twice.kind === "elaborate" && twice.depth, 2);
+    assert.equal(thrice.kind === "elaborate" && thrice.depth, 3);
+  });
+
   it("never continues a refusal", () => {
     // "Why?" after "I can't answer that" is not a request to elaborate on
     // markets — there is nothing there to deepen.
@@ -338,7 +356,7 @@ describe("routeIntent — continuations", () => {
       options: OPTIONS,
     };
     const first = respond({ kind: "standing" }, ctx);
-    const deeper = respond({ kind: "elaborate", of: "standing" }, ctx);
+    const deeper = respond({ kind: "elaborate", of: "standing", depth: 1 }, ctx);
     const said = (r: typeof first) =>
       r.segments.map((s) => (s.kind === "text" ? s.value : "#")).join("");
 
@@ -346,6 +364,47 @@ describe("routeIntent — continuations", () => {
     // The debt rung is modelled by a scenario, so the deeper answer is that
     // what-if — a verdict AND its tradeoff, from the engine.
     assert.equal(deeper.opens, "debt-first");
+  });
+
+  /**
+   * Asking again has to GET you something. Every layer is a different kind of
+   * answer — what to do, then what it unlocks, then an honest end — and no
+   * two of them may be the same sentence.
+   */
+  it("says something new at every layer, then admits when it is out", () => {
+    const ctx = { profile: SQUEEZED, decisions: [], options: OPTIONS };
+    const said = (depth: number) =>
+      respond({ kind: "elaborate", of: "standing", depth }, ctx)
+        .segments.map((s) => (s.kind === "text" ? s.value : "#"))
+        .join("");
+
+    const layers = [said(1), said(2), said(3)];
+    assert.equal(new Set(layers).size, 3, "two layers said the same thing");
+
+    // And past the last one it stops inventing rather than looping.
+    assert.equal(said(4), layers[2]);
+    assert.equal(said(9), layers[2]);
+  });
+
+  /**
+   * Layer two's whole job. "Why this one first" is only a real answer if it
+   * names the rung waiting behind — a paragraph that does not is layer one
+   * with different words.
+   */
+  it("names what clearing it unlocks", () => {
+    const ctx = { profile: SQUEEZED, decisions: [], options: OPTIONS };
+    const reply = respond({ kind: "elaborate", of: "standing", depth: 2 }, ctx);
+    const prose = reply.segments
+      .map((s) => (s.kind === "text" ? s.value : ""))
+      .join("");
+
+    const evaluation = evaluate(SQUEEZED, OPTIONS);
+    const current = evaluation.current!;
+    const next = evaluation.ladder.find(
+      (r) => r.index > current.rung.index && !r.satisfied,
+    )!;
+    assert.ok(prose.includes(next.label), `never named ${next.label}`);
+    assert.equal(reply.goes?.to, "today");
   });
 });
 
@@ -618,6 +677,32 @@ describe("respond — every answer comes from the engine", () => {
     ] as const;
     for (const intent of kinds) {
       assert.doesNotThrow(() => respond(intent, ctx));
+    }
+  });
+});
+
+describe("offers after an elaboration", () => {
+  /**
+   * An elaboration is a deeper layer of the previous subject, not a subject
+   * of its own — so the thing to exclude is what it elaborates. Without that,
+   * "how am I doing?" → "why?" came back offering "How am I doing?".
+   */
+  it("does not offer back the question the thread started with", () => {
+    const context = {
+      profile: PROFILE,
+      decisions: DECISIONS,
+      hasPrevious: false,
+    };
+    const opening = offers({ kind: "standing" }, context);
+    const after = offers(
+      { kind: "elaborate", of: "standing", depth: 1 },
+      context,
+    );
+    for (const list of [opening, after]) {
+      assert.ok(
+        !list.includes("How am I doing?"),
+        `offered the question just answered: ${list.join(" / ")}`,
+      );
     }
   });
 });
