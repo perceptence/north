@@ -30,14 +30,17 @@ import { SKY_HEIGHT } from "./Sky";
  * So the labels went back into the page, where a letter puts its dateline, and
  * the bar kept only the thing that belongs to the app rather than the screen.
  *
- * ── THE PLUS WORDLET ──────────────────────────────────────────────────────
- * Shown ONLY to members: status, never an ad — a free user's masthead is
- * exactly as quiet as it always was, because a standing upsell on the calm
- * screens is the register this product refuses. For members it is the manage
- * handle: membership is an overlay reachable from every screen, not a fifth
- * destination and not a settings screen, which keeps both hard rules intact.
- * (Free users reach the same sheet through the thing they reached for — a
- * locked scenario, the voice launcher, a second goal.)
+ * ── MEMBERSHIP IS WORN BY THE MARK ────────────────────────────────────────
+ * A member's masthead carries the Plus LOCKUP — NORTH with the ensign, the
+ * same play a masthead makes with a dagger after a name — instead of a
+ * word floating at the far edge. The mark itself is locked and untouched;
+ * the lockup extends it with the same pen (see Wordmark's note). Tapping
+ * the lockup opens the membership room, so it is also the manage handle:
+ * an overlay reachable from every screen, not a fifth destination and not
+ * a settings screen.
+ *
+ * A free user's masthead is exactly as quiet as it always was — plain
+ * NORTH, no upsell. Status, never an ad.
  */
 
 export function Masthead() {
@@ -53,38 +56,32 @@ export function Masthead() {
         SKY_HEIGHT,
       )}
     >
-      <Wordmark height={13} strokeWidth={2} />
+      {/* Gated on hydration like every localStorage read — the server
+          cannot know the tier, and guessing is a hydration mismatch. Until
+          it resolves, the plain mark: nobody is shown Plus by accident. */}
+      {hydrated && membership.tier === "plus" ? (
+        <button
+          type="button"
+          onClick={() => setManaging(true)}
+          aria-label="Your Plus membership"
+          className="cursor-pointer rounded-sm transition-opacity duration-[--motion-micro] hover:opacity-80"
+        >
+          <Wordmark height={13} strokeWidth={2} plus label="" />
+        </button>
+      ) : (
+        <Wordmark height={13} strokeWidth={2} />
+      )}
 
-      {/* Gated on hydration like every localStorage read — the server cannot
-          know the tier or the account, and guessing is a hydration
-          mismatch. */}
-      {hydrated && (
-        <div className="flex items-center gap-3">
-          {membership.tier === "plus" && (
-            <button
-              type="button"
-              onClick={() => setManaging(true)}
-              aria-label="Your Plus membership"
-              className={cn(
-                "type-overline hit-target cursor-pointer rounded-full",
-                "opacity-70 transition-opacity duration-[--motion-micro] hover:opacity-100",
-              )}
-            >
-              Plus
-            </button>
-          )}
-          {/* The avatar is the way into the account — where an account
-              always is, and pointedly NOT a fifth thing in the dock. */}
-          {account && (
-            <Link
-              href="/account"
-              aria-label="Your account"
-              className="rounded-full transition-opacity duration-[--motion-micro] hover:opacity-80"
-            >
-              <AvatarMark account={account} size={28} />
-            </Link>
-          )}
-        </div>
+      {/* The avatar is the way into the account — where an account always
+          is, and pointedly NOT a fifth thing in the dock. */}
+      {hydrated && account && (
+        <Link
+          href="/account"
+          aria-label="Your account"
+          className="rounded-full transition-opacity duration-[--motion-micro] hover:opacity-80"
+        >
+          <AvatarMark account={account} size={28} />
+        </Link>
       )}
 
       <MembershipSheet open={managing} onClose={() => setManaging(false)} />

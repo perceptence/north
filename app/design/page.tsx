@@ -185,6 +185,16 @@ export default function DesignGallery() {
             </div>
           </Specimen>
           <Specimen
+            name="The Plus lockup"
+            note="Membership, worn by the mark. The wordmark itself is locked and untouched — the lockup EXTENDS it with a compass rose after the H, at the same optical gap and on the same pen. The rose's vertical axis is the needle's own geometry at half scale, its north point filled exactly as the needle's is: the identity's one filled shape restated, never a second kind of fill. A member's masthead carries this; everyone else's carries NORTH alone. Premium is drawn as more compass, because that is the only ornament this identity owns."
+          >
+            <div className="flex flex-col items-start gap-7 text-text-primary">
+              <Wordmark height={13} strokeWidth={2} plus />
+              <Wordmark height={22} strokeWidth={1.7} plus />
+              <Wordmark height={40} plus />
+            </div>
+          </Specimen>
+          <Specimen
             name="Wordmark on the sky"
             note="The mark is ink or on-deep — never a hue, and never reversed out of a box."
           >

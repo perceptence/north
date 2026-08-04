@@ -541,3 +541,13 @@ is spectacle **in service of meaning**, with a hard bound written next to it:
 Still refused, so the wow never curdles into the cliché: no bare balance hero,
 no rainbow palette, no idle mascots, no counting numbers, no celebration of
 rung advancement.
+
+## Amendment — the Plus lockup (August 2026)
+
+The wordmark remains locked. Membership extends the LOCKUP, never the mark:
+a compass-rose ensign after the H, same pen, same optical gap, its north
+point the needle's own filled shape at half scale — the identity's one
+filled shape restated at a second size, never a second kind of fill. Drawn
+in `components/nds/Wordmark.tsx` beside the geometry it borrows; the splash
+choreographs the same paths (`components/north/Splash.tsx`) and redraws
+nothing.

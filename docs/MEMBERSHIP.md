@@ -51,9 +51,17 @@ user because it cannot ask who is asking.
   (marked with a quiet `PLUS` overline — the word, not a padlock), the voice
   launcher on free, a second goal, the story link. Each opens the
   `MembershipSheet` at the moment the thing was reached for.
-- **Managed** from the masthead's `PLUS` wordlet — shown **only to members**:
-  status, never an ad. A free user's masthead stays exactly as quiet as it
-  always was.
+- **Worn** by the mark: a member's masthead carries the **Plus lockup** —
+  NORTH with a compass-rose ensign, drawn on the wordmark's own pen (the
+  rose's north point is the needle's filled shape at half scale; the locked
+  mark itself is untouched). Tapping the lockup manages the membership. A
+  free user's masthead stays exactly as quiet as it always was — status,
+  never an ad.
+- The sheet's comparison is **two panels**, not a table: Free lists
+  everything it holds in full sentences (it is a complete coach and should
+  look like one); Plus opens "Everything in Free, plus" and wears the same
+  lockup a member's masthead does — the thing bought and the thing worn are
+  one mark.
 - Membership is an **overlay**, not a destination and not a settings screen —
   both hard rules hold (CLAUDE.md: four dock destinations; no settings
   screen).

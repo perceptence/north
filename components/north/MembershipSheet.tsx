@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, RHYTHM, SectionHeading, Text } from "@/components/nds";
+import { Button, RHYTHM, SectionHeading, Text, Wordmark } from "@/components/nds";
 import {
   NEVER_GATED,
   PLUS_PRICE_CENTS,
@@ -56,73 +56,148 @@ function dayWord(iso: string | undefined): string {
   });
 }
 
-/** A cell: `true` renders the mark, prose renders as prose. */
-function Cell({ value, mine }: { value: string | true; mine: boolean }) {
+/** A held line, ticked with the product's pen — never a text checkmark. */
+function Tick() {
   return (
-    <span
-      className={cn(
-        "type-meta",
-        mine ? "text-text-primary" : "text-text-tertiary",
-      )}
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="mt-1 size-4 shrink-0 text-text-tertiary"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      {value === true ? "Included" : value}
+      <path d="M3 8.5 L6.5 12 L13 4.5" />
+    </svg>
+  );
+}
+
+/** "Yours now" — worn by the panel that describes the reader's own tier. */
+function YoursNow() {
+  return (
+    <span className="type-overline whitespace-nowrap rounded-full border border-line-hairline px-2.5 py-1 text-text-tertiary">
+      Yours now
     </span>
   );
 }
 
-function Comparison({ tier }: { tier: Tier }) {
+function PanelRow({ label, note }: { label: string; note?: string }) {
   return (
-    <div className={cn("flex flex-col", RHYTHM.heading)}>
-      <SectionHeading>What each one holds</SectionHeading>
+    <li className="flex items-start gap-2.5">
+      <Tick />
+      <span className="flex flex-col">
+        <span className="type-body text-text-primary">{label}</span>
+        {note && <span className="type-meta text-text-tertiary">{note}</span>}
+      </span>
+    </li>
+  );
+}
 
-      {/* ── STACKED, NOT A THREE-COLUMN TABLE ─────────────────────────────
-          It WAS three columns — feature, free, plus — and on a 375px phone
-          the feature column collapsed to roughly one word per line: "The /
-          daily / read, / and / the / decision / behind / it". A comparison
-          nobody can read compares nothing.
+/**
+ * The tiers as two PANELS, not a grid of cells.
+ *
+ * ── WHY PANELS ────────────────────────────────────────────────────────────
+ * The first pass was a three-column table, unreadable at 375px; the second
+ * stacked every line with a FREE/PLUS pair under each, which read as a
+ * spreadsheet transposed — eight repetitions of the word "Included" and no
+ * shape. What a person actually asks is "what do I have, and what would I
+ * be adding?" — two questions, two surfaces.
+ *
+ * The Free panel lists everything free holds, in full sentences, because
+ * this product's free tier is a complete coach and the panel should look
+ * like one. The Plus panel opens "Everything in Free, plus" — the honest
+ * version of the pattern every service uses — and lists only what changes.
+ * Both are derived from `TIER_LINES` in core, so the panels cannot drift
+ * from the gates.
+ *
+ * ── THE PLUS PANEL WEARS THE LOCKUP ───────────────────────────────────────
+ * Its header is NORTH⁺ — the same lockup a member's masthead carries — so
+ * the thing being bought and the thing worn afterwards are one mark. The
+ * Free panel's header is a plain overline: the asymmetry is the point.
+ *
+ * No shadow on either: elevation belongs to the decision Card alone. The
+ * reader's own tier carries a quiet "Yours now" pill rather than a border
+ * treatment — hue is not how this product says "you are here".
+ */
+function Comparison({ tier }: { tier: Tier }) {
+  const kept = TIER_LINES.filter((line) => line.free === true);
+  const reduced = TIER_LINES.filter(
+    (line) => line.free !== true && line.free !== "—",
+  );
+  const added = TIER_LINES.filter((line) => line.free !== true);
 
-          So each line states what the thing IS on its own full-measure row,
-          and the two answers sit beneath it in a pair of columns. That fits
-          the phone, and the eye still runs down either side to compare. No
-          breakpoint fork: one layout that works at every width beats two
-          that each work at one. */}
-      <ul className="flex flex-col">
-        {TIER_LINES.map((line) => (
-          <li
-            key={line.what}
-            className={cn(
-              "flex flex-col border-t border-line-hairline py-3 first:border-t-0 first:pt-0",
-              RHYTHM.pair,
-            )}
-          >
-            <span className="type-body text-text-primary">{line.what}</span>
-            <div className="grid grid-cols-2 gap-x-4">
-              <span className="flex flex-col gap-0.5">
-                <span
-                  className={cn(
-                    "type-overline",
-                    tier === "free" ? "text-text-secondary" : "text-text-tertiary",
-                  )}
-                >
-                  Free{tier === "free" ? " · you" : ""}
-                </span>
-                <Cell value={line.free} mine={tier === "free"} />
-              </span>
-              <span className="flex flex-col gap-0.5">
-                <span
-                  className={cn(
-                    "type-overline",
-                    tier === "plus" ? "text-text-secondary" : "text-text-tertiary",
-                  )}
-                >
-                  Plus{tier === "plus" ? " · you" : ""}
-                </span>
-                <Cell value={line.plus} mine={tier === "plus"} />
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
+  return (
+    <div className="grid gap-4 md:grid-cols-2 md:items-start">
+      {/* ── FREE ─────────────────────────────────────────────────────── */}
+      <section
+        aria-label="What Free holds"
+        className={cn(
+          "flex flex-col rounded-sheet border border-line-hairline p-5",
+          RHYTHM.heading,
+        )}
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="type-overline text-text-secondary">Free</span>
+            <span className="type-meta text-text-tertiary">
+              The whole coach, one thing at a time
+            </span>
+          </div>
+          {tier === "free" && <YoursNow />}
+        </div>
+        <ul className={cn("flex flex-col", RHYTHM.pair)}>
+          {kept.map((line) => (
+            <PanelRow key={line.what} label={line.what} />
+          ))}
+          {reduced.map((line) => (
+            <PanelRow
+              key={line.what}
+              label={line.what}
+              note={typeof line.free === "string" ? line.free : undefined}
+            />
+          ))}
+        </ul>
+      </section>
+
+      {/* ── PLUS ─────────────────────────────────────────────────────── */}
+      <section
+        aria-label="What Plus adds"
+        className={cn(
+          "flex flex-col rounded-sheet border border-line-hairline bg-surface-raised p-5",
+          RHYTHM.heading,
+        )}
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            {/* The lockup a member's masthead wears — the thing bought and
+                the thing worn are one mark. */}
+            <Wordmark height={12} strokeWidth={2} plus label="North Plus" />
+            <span className="type-meta text-text-tertiary">
+              {PRICE} a month · ends whenever you say
+            </span>
+          </div>
+          {tier === "plus" && <YoursNow />}
+        </div>
+        <div className={cn("flex flex-col", RHYTHM.pair)}>
+          <span className="type-meta text-text-secondary">
+            Everything in Free, plus
+          </span>
+          <ul className={cn("flex flex-col", RHYTHM.pair)}>
+            {/* Subject first, the upgrade as its note — "Talking to North
+                out loud / The whole conversation", never the description
+                floating with no subject. Mirrors the Free panel's rows. */}
+            {added.map((line) => (
+              <PanelRow
+                key={line.what}
+                label={line.what}
+                note={typeof line.plus === "string" ? line.plus : undefined}
+              />
+            ))}
+          </ul>
+        </div>
+      </section>
     </div>
   );
 }
