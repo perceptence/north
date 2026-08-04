@@ -16,13 +16,13 @@ import {
 import {
   callbackDue,
   callbackDueAt,
+  catchUpDue,
   committedOn,
   profileWhen,
   recollect,
   settledRungIds,
 } from "@/core/decisions";
-import { CORRECTABLE, FIELD_BEHIND_RUNG } from "@/core/onboarding/correction";
-import type { TurnId } from "@/core/onboarding/script";
+import { CORRECTABLE } from "@/core/onboarding/correction";
 import type { Decision } from "@/core/decisions/types";
 import { project } from "@/core/projection";
 import { evaluate, ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
@@ -91,8 +91,33 @@ export function TodayScreen() {
   const [now] = useState(() => new Date());
   const hydrated = useHydrated();
   const [sheet, setSheet] = useState<null | "derivation" | "ladder">(null);
-  // After acting on a decision, the one field most likely to have changed.
-  const [catchUp, setCatchUp] = useState<TurnId | null>(null);
+  /**
+   * Whether the catch-up conversation is actually open.
+   *
+   * The QUESTION is derived (see `catchUpDue` below); this is only whether the
+   * user has opened it. Two things set it, and both are the user acting:
+   * answering the return callback, and tapping the prompt Today shows when it
+   * is owed a catch-up.
+   *
+   * ── WHY NOT OPEN IT ON ARRIVAL ────────────────────────────────────────────
+   * Because a modal that seizes the screen before you have touched anything is
+   * the most interruptive pattern there is, on a product whose whole posture
+   * is that it speaks when it has something to say and otherwise stays quiet.
+   * "North will ask" is honoured by asking — visibly, in its own voice, on the
+   * screen you just opened — not by taking the screen hostage.
+   *
+   * There is a second, mechanical reason worth recording: `Sheet` cannot
+   * currently be opened on mount at all. It pushes a history entry when it
+   * opens and closes itself on `popstate`, and React's StrictMode double-
+   * invokes mount effects — so the first cleanup's `history.back()` lands
+   * after the second effect has re-attached the listener, and the sheet reads
+   * its own programmatic pop as the user pressing Back. No existing caller
+   * opens a Sheet on mount, so nothing had exercised it. That is a real latent
+   * defect in `Sheet`, not a reason for this design — the design stands on the
+   * paragraph above — but it should be fixed before anything does need to
+   * open one on mount.
+   */
+  const [asking, setAsking] = useState(false);
 
   // Reaching Today without a profile is not an error — it is a route
   // (docs/UX-ARCHITECTURE.md §9, ER5).
@@ -161,6 +186,20 @@ export function TodayScreen() {
   const committed = evaluation.current
     ? committedOn(decisions, evaluation.current.rung.id)
     : null;
+
+  /**
+   * The question North owes the user after they said they did something.
+   *
+   * Derived from whether any profile field is older than the commitment that
+   * should have changed it — so it fires no matter WHICH screen resolved the
+   * decision, and clears itself when the correction is answered because
+   * `applyAnswers` re-stamps `asOf`. Decisions promises this out loud
+   * ("North will ask what changed next time you're on Today"); before this it
+   * only happened if you resolved the commitment from Today's own callback,
+   * which on the demo path is not even reachable.
+   */
+  const owed = catchUpDue(profile, decisions);
+  const catchUp = asking ? owed : null;
 
   // The situation as it stood the day this was decided, run back through the
   // engine. Null when that day carries nothing worth recalling — the question
@@ -274,12 +313,15 @@ export function TodayScreen() {
               <Button
                 variant="primary"
                 size="lg"
+                // Opening the catch-up here is the user acting, so it is not
+                // an interruption — they just told North they did the thing,
+                // and the next question follows from that. WHICH question is
+                // no longer named here: resolving stamps a `resolvedAt` newer
+                // than the field behind that rung, and `catchUpDue` works it
+                // out. That is why resolving from Decisions now works too.
                 onClick={() => {
                   resolveDecision(pending.id, "held");
-                  // Acting on a decision doesn't change what North knows, so
-                  // the engine would keep describing the old situation. This
-                  // is where the profile catches up.
-                  setCatchUp(FIELD_BEHIND_RUNG[pending.rungId]);
+                  setAsking(true);
                 }}
               >
                 Yes, done
@@ -455,19 +497,41 @@ export function TodayScreen() {
         </p>
       )}
 
+      {/* ── THE PROMISE THE LEDGER MAKES, KEPT ─────────────────────────────
+          Resolving a commitment prints "North will ask what changed next time
+          you're on Today". This is that asking. It is a line and a way in
+          rather than a modal, so the coach is heard without the screen being
+          taken — and it appears however the commitment was resolved, because
+          `catchUpDue` reads the data rather than a flag someone remembered to
+          set.
+
+          It disappears by answering, not by dismissing: once the correction
+          is saved the field is newer than the commitment and there is nothing
+          left to ask. Waving it off just closes the sheet; the question is
+          still owed, so it is still here. */}
+      {owed && !asking && (
+        <ActionLink icon={<LedgerMark />} onClick={() => setAsking(true)}>
+          You did something — tell me what changed, so the numbers keep up
+        </ActionLink>
+      )}
+
       {/* The loop that closes: you said you did it, so North asks what
-          changed rather than carrying a stale picture of you. */}
+          changed rather than carrying a stale picture of you.
+
+          `onDone` needs no handler beyond closing — answering writes a profile
+          whose field is newer than the commitment, so `catchUpDue` stops
+          returning it and the prompt above goes with it. */}
       <Sheet
         open={catchUp !== null}
-        onClose={() => setCatchUp(null)}
+        onClose={() => setAsking(false)}
         title={<h2 className="type-label text-text-tertiary">Let&rsquo;s catch up</h2>}
       >
         {catchUp && (
           <CorrectionTurn
             turnId={catchUp}
             label={CORRECTABLE.find((c) => c.turnId === catchUp)?.label}
-            onDone={() => setCatchUp(null)}
-            onCancel={() => setCatchUp(null)}
+            onDone={() => setAsking(false)}
+            onCancel={() => setAsking(false)}
           />
         )}
       </Sheet>
