@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CoachPresence } from "@/components/nds";
 import { CALLBACK_AFTER_DAYS } from "@/core/decisions";
 import { seedDemoStory, type DemoStage } from "@/lib/demo-story";
+import { clearAccount } from "@/state/account-store";
 import { clearDecisions } from "@/state/decisions-store";
 import { clearProfile } from "@/state/profile-store";
 
@@ -69,6 +70,10 @@ export default function DemoPage() {
     if (moment.stage === null) {
       clearProfile();
       clearDecisions();
+      // The account too — onboarding now BEGINS with signup, so leaving one
+      // behind would drop the visitor into the middle of a flow they came
+      // to watch from the start.
+      clearAccount();
     } else {
       seedDemoStory(moment.stage);
     }

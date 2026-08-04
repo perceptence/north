@@ -2,6 +2,7 @@
 
 import type { Decision } from "@/core/decisions/types";
 import type { SituationProfile } from "@/core/profile/types";
+import { saveAccount } from "@/state/account-store";
 import { seedDecisions } from "@/state/decisions-store";
 import { seedProfile } from "@/state/profile-store";
 
@@ -115,6 +116,25 @@ export function seedDemoStory({ agedDays = 0 }: DemoStage = {}): void {
       ),
     ],
   };
+
+  /**
+   * The character has an account, because every journey now begins with
+   * one. Without it the masthead had no avatar and `/account` said "no
+   * account on this device" — the seeded story was a profile belonging to
+   * nobody, which is exactly the state the opening flow was reordered to
+   * make impossible.
+   *
+   * No `secret`: nobody typed a password here, and inventing a digest for a
+   * credential that was never chosen would be a fiction in the one place
+   * this product keeps scrupulously honest.
+   */
+  saveAccount({
+    id: "acc_demo",
+    name: "Avery Chen",
+    email: "avery@example.com",
+    createdAt: iso(37),
+    consentAt: iso(37),
+  });
 
   // Seeded THROUGH the stores, never by writing localStorage directly. Both
   // stores cache in module scope, so a screen that has already read them (the
