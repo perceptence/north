@@ -77,7 +77,11 @@ function Tick() {
 /** "Yours now" — worn by the panel that describes the reader's own tier. */
 function YoursNow() {
   return (
-    <span className="type-overline whitespace-nowrap rounded-full border border-line-hairline px-2.5 py-1 text-text-tertiary">
+    /* `line-control`, not `line-hairline`. The hairline token is 1.23
+       against paper — it exists to SEPARATE stacked rows, and it cannot
+       describe the edge of an object. On a pill it simply vanished.
+       `line-control` is the boundary token (3.18, the UI-component gate). */
+    <span className="type-overline whitespace-nowrap rounded-full border border-line-control px-2.5 py-1 text-text-secondary">
       Yours now
     </span>
   );
@@ -121,20 +125,54 @@ function PanelRow({ label, note }: { label: string; note?: string }) {
  * reader's own tier carries a quiet "Yours now" pill rather than a border
  * treatment — hue is not how this product says "you are here".
  */
-function Comparison({ tier }: { tier: Tier }) {
+function Comparison({
+  tier,
+  ending,
+  onUpgrade,
+  onEnd,
+  onKeep,
+  since,
+  renewsAt,
+}: {
+  tier: Tier;
+  ending: boolean;
+  onUpgrade: () => void;
+  onEnd: () => void;
+  onKeep: () => void;
+  since?: string;
+  renewsAt?: string;
+}) {
   const kept = TIER_LINES.filter((line) => line.free === true);
   const reduced = TIER_LINES.filter(
     (line) => line.free !== true && line.free !== "—",
   );
   const added = TIER_LINES.filter((line) => line.free !== true);
 
+  /*
+   * ── A CONTAINER QUERY, NOT A BREAKPOINT ──────────────────────────────
+   * `md:grid-cols-2` asked the WINDOW how wide it was, and the window is
+   * not what holds these. On desktop this sheet is a right-hand pane about
+   * 496px wide, so a 1280px window happily split it into two ~230px
+   * columns: "The whole coach, one thing at a time" broken over three
+   * lines, every row wrapping mid-phrase. The panels go side by side when
+   * THIS BOX is wide enough to carry them and stack otherwise — which on
+   * the pane and on any phone means one full-width column, each row on its
+   * own line.
+   *
+   * `items-stretch` (the grid default) rather than `items-start`, so where
+   * they DO sit side by side the two are the same height; the actions in
+   * each are pushed to the foot with `mt-auto`, so the pair closes on one
+   * line instead of one card trailing off.
+   */
   return (
-    <div className="grid gap-4 md:grid-cols-2 md:items-start">
+    <div className="@container/tiers grid gap-4 @2xl/tiers:grid-cols-2">
       {/* ── FREE ─────────────────────────────────────────────────────── */}
       <section
         aria-label="What Free holds"
         className={cn(
-          "flex flex-col rounded-sheet border border-line-hairline p-5",
+          // Same reason as the pill: these panels are OBJECTS, and an
+          // object's edge needs the boundary token, not the separator.
+          "flex flex-col rounded-sheet border border-line-control p-5",
           RHYTHM.heading,
         )}
       >
@@ -159,23 +197,56 @@ function Comparison({ tier }: { tier: Tier }) {
             />
           ))}
         </ul>
+
+        {/* The Free panel's own foot, so both cards end on a line rather
+            than one trailing off. It says what free costs, which is the
+            honest counterpart to the price opposite. */}
+        <div className="mt-auto pt-1">
+          <Text variant="meta" tone="tertiary">
+            Free, always. No card, no trial that ends.
+          </Text>
+        </div>
       </section>
 
       {/* ── PLUS ─────────────────────────────────────────────────────── */}
       <section
         aria-label="What Plus adds"
         className={cn(
-          "flex flex-col rounded-sheet border border-line-hairline bg-surface-raised p-5",
+          // NO border. The Free panel is drawn ON the sheet, so it needs an
+          // edge to exist at all; this one is a raised SURFACE against the
+          // sheet's sunken paper, and a surface that changes colour does not
+          // also need outlining. Two ways of saying "this is a separate
+          // object" is one too many, and the border was the weaker of them.
+          "flex flex-col rounded-sheet bg-surface-raised p-5",
           RHYTHM.heading,
         )}
       >
         <div className="flex items-baseline justify-between gap-3">
           <div className="flex flex-col gap-1">
             {/* The lockup a member's masthead wears — the thing bought and
-                the thing worn are one mark. */}
-            <Wordmark height={12} strokeWidth={2} plus label="North Plus" />
+                the thing worn are one mark. Painted in the atmosphere HERE
+                and only here: this is the moment Plus is being presented,
+                and the sheet's one gradient element belongs to the thing on
+                offer. The masthead's copy stays ink, because chrome that
+                wears the sky on every screen spends that gradient on
+                furniture. */}
+            <Wordmark
+              height={14}
+              strokeWidth={2}
+              plus
+              aurora
+              label="North Plus"
+            />
+            {/* NOT the price. The price moved to this card's foot, next to
+                the button that acts on it, and leaving a copy up here meant
+                the sheet quoted $4.99 twice in one card — the second time
+                three inches below the first. What belongs in a header is
+                what the tier IS, answering the Free panel's line opposite:
+                one thing at a time ↔ all of it at once. The pacing is the
+                difference between the tiers, so the pair of subtitles is
+                the comparison in miniature. */}
             <span className="type-meta text-text-tertiary">
-              {PRICE} a month · ends whenever you say
+              All of it at once, and out loud
             </span>
           </div>
           {tier === "plus" && <YoursNow />}
@@ -196,6 +267,38 @@ function Comparison({ tier }: { tier: Tier }) {
               />
             ))}
           </ul>
+        </div>
+
+        {/* ── THE CLOSE, INSIDE THE CARD IT BELONGS TO ──────────────────
+            The price and the button used to sit at the foot of the whole
+            sheet, a screen-gap below both panels — so the thing you were
+            buying and the thing that bought it were two separate objects
+            with the Free panel's list between them. A price belongs to its
+            product. It reads now as one card: what Plus is, what it costs,
+            and the way in. */}
+        <div className={cn("mt-auto flex flex-col items-stretch pt-1", RHYTHM.pair)}>
+          {tier === "plus" ? (
+            <>
+              <Text variant="meta" tone="tertiary">
+                Since {dayWord(since)} · {ending ? "runs out" : "renews"}{" "}
+                {dayWord(renewsAt)}
+              </Text>
+              {ending ? (
+                <ActionLink onClick={onKeep}>Keep Plus</ActionLink>
+              ) : (
+                <ActionLink onClick={onEnd}>End Plus</ActionLink>
+              )}
+            </>
+          ) : (
+            <>
+              <Button variant="primary" fullWidth onClick={onUpgrade}>
+                Upgrade to Plus
+              </Button>
+              <Text variant="meta" tone="tertiary">
+                {PRICE} a month · ends whenever you say, one tap
+              </Text>
+            </>
+          )}
         </div>
       </section>
     </div>
@@ -299,43 +402,25 @@ export function MembershipSheet({
           </>
         ) : (
           <>
-            <Comparison tier={membership.tier} />
+            <Comparison
+              tier={membership.tier}
+              ending={!!ending}
+              since={membership.since}
+              renewsAt={membership.renewsAt}
+              onUpgrade={() => {
+                setRenewsOn(
+                  new Date(Date.now() + 30 * 86_400_000).toISOString(),
+                );
+                setStage("checkout");
+              }}
+              onEnd={() => endPlus()}
+              onKeep={() => keepPlus()}
+            />
 
-            <Text variant="meta" tone="tertiary" measure>
+            <Text variant="meta" tone="tertiary">
               {NEVER_GATED} Ask anything in writing on Navigator, free — voice
               answers with the same engine, out loud.
             </Text>
-
-            {plus ? (
-              <div className={cn("flex flex-col items-start", RHYTHM.heading)}>
-                <Text variant="meta" tone="tertiary">
-                  Since {dayWord(membership.since)} ·{" "}
-                  {ending ? "runs out" : "renews"} {dayWord(membership.renewsAt)}
-                </Text>
-                {ending ? (
-                  <ActionLink onClick={() => keepPlus()}>Keep Plus</ActionLink>
-                ) : (
-                  <ActionLink onClick={() => endPlus()}>End Plus</ActionLink>
-                )}
-              </div>
-            ) : (
-              <div className={cn("flex flex-col items-start", RHYTHM.heading)}>
-                <Text variant="meta" tone="tertiary">
-                  {PRICE} a month · ends whenever you say, one tap
-                </Text>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    setRenewsOn(
-                      new Date(Date.now() + 30 * 86_400_000).toISOString(),
-                    );
-                    setStage("checkout");
-                  }}
-                >
-                  Upgrade to Plus
-                </Button>
-              </div>
-            )}
           </>
         )}
       </div>

@@ -195,6 +195,16 @@ export default function DesignGallery() {
             </div>
           </Specimen>
           <Specimen
+            name="The Plus lockup, in the aurora"
+            note="ONE PLACE ONLY: the moment Plus is being presented — the tier panel's header. Never chrome. A masthead that wears the sky on every screen spends the product's one gradient on furniture, and the one-signal-per-viewport rule would have nothing left for the thing that actually needs attention. Same three stops as .text-aurora, held to the AA-safe half of the ramp, but painted as an SVG gradient: background-clip:text fills glyphs a font drew, and a stroke is not one of those. It must be gradientUnits='userSpaceOnUse' — under the objectBoundingBox default every straight stroke in the mark (both N verticals, the R stem, the T, all of the H, the bezel ticks) has a zero-dimension bounding box and is not rendered at all."
+          >
+            <div className="flex flex-col items-start gap-7">
+              <Wordmark height={13} strokeWidth={2} plus aurora />
+              <Wordmark height={22} strokeWidth={1.7} plus aurora />
+              <Wordmark height={40} plus aurora />
+            </div>
+          </Specimen>
+          <Specimen
             name="Wordmark on the sky"
             note="The mark is ink or on-deep — never a hue, and never reversed out of a box."
           >
