@@ -112,6 +112,23 @@
    */
   --chrome-onboarding: 6rem;
 
+  /**
+   * The apron — the chrome's paper foot, below the masthead, and the exact
+   * distance content travels past the sky before it disappears.
+   *
+   * ONE value, used twice: as the apron's height in the fixed chrome, and as
+   * the content column's top padding. They are not two numbers that happen to
+   * match — they are the same measurement, and the shell is only correct while
+   * they are equal. At rest the first line of the read lands precisely on the
+   * chrome's bottom edge, so the cut has nothing to cut; shrink one without
+   * the other and the read starts underneath the masthead.
+   *
+   * It was 1.75rem/2.25rem (`h-7 md:h-9`). Tightened so content hides closer
+   * to the masthead, which reads more like an app and less like a page with a
+   * header floating above it.
+   */
+  --apron: 1rem;
+
   --text-on-deep: rgb(250 248 245 / 0.95); /* 13.67 on sky-900, 7.35 on sky-600 */
   --text-on-deep-dim: rgb(250 248 245 / 0.72); /* 7.77 / 4.73 */
   --atmosphere: linear-gradient(
@@ -228,6 +245,7 @@
 @media (width >= 40rem) {
   :root {
     --chrome-onboarding: 7rem;
+    --apron: 1.25rem;
   }
 }
 

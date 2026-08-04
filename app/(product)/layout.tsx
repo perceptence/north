@@ -106,17 +106,22 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
             text passing under the chrome — which is exactly what it is. The
             ghost read as a rendering fault, which is worse than an edge.
 
-            Its height still matches the content's own top padding, so at rest
-            the cut sits in the gap above the first line and touches nothing
-            you are meant to read. */}
-        {/* No edge. An earlier pass gave this a `line-hairline` on scroll, to
-            explain the cut the way a platform nav bar does. It was the right
-            instinct and the wrong product: on a screen whose whole argument
-            is that the sky dissolves into paper, a rule appearing under the
-            masthead reads as a seam — reported twice as "a weird grey line"
-            before it was taken back out. The cut stays; content passing under
-            chrome is what it looks like, and it needs no rule to announce it. */}
-        <div aria-hidden="true" className="h-7 bg-surface-page md:h-9" />
+            No edge, either. An earlier pass gave this a `line-hairline` on
+            scroll, to explain the cut the way a platform nav bar does. Right
+            instinct, wrong product: on a screen whose whole argument is that
+            the sky dissolves into paper, a rule appearing under the masthead
+            reads as a seam — reported twice as "a weird grey line" before it
+            came back out. The cut stays; content passing under chrome is what
+            it looks like, and it needs no rule to announce it.
+
+            `--apron` rather than a class, because the content column's top
+            padding is the SAME measurement and the shell is only correct
+            while the two are equal. One value, two uses, no drift. */}
+        <div
+          aria-hidden="true"
+          className="bg-surface-page"
+          style={{ height: "var(--apron)" }}
+        />
       </div>
 
       {/* Padding on the OUTER element, the measure inside it — the same
@@ -152,12 +157,11 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
               nothing on desktop, without a profile, or where the browser
               cannot both hear and speak. */}
           <VoiceLauncher />
-          {/* Matches the APRON's height exactly. That is the invariant the
-              whole shell rests on: chrome = sky + apron, spacer = sky +
-              this, so the first line lands precisely at the apron's edge and
-              the cut has nothing to cut at rest. Change one of these three
-              and you must change the other two. */}
-          <div className="pt-7 md:pt-9">{children}</div>
+          {/* The apron's own measurement, not a copy of it. That is the
+              invariant the whole shell rests on: chrome = sky + apron,
+              spacer = sky + this, so the first line lands precisely at the
+              apron's edge and the cut has nothing to cut at rest. */}
+          <div style={{ paddingTop: "var(--apron)" }}>{children}</div>
         </div>
       </div>
     </div>
