@@ -18,6 +18,7 @@ import {
   HorizonBand,
   HorizonField,
   Row,
+  RouteMarks,
   RungIndicator,
   SectionHeading,
   Sheet,
@@ -42,8 +43,10 @@ import {
   StoryMark,
 } from "@/components/north/ActionGlyphs";
 import { AssumptionsPanel } from "@/components/north/AssumptionsPanel";
+import { InsightSheet } from "@/components/north/InsightSheet";
 import { LadderPanel } from "@/components/north/LadderPanel";
 import { DirectionMark } from "@/components/north/InsightsScreen";
+import { Sky } from "@/components/north/Sky";
 import { SpokenField } from "@/components/north/SpokenField";
 import { TURN_GLYPH, TurnGlyph } from "@/components/north/TurnGlyph";
 import type { TurnId } from "@/core/onboarding/script";
@@ -58,6 +61,45 @@ import { ContrastTable, Grid, ScaleRow, Section, Specimen, SwatchRow } from "./_
  * This is not an application screen — it is a project artifact, outside the
  * product IA (docs/UX-ARCHITECTURE.md §1).
  */
+
+/** A route mid-walk: three behind, one here, the rest still to come. */
+const ROUTE_SPECIMEN = [
+  { id: "a", label: "Bearings", state: "answered" as const, reachable: true },
+  { id: "b", label: "Footing", state: "answered" as const, reachable: true },
+  { id: "c", label: "The inflow", state: "answered" as const, reachable: true },
+  { id: "d", label: "The outflow", state: "current" as const, reachable: true },
+  { id: "e", label: "Reserves", state: "toCome" as const },
+  { id: "f", label: "Drag", state: "toCome" as const },
+  { id: "g", label: "Leaning in", state: "toCome" as const },
+];
+
+/** A dispatch's reasoning, shaped exactly like `behind()` returns it. */
+const BEHIND_SPECIMEN = {
+  eyebrow: "Behind the buffer",
+  thesis: "How many months your cash actually covers, and how it got there.",
+  sections: [
+    {
+      heading: "The working",
+      segments: [
+        { kind: "text" as const, value: "You hold " },
+        { kind: "figure" as const, value: 14_000_000, format: "currency" as const, confidence: "stated" as const, label: "in cash" },
+        { kind: "text" as const, value: " in cash, against " },
+        { kind: "figure" as const, value: 1_200_000, format: "currency" as const, confidence: "stated" as const, label: "a month" },
+        { kind: "text" as const, value: " a month going out." },
+      ],
+    },
+    {
+      heading: "What moved",
+      segments: [
+        { kind: "text" as const, value: "You held " },
+        { kind: "figure" as const, value: 5_000_000, format: "currency" as const, confidence: "stated" as const, label: "in cash before" },
+        { kind: "text" as const, value: " when North last looked." },
+      ],
+    },
+  ],
+  goes: "today" as const,
+  goesLabel: "See it on Today",
+};
 
 const SECTIONS = [
   ["brand", "Wordmark"],
@@ -97,7 +139,8 @@ export default function DesignGallery() {
   const [answer, setAnswer] = useState("");
   const [glyphTurn, setGlyphTurn] = useState<TurnId>("openingConcern");
   const [spoken, setSpoken] = useState("");
-  const [sheet, setSheet] = useState<null | "derivation" | "assumptions" | "ladder">(null);
+  const [offered, setOffered] = useState("");
+  const [sheet, setSheet] = useState<null | "derivation" | "assumptions" | "ladder" | "behind">(null);
   const [pending, setPending] = useState(false);
   const [deposit, setDeposit] = useState(6_000_000);
 
@@ -690,6 +733,44 @@ export default function DesignGallery() {
           </Specimen>
 
           <Specimen
+            name="InsightSheet"
+            note="The room behind one dispatch in the letter. Every sentence on Insights is the visible tip of a real calculation — the buffer entry sits on explain(), the ladder entry on a full evaluate(), the record entry on the actual ledger — and none of it was reachable. It uses ExplanationPanel, not DerivationSheet, per the distinction the system already draws: a DerivationSheet shows ONE number's arithmetic, an ExplanationPanel shows the reasoning behind a whole answer, meant to be read. core/insights/behind.ts returns null where there is nothing honest to add, and then the dispatch simply isn't openable — a room that opens onto 'there is nothing here' is worse than a sentence that never offered to open."
+          >
+            <Button variant="secondary" onClick={() => setSheet("behind")}>
+              Open the room
+            </Button>
+            <InsightSheet
+              detail={sheet === "behind" ? BEHIND_SPECIMEN : null}
+              onClose={() => setSheet(null)}
+            />
+          </Specimen>
+
+          <Specimen
+            name="RouteMarks"
+            note="Where you are on a route: answered, here, still to come. Onboarding drew this twice in two different visual languages — the phone strip used equal-width bars separated only by opacity, the desktop rail used varying length plus three colour tokens — so the same information changed vocabulary at 1024px. One vocabulary now, and the richer of the two: here is long and full strength, answered is short and half lit, to come is short and barely there. Length AND weight carry it, so it survives a glance in a masthead and never rests on colour alone. Marks paint in currentColor and know nothing about their ground, which is what lets one definition hang on the sky and on paper. `onJump` is optional like RungIndicator's `onInterrogate`: a desktop margin has room to give every mark a real 44px target, a phone masthead does not — ten of those is 440px of touch target in 375px of screen — so the strip is decorative and going back there is the swipe."
+          >
+            <div className="flex flex-col gap-8">
+              <RouteMarks marks={ROUTE_SPECIMEN} />
+              <div className="flex items-start gap-10">
+                <RouteMarks marks={ROUTE_SPECIMEN} direction="col" />
+                <RouteMarks
+                  marks={ROUTE_SPECIMEN}
+                  direction="col"
+                  label="Specimen progress"
+                  onJump={() => undefined}
+                />
+              </div>
+              {/* The sky ground, where the phone strip actually hangs. */}
+              <div className="relative overflow-hidden rounded-chip">
+                <Sky className="absolute inset-0" />
+                <div className="relative px-5 py-6 text-text-on-deep">
+                  <RouteMarks marks={ROUTE_SPECIMEN} />
+                </div>
+              </div>
+            </div>
+          </Specimen>
+
+          <Specimen
             name="SectionHeading"
             note="The heading that opens a block within a screen — and it takes no tone and no variant. A section variant existed and every heading used it, but each call site picked its own tone, so one rank was rendering at three greys across the product and the horizon caption had drifted to type-overline entirely. A rank whose appearance is chosen per call site is not a rank. Mono caps 13/500/0.1em — heavier and larger than type-overline, which is the quieter mark reserved for a page's dateline."
           >
@@ -857,6 +938,22 @@ export default function DesignGallery() {
               value={spoken}
               onChange={setSpoken}
               label="What's the money thing you keep meaning to deal with?"
+            />
+          </Specimen>
+          <Specimen
+            name="SpokenField — with offers"
+            note="The same field, carrying the questions worth asking. They occupy the placeholder's position and clear the moment you type, but they are BUTTONS, not placeholder text: core/coach/offers.ts exists because seven of the eleven things this coach can answer had no tap path anywhere in the product, and real placeholder text would put six of them back out of reach and show the seventh. Set in the voice face and italic — the same face your typed words take — because tapping one IS saying it, and wearing the dotted signal-coach rule every other tappable thing in the product wears. The field and the offers share one grid cell, so the writing area sizes itself to whichever is taller and no count needs a magic height."
+          >
+            <SpokenField
+              value={offered}
+              onChange={setOffered}
+              label="Ask North a question in your own words"
+              suggestions={[
+                "How am I doing?",
+                "Why that first?",
+                "What’s changed?",
+              ]}
+              onSuggest={setOffered}
             />
           </Specimen>
           <Specimen
