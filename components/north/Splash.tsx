@@ -18,6 +18,7 @@ import {
   PLUS_ENSIGN,
   PLUS_RATIO,
   PLUS_VIEW,
+  INK_ORIGIN,
   WORD_RATIO,
   WORD_VIEW,
 } from "@/components/nds/Wordmark";
@@ -133,14 +134,28 @@ function DrawnWordmark({ height, plus }: { height: number; plus: boolean }) {
       <Drawn d={COMPASS[1]} delay={0.4} />
 
       {/* The needle — both halves on one pivot, waking wrong and settling
-          on north. Critically damped: it arrives, it does not wobble. */}
+          on north. Critically damped: it arrives, it does not wobble.
+
+          ── THE PIVOT HAS TO BE GIVEN IN MOTION'S OWN TERMS ────────────────
+          This read `transformOrigin: "88px 48px"` and Motion silently threw
+          it away: it writes the origin itself from `originX`/`originY`,
+          which default to 50%. Under `transform-box: view-box` that resolved
+          to (126.5, 48) — the centre of the whole LOCKUP — so the needle
+          swung about a point 38 units to the right of the compass instead of
+          turning on its own centre.
+
+          Two corrections in one line. Use `originX`/`originY`, which Motion
+          honours; and measure them from the viewBox's top-left, because that
+          is where `view-box` counts from — a pivot written at the geometry's
+          own (88, 48) would land 45 units off again. */}
       <m.g
         initial={{ rotate: NEEDLE_FROM_DEG }}
         animate={{ rotate: 0 }}
         transition={{ ...SPRING.considered, delay: 0.25 }}
         style={{
           transformBox: "view-box",
-          transformOrigin: `${COMPASS_CENTER.x}px ${COMPASS_CENTER.y}px`,
+          originX: `${COMPASS_CENTER.x - INK_ORIGIN.x}px`,
+          originY: `${COMPASS_CENTER.y - INK_ORIGIN.y}px`,
         }}
       >
         <Drawn d={COMPASS[2]} delay={0.2} />
@@ -155,21 +170,29 @@ function DrawnWordmark({ height, plus }: { height: number; plus: boolean }) {
       {/* The seal, last — and it ARRIVES rather than appearing: in from the
           right, quick, the way a stamp is brought down onto a finished
           letter. It travels on `x` (a fade-up would have made it the one
-          soft thing in a drawing that is otherwise all pen), and the needle
-          settles the same way the big one did as it lands. */}
+          soft thing in a drawing that is otherwise all pen).
+
+          ── AND IT NO LONGER TURNS ─────────────────────────────────────────
+          It used to also spin from -150°, echoing the needle. With Motion's
+          origin landing on the lockup's centre (see the needle's note) that
+          pivot sat about 70 units to the rose's LEFT, so instead of turning
+          in place it was flung out to the left of the wordmark and swept
+          back along a wide circular arc to its seat — which is precisely
+          what it looked like.
+
+          The origin bug is fixed above, but the rotation does not come back.
+          The brief was "in from the right, quick", and that is one clean
+          movement; a spin on arrival was decoration this mark did not ask
+          for, and a seal is pressed straight down, not screwed in. */}
       {plus && (
         <m.g
-          initial={{ x: 26, rotate: NEEDLE_FROM_DEG, opacity: 0 }}
-          animate={{ x: 0, rotate: 0, opacity: 1 }}
+          initial={{ x: 26, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
           transition={{
-            x: { duration: 0.26, ease: EASE.out, delay: 1.15 },
-            rotate: { ...SPRING.considered, delay: 1.2 },
+            x: { duration: 0.28, ease: EASE.out, delay: 1.15 },
             opacity: { duration: 0.14, ease: EASE.out, delay: 1.15 },
           }}
-          style={{
-            transformBox: "view-box",
-            transformOrigin: "197px 39.4px",
-          }}
+          style={{ transformBox: "view-box" }}
         >
           {PLUS_ENSIGN.strokes.map((d) => (
             <path key={d} d={d} />

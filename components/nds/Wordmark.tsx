@@ -34,6 +34,17 @@ import { cn } from "@/lib/cn";
  */
 const INK = { x: 45.2, y: 33.2, h: 29.6, w: 139.6, plusW: 162.6 } as const;
 
+/**
+ * The viewBox's top-left, in the mark's own units.
+ *
+ * Anything rotating a PART of the lockup needs this. Under
+ * `transform-box: view-box` a transform origin is measured from here, not
+ * from the coordinate the geometry is written in — so a pivot at the compass
+ * centre (88, 48) has to be given as (88 - 45.2, 48 - 33.2). Splash learned
+ * this the hard way; see the note there.
+ */
+export const INK_ORIGIN = { x: INK.x, y: INK.y } as const;
+
 /** Ink box of the full lockup, including stroke overhang. */
 export const WORD_VIEW = "45.2 33.2 139.6 29.6";
 export const WORD_RATIO = INK.w / INK.h;
