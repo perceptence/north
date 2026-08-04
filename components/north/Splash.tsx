@@ -15,9 +15,13 @@ import {
   COMPASS_CENTER,
   LETTERS,
   NEEDLE_NORTH,
+  PLUS_ENSIGN,
+  PLUS_RATIO,
+  PLUS_VIEW,
   WORD_RATIO,
   WORD_VIEW,
 } from "@/components/nds/Wordmark";
+import { useMembership } from "@/state/membership-store";
 
 /**
  * The launch beat — the compass finds north, and the name writes itself.
@@ -90,12 +94,19 @@ function Drawn({ d, delay, fill }: { d: string; delay: number; fill?: boolean })
   );
 }
 
-/** The lockup, performing. Exactly the Wordmark's geometry, choreographed. */
-function DrawnWordmark({ height }: { height: number }) {
+/**
+ * The lockup, performing. Exactly the Wordmark's geometry, choreographed.
+ *
+ * A member's launch draws the Plus lockup — the rose settles in last, after
+ * the name, the way a seal is pressed after a letter is written. Someone
+ * paying for this should be met by the mark they wear, not by everyone
+ * else's and a badge discovered later in the masthead.
+ */
+function DrawnWordmark({ height, plus }: { height: number; plus: boolean }) {
   return (
     <m.svg
-      viewBox={WORD_VIEW}
-      width={Math.round(height * WORD_RATIO)}
+      viewBox={plus ? PLUS_VIEW : WORD_VIEW}
+      width={Math.round(height * (plus ? PLUS_RATIO : WORD_RATIO))}
       height={height}
       fill="none"
       aria-hidden="true"
@@ -140,12 +151,41 @@ function DrawnWordmark({ height }: { height: number }) {
       {LETTERS.map((d, index) => (
         <Drawn key={d} d={d} delay={LETTER_DELAY[index] ?? 0.9} />
       ))}
+
+      {/* The seal, last — and it ARRIVES rather than appearing: in from the
+          right, quick, the way a stamp is brought down onto a finished
+          letter. It travels on `x` (a fade-up would have made it the one
+          soft thing in a drawing that is otherwise all pen), and the needle
+          settles the same way the big one did as it lands. */}
+      {plus && (
+        <m.g
+          initial={{ x: 26, rotate: NEEDLE_FROM_DEG, opacity: 0 }}
+          animate={{ x: 0, rotate: 0, opacity: 1 }}
+          transition={{
+            x: { duration: 0.26, ease: EASE.out, delay: 1.15 },
+            rotate: { ...SPRING.considered, delay: 1.2 },
+            opacity: { duration: 0.14, ease: EASE.out, delay: 1.15 },
+          }}
+          style={{
+            transformBox: "view-box",
+            transformOrigin: "197px 39.4px",
+          }}
+        >
+          {PLUS_ENSIGN.strokes.map((d) => (
+            <path key={d} d={d} />
+          ))}
+          <path d={PLUS_ENSIGN.south} />
+          <path d={PLUS_ENSIGN.north} fill="currentColor" />
+        </m.g>
+      )}
     </m.svg>
   );
 }
 
 export function Splash() {
   const reduce = useReducedMotion();
+  const membership = useMembership();
+  const plus = membership.tier === "plus";
   const [showing, setShowing] = useState(true);
 
   useEffect(() => {
@@ -179,9 +219,9 @@ export function Splash() {
         >
           <div className="text-text-on-deep">
             {reduce ? (
-              <Wordmark height={30} strokeWidth={1.5} />
+              <Wordmark height={30} strokeWidth={1.5} plus={plus} />
             ) : (
-              <DrawnWordmark height={30} />
+              <DrawnWordmark height={30} plus={plus} />
             )}
           </div>
         </m.div>

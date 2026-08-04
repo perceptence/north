@@ -1,3 +1,6 @@
+"use client";
+
+import { useId } from "react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -24,13 +27,20 @@ import { cn } from "@/lib/cn";
  * literally a letter of the wordmark rather than a separate drawing.
  */
 
+/**
+ * The ink box, as numbers — the view strings below are these, formatted.
+ * The aurora paint needs them as coordinates, not as a string it would have
+ * to parse back apart.
+ */
+const INK = { x: 45.2, y: 33.2, h: 29.6, w: 139.6, plusW: 162.6 } as const;
+
 /** Ink box of the full lockup, including stroke overhang. */
 export const WORD_VIEW = "45.2 33.2 139.6 29.6";
-export const WORD_RATIO = 139.6 / 29.6;
+export const WORD_RATIO = INK.w / INK.h;
 
 /** Ink box of the Plus lockup — the same drawing, plus the ensign. */
-const PLUS_VIEW = "45.2 33.2 162.6 29.6";
-const PLUS_RATIO = 162.6 / 29.6;
+export const PLUS_VIEW = "45.2 33.2 162.6 29.6";
+export const PLUS_RATIO = INK.plusW / INK.h;
 
 /** Ink box of the compass alone. Square, so icons need no padding maths. */
 const MARK_VIEW = "73.2 33.2 29.6 29.6";
@@ -93,10 +103,58 @@ export const PLUS_ENSIGN = {
   north: "M197 33.7 L198.7 39.4 L195.3 39.4 Z",
 } as const;
 
-function Compass({ strokeWidth }: { strokeWidth: number }) {
+/**
+ * The aurora, as an SVG paint.
+ *
+ * `.text-aurora` is `background-clip: text` — it fills glyph shapes drawn by
+ * a font, and an SVG stroke is not one of those. Same three stops, same
+ * OKLab feel, expressed the one way a stroke can take a gradient. Held to
+ * the AA-safe half of the ramp exactly as the CSS version is, so the mark
+ * stays legible ink rather than becoming decoration.
+ *
+ * ── userSpaceOnUse, AND IT IS NOT A PREFERENCE ────────────────────────────
+ * SVG's default is `objectBoundingBox`, and under that unit a gradient is
+ * NOT RENDERED on an element whose bounding box has zero width or height.
+ * Nearly this whole mark is such elements: the N's two verticals, the R's
+ * stem, the T's arm and stem, all three of the H's strokes, both bezel
+ * ticks — every straight line. The first version of this paint silently
+ * erased them and left `\ Ⓞ ꓤ` on screen, the diagonals and curves being
+ * the only strokes with area to measure.
+ *
+ * User space also makes it ONE ramp across the lockup rather than a fresh
+ * ramp per stroke restarting inside every letter — which is what an ombre
+ * across a wordmark should be, so the fix and the intent agree.
+ */
+function AuroraPaint({ id, plus }: { id: string; plus: boolean }) {
+  const right = INK.x + (plus ? INK.plusW : INK.w);
+  return (
+    <defs>
+      <linearGradient
+        id={id}
+        gradientUnits="userSpaceOnUse"
+        x1={INK.x}
+        y1={INK.y + INK.h}
+        x2={right}
+        y2={INK.y}
+      >
+        <stop offset="0%" stopColor="var(--sky-900)" />
+        <stop offset="55%" stopColor="var(--signal-coach)" />
+        <stop offset="100%" stopColor="var(--sky-600)" />
+      </linearGradient>
+    </defs>
+  );
+}
+
+function Compass({
+  strokeWidth,
+  paint = "currentColor",
+}: {
+  strokeWidth: number;
+  paint?: string;
+}) {
   return (
     <g
-      stroke="currentColor"
+      stroke={paint}
       fill="none"
       strokeWidth={strokeWidth}
       strokeLinecap="round"
@@ -106,7 +164,7 @@ function Compass({ strokeWidth }: { strokeWidth: number }) {
       {COMPASS.map((d) => (
         <path key={d} d={d} />
       ))}
-      <path d={NEEDLE_NORTH} fill="currentColor" />
+      <path d={NEEDLE_NORTH} fill={paint} />
     </g>
   );
 }
@@ -116,6 +174,16 @@ export interface WordmarkProps {
   height?: number;
   /** Renders the Plus lockup — NORTH with the ensign. Membership chrome. */
   plus?: boolean;
+  /**
+   * Paints the mark in the atmosphere rather than ink — the same ramp
+   * `.text-aurora` gives one word per screen.
+   *
+   * For the moment Plus is being PRESENTED, never for chrome: a masthead
+   * that wears the sky every screen spends the product's one gradient on
+   * furniture, and the one-signal-per-viewport rule would have nothing left
+   * to give the thing that actually needs attention.
+   */
+  aurora?: boolean;
   /**
    * Stroke weight in the mark's own units (cap height = 28). The default is
    * the drawn weight; nudge it up only where a surface renders the mark small
@@ -133,11 +201,14 @@ export interface WordmarkProps {
 export function Wordmark({
   height = 14,
   plus = false,
+  aurora = false,
   strokeWidth = 1.6,
   label,
   className,
 }: WordmarkProps) {
+  const gradientId = useId();
   const name = label ?? (plus ? "North Plus" : "North");
+  const paint = aurora ? `url(#${gradientId})` : "currentColor";
   return (
     <svg
       viewBox={plus ? PLUS_VIEW : WORD_VIEW}
@@ -149,8 +220,9 @@ export function Wordmark({
       aria-hidden={name ? undefined : "true"}
       className={cn("block", className)}
     >
+      {aurora && <AuroraPaint id={gradientId} plus={plus} />}
       <g
-        stroke="currentColor"
+        stroke={paint}
         fill="none"
         strokeWidth={strokeWidth}
         strokeLinecap="round"
@@ -165,11 +237,11 @@ export function Wordmark({
               <path key={d} d={d} />
             ))}
             <path d={PLUS_ENSIGN.south} />
-            <path d={PLUS_ENSIGN.north} fill="currentColor" />
+            <path d={PLUS_ENSIGN.north} fill={paint} />
           </>
         )}
       </g>
-      <Compass strokeWidth={strokeWidth} />
+      <Compass strokeWidth={strokeWidth} paint={paint} />
     </svg>
   );
 }
