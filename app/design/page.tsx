@@ -32,6 +32,8 @@ import {
   ActionLink,
   AdjustMark,
   AjarMark,
+  DownloadMark,
+  HiddenMark,
   AssumedMark,
   BackMark,
   HorizonMark,
@@ -39,6 +41,8 @@ import {
   OpenBookMark,
   ReleaseMark,
   SpeakMark,
+  ReceiveMark,
+  SalutationMark,
   SignpostMark,
   StoryMark,
 } from "@/components/north/ActionGlyphs";
@@ -993,7 +997,7 @@ export default function DesignGallery() {
           </Specimen>
           <Specimen
             name="Action marks"
-            note="North has no icon library and will not gain one — every mark comes from the same hairline pen as the glyphs and the horizon fan. Every mark here was chosen in user review (July 2026) after the first in-world drawings failed the 16px read. 1.25 stroke on a 16 grid, a hair lighter than the nav glyphs because they sit beside meta text and must not outweigh it."
+            note="North has no icon library and will not gain one — every mark comes from the same hairline pen as the glyphs and the horizon fan. Every mark here was chosen in user review — July 2026 for the first set, August for the account\u2019s four — after the losing drawings failed the 16px read. Candidates are judged in the ROW they join, never alone: a mark\u2019s job is to be told apart from its neighbours, and \u201CHide it\u201D beside \u201CDownload it\u201D is where the mirrored-tray candidate died. 1.25 stroke on a 16 grid, a hair lighter than the nav glyphs because they sit beside meta text and must not outweigh it. The mark is OPTIONAL \u2014 \u201CNever mind\u201D goes bare on purpose, being the quiet half of a pair beside a bordered pill."
           >
             <div className="flex flex-col items-start gap-1">
               <ActionLink icon={<AssumedMark />} onClick={() => undefined}>
@@ -1029,6 +1033,20 @@ export default function DesignGallery() {
               <ActionLink icon={<SpeakMark />} onClick={() => undefined}>
                 Say the numbers too
               </ActionLink>
+              <ActionLink icon={<SalutationMark />} onClick={() => undefined}>
+                Call me something else
+              </ActionLink>
+              <ActionLink icon={<ReceiveMark />} onClick={() => undefined}>
+                Coming from another device instead
+              </ActionLink>
+              <ActionLink icon={<DownloadMark />} onClick={() => undefined}>
+                Download it
+              </ActionLink>
+              <ActionLink icon={<HiddenMark />} onClick={() => undefined}>
+                Hide it
+              </ActionLink>
+              {/* The null option is part of the pattern, not an omission. */}
+              <ActionLink onClick={() => undefined}>Never mind</ActionLink>
             </div>
           </Specimen>
           <Specimen

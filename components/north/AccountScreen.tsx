@@ -18,8 +18,8 @@ import { updateAccount, useAccount } from "@/state/account-store";
 import { useMembership } from "@/state/membership-store";
 import {
   ActionLink,
-  AjarMark,
   DownloadMark,
+  HiddenMark,
   ReceiveMark,
   SalutationMark,
 } from "./ActionGlyphs";
@@ -51,6 +51,17 @@ import { MembershipSheet } from "./MembershipSheet";
  */
 
 const PRICE = `$${(PLUS_PRICE_CENTS / 100).toFixed(2)}`;
+
+/**
+ * The portrait, sized to the column it stands beside.
+ *
+ * Three lines — name on `leading-7` (28), then two `type-meta` at 18 —
+ * measure 64. The picture matches that exactly, so the circle and the text
+ * block share a top and a bottom rather than the picture hovering at some
+ * unrelated size next to them. Measured in the browser, not guessed; if the
+ * type scale moves, this moves with it.
+ */
+const IDENTITY_AVATAR_PX = 64;
 
 function dayWord(iso: string | undefined): string {
   if (!iso) return "";
@@ -202,24 +213,36 @@ export function AccountScreen() {
 
           Now: the name IS the answer, the action to change it sits directly
           under the thing it changes, and the date joins the identity it
-          belongs to. */}
+          belongs to.
+
+          ── AND THE THREE LINES ARE ONE COLUMN ────────────────────────────
+          Name, address and standing are three facts about one person, so
+          they set as one block beside one portrait. "Since" used to sit
+          outside the row, which left the picture paired with two lines and
+          floating above a third that was equally about him.
+
+          The name is set on `leading-7` rather than its own 32px leading:
+          `type-voice-md` is sized for the coach SPEAKING a sentence, and
+          that leading is generous by design. Stacked directly on its own
+          email it opened a gap that read as a paragraph break between a
+          person and their address. The type size is untouched — only the
+          space under it. */}
       <div className={cn("flex flex-col", RHYTHM.heading)}>
         <h1 className="type-overline text-text-tertiary">Your account</h1>
-        <div className={cn("flex items-center", RHYTHM.block)}>
-          <AvatarMark account={account} size={56} />
+        <div className="flex items-center gap-4">
+          <AvatarMark account={account} size={IDENTITY_AVATAR_PX} />
           <div className="flex min-w-0 flex-col">
-            <span className="type-voice-md text-text-primary">
+            <span className="type-voice-md leading-7 text-text-primary">
               {account.name}
             </span>
             <span className="type-meta truncate text-text-tertiary">
               {account.email}
             </span>
+            <span className="type-meta text-text-tertiary">
+              With North since {dayWord(account.createdAt)}.
+            </span>
           </div>
         </div>
-
-        <Text variant="meta" tone="tertiary" measure>
-          With North since {dayWord(account.createdAt)}.
-        </Text>
 
         {/* The one editable thing, and it is editable because it is the one
             North says out loud — the letter's salutation. */}
@@ -327,7 +350,7 @@ export function AccountScreen() {
               >
                 Download it
               </ActionLink>
-              <ActionLink icon={<AjarMark />} onClick={() => setCode(null)}>
+              <ActionLink icon={<HiddenMark />} onClick={() => setCode(null)}>
                 Hide it
               </ActionLink>
             </div>

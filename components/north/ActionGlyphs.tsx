@@ -291,6 +291,37 @@ export function DownloadMark() {
 }
 
 /**
+ * Put it out of sight — the lid, down.
+ *
+ * Chosen in review (Aug 2026) over a folded sheet, the download mark
+ * mirrored, two leaves drawn shut, and receding rules. Judged in the row it
+ * actually joins — beside "Copy code" and "Download it" — because this
+ * mark's whole job is to be told apart from those two at a glance, which is
+ * invisible when a candidate is judged alone. The mirrored tray lost exactly
+ * there: a clever pair on paper, two near-identical shapes in the row.
+ *
+ * The reservation, recorded because it was real and was overruled on
+ * purpose: an eye appears nowhere else in this product's vocabulary, and it
+ * is the shape every other app reaches for. It won on legibility. This is
+ * the one action in that row with a consequence you feel immediately — the
+ * code you were told to guard leaves the screen — and instant recognition
+ * beat in-world consistency for it.
+ *
+ * Lashes, not a pupil: an open eye watching would be the wrong idea in a
+ * product that never surveils anything.
+ */
+export function HiddenMark() {
+  return (
+    <Mark>
+      <path d="M1.8 8.6 C4 11.4 12 11.4 14.2 8.6" />
+      <path d="M4 10.8 L2.9 12.6" />
+      <path d="M8 11.8 V13.8" />
+      <path d="M12 10.8 L13.1 12.6" />
+    </Mark>
+  );
+}
+
+/**
  * North's spoken voice — the coach, speaking.
  *
  * Chosen in review (July 2026) over a hanging quote, a transcript's speaker

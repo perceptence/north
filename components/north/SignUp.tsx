@@ -89,8 +89,21 @@ async function toSquareDataUrl(file: File): Promise<string | undefined> {
  * outbound request the product makes, and it must be allowed to fail without
  * leaving a hole where someone's face goes.
  */
-const STOCK_PORTRAIT = (id: string, px: number) =>
-  `https://i.pravatar.cc/${px}?u=${encodeURIComponent(id)}`;
+const STOCK_PORTRAIT = (id: string) =>
+  `https://i.pravatar.cc/${STOCK_PORTRAIT_PX}?u=${encodeURIComponent(id)}`;
+
+/**
+ * ONE size for every request, and the browser scales it down.
+ *
+ * The first version asked for `size * 2`, which put the render size in the
+ * URL — and the service keys its portrait on the whole URL, not on `u`
+ * alone. So the same account came back as a DIFFERENT PERSON at each size:
+ * one face in the 40px masthead, another in the 64px identity block, on the
+ * same screen. Exactly the "worse than initials" failure the stand-in was
+ * supposed to avoid. 128 covers the largest use at 2× and costs nothing
+ * anywhere else.
+ */
+const STOCK_PORTRAIT_PX = 128;
 
 export function AvatarMark({
   account,
@@ -119,7 +132,7 @@ export function AvatarMark({
    */
   const chain = [
     account.avatar,
-    account.id ? STOCK_PORTRAIT(account.id, size * 2) : undefined,
+    account.id ? STOCK_PORTRAIT(account.id) : undefined,
   ].filter(Boolean) as string[];
   const src = chain[failures];
 
