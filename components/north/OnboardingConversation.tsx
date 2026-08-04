@@ -7,6 +7,7 @@ import {
   ChoiceChip,
   ChoiceChipGroup,
   CoachPresence,
+  RHYTHM,
   RouteMarks,
   Text,
   type RouteMark,
@@ -31,6 +32,7 @@ import {
 import { cn } from "@/lib/cn";
 import { saveProfile } from "@/state/profile-store";
 
+import { ActionLink, AjarMark } from "./ActionGlyphs";
 import { Sky } from "./Sky";
 import { SpokenField } from "./SpokenField";
 import { TURN_GLYPH, TurnGlyph } from "./TurnGlyph";
@@ -98,7 +100,14 @@ export function OnboardingConversation() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [answers, setAnswers] = useState<Answers>({});
-  const [draft, setDraft] = useState("");
+  /**
+   * One draft PER TEXT TURN, not one shared. With a single string, the
+   * concern you typed at the door arrived pre-filled in the name field ten
+   * questions later — the previous answer wearing the next question's hat.
+   * Keyed by turn, each field owns its words and travelling back shows what
+   * you actually said there.
+   */
+  const [drafts, setDrafts] = useState<Partial<Record<TurnId, string>>>({});
   const [picked, setPicked] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [activeId, setActiveId] = useState<TurnId>("openingConcern");
@@ -432,24 +441,68 @@ export function OnboardingConversation() {
               )}
 
               {turn.kind === "text" ? (
-                <SpokenField
-                  value={draft}
-                  onChange={setDraft}
-                  label={turn.question}
-                  autoFocus={index === 0}
-                  onSubmit={() =>
-                    draft.trim() && record(turn, toTextAnswer(draft.trim()))
-                  }
-                  action={
-                    <Button
-                      variant="primary"
-                      disabled={!draft.trim()}
-                      onClick={() => record(turn, toTextAnswer(draft.trim()))}
+                <>
+                  <SpokenField
+                    value={drafts[turn.id] ?? ""}
+                    onChange={(value) =>
+                      setDrafts((current) => ({ ...current, [turn.id]: value }))
+                    }
+                    label={turn.question}
+                    autoFocus={index === 0}
+                    onSubmit={() => {
+                      const said = (drafts[turn.id] ?? "").trim();
+                      if (said) record(turn, toTextAnswer(said));
+                    }}
+                    action={
+                      <Button
+                        variant="primary"
+                        disabled={!(drafts[turn.id] ?? "").trim()}
+                        onClick={() =>
+                          record(
+                            turn,
+                            toTextAnswer((drafts[turn.id] ?? "").trim()),
+                          )
+                        }
+                      >
+                        Continue
+                      </Button>
+                    }
+                  />
+                  {/* The decline, recorded as an EMPTY answer — an answer,
+                      so the conversation moves on; empty, so the profile
+                      holds nothing. Quiet on purpose: it is a real choice,
+                      not the suggested one. */}
+                  {turn.optional && (
+                    <ActionLink
+                      icon={<AjarMark />}
+                      onClick={() => record(turn, toTextAnswer(""))}
                     >
-                      Continue
-                    </Button>
-                  }
-                />
+                      Rather not say
+                    </ActionLink>
+                  )}
+                </>
+              ) : turn.kind === "acknowledge" ? (
+                <div className={cn("flex flex-col items-start", RHYTHM.block)}>
+                  {/* The terms, one per line, in the coach's reading voice —
+                      body size, not voice-md: this is the one place the
+                      coach slows down and speaks carefully, and setting it
+                      at full speaking size would make a contract SHOUT. */}
+                  <div className={cn("flex flex-col", RHYTHM.pair)}>
+                    {turn.statement.map((line) => (
+                      <Text key={line} variant="body" tone="secondary" measure>
+                        {line}
+                      </Text>
+                    ))}
+                  </div>
+                  <Button
+                    variant="primary"
+                    onClick={() =>
+                      record(turn, { value: "acknowledged", confidence: "stated" })
+                    }
+                  >
+                    {turn.action}
+                  </Button>
+                </div>
               ) : (
                 <>
                   <ChoiceChipGroup label={turn.question} block={turn.block}>

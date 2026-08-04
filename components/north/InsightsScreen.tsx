@@ -286,6 +286,13 @@ export function InsightsScreen() {
         <h1 className="type-overline text-text-tertiary">
           {dateline ?? "Insights"}
         </h1>
+        {/* The address, when North knows who it is writing to — a size down
+            from the news, because a salutation is an address, not the news. */}
+        {letter.salutation && (
+          <p className="type-voice-md text-text-secondary">
+            {letter.salutation}
+          </p>
+        )}
         <div className="type-voice-lg text-text-primary">
           <ReadProse read={{ ...emptyActions, segments: letter.opening }} />
         </div>

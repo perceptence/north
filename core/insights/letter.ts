@@ -50,6 +50,13 @@ export interface LetterEntry {
 }
 
 export interface Letter {
+  /**
+   * How a letter begins — with the reader's name, when North has one.
+   * "Tanmay —", or null for the unnamed. Its own field rather than folded
+   * into `opening` so the screen can set it a size down: a salutation is an
+   * address, not the news.
+   */
+  salutation: string | null;
   /** One sentence naming what kind of stretch this was. */
   opening: ReadSegment[];
   /** Everything that moved, most consequential first. */
@@ -95,8 +102,11 @@ export function composeLetter(
 ): Letter {
   const footnote = blindSpots(current);
 
+  const salutation = current.name ? `${current.name.value} —` : null;
+
   if (!previous || !sinceIso) {
     return {
+      salutation,
       opening: [
         text(
           "This is the start of the record. From here North tells you what actually moved — not a feed, a letter.",
@@ -233,6 +243,7 @@ export function composeLetter(
   const quiet = entries.length === 0;
 
   return {
+    salutation,
     opening: quiet
       ? [text("Nothing changed. That’s fine — nothing needed to.")]
       : [

@@ -78,7 +78,7 @@ export const JOURNEYS: readonly Journey[] = [
   {
     id: "onboarding",
     label: "The conversation",
-    note: "Wipes and starts fresh — ten questions, about ninety seconds",
+    note: "Wipes and starts fresh — a dozen turns, about two minutes",
     href: "/demo?at=onboarding",
   },
 ];

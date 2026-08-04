@@ -75,6 +75,11 @@ export const UNADVISED_EARNER: SituationProfile = {
   openingConcern: stated(
     "I have cash piling up and no idea what to do with it.",
   ),
+  // The demo character has a name so the letter's salutation is visible in
+  // the seeded story — and consent, because this profile represents someone
+  // who walked the conversation, which now closes on the terms.
+  name: stated("Avery"),
+  consent: { at: FIXTURE_ASOF },
   financialConfidence: stated("mostly-ok"),
   incomeBand: stated("200k-400k"),
   liquidCents: stated(14_000_000), // $140,000 → 11 months

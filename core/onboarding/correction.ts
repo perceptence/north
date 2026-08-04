@@ -106,6 +106,20 @@ export function applyAnswers(
   if (answers.employerMatch)
     next.employerMatchBps = lift<BasisPoints>("employerMatch");
   if (answers.horizon) next.horizonMonths = lift<Months>("horizon");
+  // "Call me something else" is the sanctioned correction for identity —
+  // the same one-question conversation every other field gets. An empty
+  // name answer withdraws it.
+  if (answers.name) {
+    const said = String(answers.name.value).replace(/\s+/g, " ").trim().slice(0, 40);
+    if (said) {
+      next.name = { value: said, confidence: answers.name.confidence, asOf };
+    } else {
+      delete next.name;
+    }
+  }
+  // Re-acknowledging the terms restamps them — the record is "last agreed",
+  // not "first agreed".
+  if (answers.consent) next.consent = { at: asOf };
 
   if (answers.expensiveDebt) {
     const kind = answers.expensiveDebt.value as string;

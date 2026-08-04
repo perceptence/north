@@ -33,6 +33,8 @@ const CLEAN: Answers = {
   retirement: said(400),
   employerMatch: said(400),
   horizon: said(300),
+  name: toTextAnswer("Avery"),
+  consent: said("acknowledged"),
 };
 
 const WITH_DEBT: Answers = {
@@ -50,10 +52,39 @@ describe("the script", () => {
     }
   });
 
-  test("exactly one free-text turn, and it opens the conversation", () => {
+  test("two free-text turns: the concern opens, the name closes", () => {
+    // Free text is used where the CONTENT matters more than parseability —
+    // and neither is ever parsed. The concern is reflected back verbatim;
+    // the name only ever addresses the letter. Everything financial stays
+    // selected, so the profile stays valid by construction.
     const text = SCRIPT.filter((t) => t.kind === "text");
-    assert.equal(text.length, 1);
+    assert.deepEqual(
+      text.map((t) => t.id),
+      ["openingConcern", "name"],
+    );
     assert.equal(SCRIPT[0].id, "openingConcern");
+    // And the name is the one that may be declined — a required name is a
+    // form's demand, not a conversation's question.
+    assert.deepEqual(
+      text.filter((t) => t.optional).map((t) => t.id),
+      ["name"],
+    );
+  });
+
+  test("the terms are the last thing before the reveal", () => {
+    // Consent closes the ONBOARDING stage — after you have told it
+    // everything, immediately before it tells you anything.
+    const onboarding = SCRIPT.filter((t) => (t.stage ?? "onboarding") === "onboarding");
+    assert.equal(onboarding[onboarding.length - 1].id, "consent");
+    const consent = onboarding[onboarding.length - 1];
+    assert.equal(consent.kind, "acknowledge");
+    if (consent.kind === "acknowledge") {
+      // The three commitments, each present: not-advice, readings, device.
+      const all = consent.statement.join(" ");
+      assert.match(all, /nothing here is investment advice/);
+      assert.match(all, /ranges, not promises/);
+      assert.match(all, /stays on this device/);
+    }
   });
 
   test("every choice turn offers at least two options", () => {

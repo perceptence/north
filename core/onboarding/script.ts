@@ -41,6 +41,8 @@ export type TurnId =
   | "retirement"
   | "employerMatch"
   | "horizon"
+  | "name"
+  | "consent"
   | "goalLabel"
   | "goalTarget"
   | "goalWhen"
@@ -101,6 +103,14 @@ interface TurnBase {
 
 export interface TextTurn extends TurnBase {
   kind: "text";
+  /**
+   * May be declined. The screen offers a quiet skip that records an EMPTY
+   * answer — an answer, so completeness still holds; empty, so the builder
+   * knows nothing was said. Only the name asks for this: a coach accepts
+   * "I'd rather not say", and a required name is a form's demand, not a
+   * conversation's question.
+   */
+  optional?: boolean;
 }
 
 export interface ChoiceTurn extends TurnBase {
@@ -110,7 +120,22 @@ export interface ChoiceTurn extends TurnBase {
   block?: boolean;
 }
 
-export type Turn = TextTurn | ChoiceTurn;
+/**
+ * A statement to take in, not a question to answer — the coach setting its
+ * own terms before the reveal. One action acknowledges it. It is still a
+ * TURN, in the script with the rest, because the coach never breaks
+ * character into system voice: the disclaimer is the coach stating its
+ * boundary, in its own words, where the conversation already lives.
+ */
+export interface AcknowledgeTurn extends TurnBase {
+  kind: "acknowledge";
+  /** The terms, one per line, in the coach's voice. */
+  statement: string[];
+  /** What pressing the single action means. */
+  action: string;
+}
+
+export type Turn = TextTurn | ChoiceTurn | AcknowledgeTurn;
 
 const hasExpensiveDebt = (answers: Answers) =>
   answers.expensiveDebt !== undefined && answers.expensiveDebt.value !== "none";
@@ -250,6 +275,32 @@ export const SCRIPT: readonly Turn[] = [
       { label: "Twenty years or so", value: 240 },
       { label: "Retirement, whenever that is", value: 300 },
     ],
+  },
+  {
+    id: "name",
+    kind: "text",
+    optional: true,
+    question: "Nearly there. What should I call you?",
+    note: "A first name is plenty — it’s only for addressing you.",
+  },
+  {
+    /**
+     * ── THE TERMS, LAST — BEFORE THE REVEAL ──────────────────────────────
+     * The one legal-shaped moment in the product, said in the coach's own
+     * voice at the moment it matters: after you've told it everything and
+     * immediately before it tells you anything. A checkbox in a footer is
+     * where consent goes to be ignored; a coach states its boundary out
+     * loud and waits for a nod.
+     */
+    id: "consent",
+    kind: "acknowledge",
+    question: "Before I show you anything — how I work.",
+    statement: [
+      "I coach; I don’t advise. I’ll name what matters and show my working, but I won’t pick investments, and nothing here is investment advice.",
+      "What I know is what you’ve told me. Every figure is a reading of that — ranges, not promises.",
+      "And everything stays on this device. There’s no account and no server behind me.",
+    ],
+    action: "Understood",
   },
   {
     id: "goalLabel",

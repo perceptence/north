@@ -244,6 +244,19 @@ refusal or recognition error just ends the listening session quietly — the
 coach never announces a failure. Dictation appends to typed text, both are the
 user's words, and both land `stated`.
 
+**The close — introductions, then the terms** *(August 2026)*. The
+conversation ends with the only two non-financial turns it has. "What should
+I call you?" — a first name, freely skippable ("Rather not say" records an
+empty answer), used to address the letter and nothing else. Then the coach
+states its terms in its own voice — coaching not advice, figures are
+readings, everything stays on this device — and waits for "Understood."
+Consent is a turn, not a checkbox in a footer, because the coach never
+breaks character into system voice; and it is LAST because it belongs after
+you have told it everything and immediately before it tells you anything.
+There is deliberately no email, password, or avatar: nothing lives off this
+device, so there is nothing to authenticate against, and collecting
+credentials against localStorage would be security theater.
+
 **Primary actions**
 - **Answer** — select, or speak/type for the opening question.
 - **Revisit** — swipe right on phone and tablet, scroll up on desktop, or the

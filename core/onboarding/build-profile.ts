@@ -82,8 +82,23 @@ export function buildProfile(answers: Answers, now: Date): SituationProfile {
       ]
     : [];
 
+  /**
+   * The name, tidied at the door: trimmed, one line, capped. Skipping the
+   * turn records an EMPTY answer, and empty means ABSENT — the profile
+   * grammar has no blank fields, only unasked questions (profile/types.ts).
+   */
+  const saidName = String(answers.name!.value)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
+
   return {
     openingConcern: at<string>("openingConcern"),
+    ...(saidName
+      ? { name: { value: saidName, confidence: answers.name!.confidence, asOf } }
+      : {}),
+    // The terms, acknowledged — an event with a timestamp, not a Field.
+    consent: { at: asOf },
     financialConfidence: at<FinancialConfidence>("confidence"),
     incomeBand: at<IncomeBand>("incomeBand"),
     liquidCents: at<Cents>("liquid"),

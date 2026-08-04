@@ -254,6 +254,36 @@ export const TURN_GLYPH: Record<TurnId, Glyph> = {
       [[8, 30], [8, 33], [8, 36], [8, 40], [8, 43], [8, 46]],
     ],
   },
+  /* The signature: a hand writing a name — the long stroke, its flourish,
+     the underline sweep, an i-dot, lead-in, ground. It generates, because a
+     signature is a line being written. */
+  name: {
+    name: "Introductions",
+    life: { kind: "grow" },
+    figure: [
+      [[10, 44], [22, 30], [34, 48], [48, 28], [62, 44], [78, 30]],
+      [[78, 30], [82, 26], [86, 24], [88, 26], [86, 30], [82, 32]],
+      [[14, 54], [28, 52], [44, 53], [58, 52], [70, 53], [82, 51]],
+      [[52, 20], [52, 19], [53, 18], [54, 19], [54, 20], [53, 21]],
+      [[6, 50], [7, 48], [8, 47], [9, 46], [9, 45], [10, 44]],
+      [[20, 62], [31, 62], [42, 62], [54, 62], [65, 62], [76, 62]],
+    ],
+  },
+  /* The accord: two arms reaching from either side, clasped at the middle,
+     a small mark above where they agree, the ground under both. It bobs —
+     a handshake held, not pumped. */
+  consent: {
+    name: "The terms",
+    life: { kind: "bob" },
+    figure: [
+      [[8, 40], [18, 36], [28, 33], [36, 31], [42, 30], [46, 30]],
+      [[88, 40], [78, 36], [68, 33], [60, 31], [54, 30], [50, 30]],
+      [[42, 26], [45, 28], [48, 30], [51, 32], [54, 34], [56, 35]],
+      [[54, 26], [51, 28], [48, 30], [45, 32], [42, 34], [40, 35]],
+      [[47, 14], [48, 12], [49, 11], [50, 12], [51, 13], [50, 15]],
+      [[24, 58], [34, 58], [44, 58], [54, 58], [64, 58], [74, 58]],
+    ],
+  },
   /* The goal conversation, same dialect. */
   goalLabel: {
     name: "Destination",
