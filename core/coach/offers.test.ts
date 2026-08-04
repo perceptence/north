@@ -169,3 +169,70 @@ describe("offers reach real answers", () => {
     assert.equal(respond({ kind: "repeat" }, context).asks, undefined);
   });
 });
+
+describe("the door out of an answer", () => {
+  const full = {
+    profile: WITH_GOAL,
+    decisions: [DECISION],
+    options: { limits: ILLUSTRATIVE_LIMITS, now: FIXTURE_NOW },
+    previousProfile: UNADVISED_EARNER,
+    previousAt: FIXTURE_ASOF,
+  };
+  /** Nothing on the ledger, no goal, no past state to diff. */
+  const bareCtx = {
+    profile: UNADVISED_EARNER,
+    decisions: [],
+    options: { limits: ILLUSTRATIVE_LIMITS, now: FIXTURE_NOW },
+    previousProfile: null,
+    previousAt: null,
+  };
+
+  it("sends each answer to the screen it belongs to", () => {
+    assert.equal(respond({ kind: "standing" }, full).goes?.to, "today");
+    assert.equal(respond({ kind: "ladder" }, full).goes?.to, "today");
+    assert.equal(respond({ kind: "decisions" }, full).goes?.to, "decisions");
+    assert.equal(respond({ kind: "goals" }, full).goes?.to, "goals");
+    assert.equal(respond({ kind: "horizon" }, full).goes?.to, "goals");
+    assert.equal(respond({ kind: "changes" }, full).goes?.to, "insights");
+  });
+
+  /**
+   * The same discipline the offers follow. A door onto an empty ledger, or
+   * onto a letter that repeats the sentence you were just given, is worse
+   * than no door — and where the answer's own next step is to TELL North
+   * something, the next action is conversation, not navigation.
+   */
+  it("stays shut when there is nothing behind it", () => {
+    assert.equal(respond({ kind: "decisions" }, bareCtx).goes, undefined);
+    assert.equal(respond({ kind: "goals" }, bareCtx).goes, undefined);
+    assert.equal(respond({ kind: "changes" }, bareCtx).goes, undefined);
+  });
+
+  it("offers none where the conversation is the better answer", () => {
+    // Capabilities is a set of questions, not a place — and the offers below
+    // it already are the ways in.
+    assert.equal(respond({ kind: "capabilities" }, full).goes, undefined);
+    assert.equal(respond({ kind: "unknown" }, full).goes, undefined);
+    // A scenario already carries `opens`, which is a more specific door than
+    // any tab.
+    const scenario = respond({ kind: "scenario", id: "home" }, full);
+    assert.equal(scenario.goes, undefined);
+    assert.equal(scenario.opens, "home");
+  });
+
+  it("labels the two Goals doors differently, because they promise different things", () => {
+    const goals = respond({ kind: "goals" }, full).goes;
+    const horizon = respond({ kind: "horizon" }, full).goes;
+    assert.equal(goals?.to, horizon?.to, "same screen");
+    assert.notEqual(goals?.label, horizon?.label, "different promise");
+  });
+
+  it("names a screen, never a URL — core does not know the routes", () => {
+    for (const kind of ["standing", "decisions", "goals", "changes"] as const) {
+      const door = respond({ kind }, full).goes;
+      assert.ok(door, kind);
+      assert.ok(!door.to.includes("/"), `${kind} leaked a path: ${door.to}`);
+      assert.ok(door.label.length > 0, `${kind} has no label`);
+    }
+  });
+});

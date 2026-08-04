@@ -1,8 +1,15 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RHYTHM, Button, Text, TRANSITION, m } from "@/components/nds";
-import { openingOffers, respond, type CoachReply } from "@/core/coach";
+import {
+  openingOffers,
+  respond,
+  type CoachDoor,
+  type CoachReply,
+  type Destination,
+} from "@/core/coach";
 import { resolveIntent } from "@/lib/route-intent";
 import type { Scenario, ScenarioId } from "@/core/navigator";
 import { spoken, type SpeechRegister } from "@/core/speech";
@@ -11,7 +18,13 @@ import type { SituationProfile } from "@/core/profile/types";
 import type { EvaluateOptions, ReadSegment } from "@/core/waterfall";
 import { cn } from "@/lib/cn";
 import { useSpeechSynthesis } from "@/lib/use-speech-synthesis";
-import { ActionLink, AdjustMark, SpeakMark } from "./ActionGlyphs";
+import {
+  ActionLink,
+  AdjustMark,
+  HorizonMark,
+  LedgerMark,
+  SpeakMark,
+} from "./ActionGlyphs";
 import { ReadProse } from "./ReadProse";
 import { SpokenField } from "./SpokenField";
 
@@ -58,6 +71,42 @@ interface Turn {
   opens?: ScenarioId;
   /** What to ask next, chosen by the engine from what is true of you. */
   asks?: string[];
+  /** The screen this answer belongs to, if there is one worth opening. */
+  goes?: CoachDoor;
+}
+
+/**
+ * Where a destination lives, and what marks it.
+ *
+ * The mapping is HERE and not in `core/`, which has no business knowing this
+ * app's routes — `goes.to` is a name. `?from=navigator` rides along so the
+ * ledger's Back names where you actually came from; Decisions is a drill-down
+ * reached from three screens now, and getting that wrong is how a drill-down
+ * starts lying about the way out.
+ */
+const PATHS: Record<Destination, string> = {
+  today: "/today",
+  decisions: "/decisions?from=navigator",
+  goals: "/goals",
+  insights: "/insights",
+};
+
+const pathFor = (to: Destination) => PATHS[to];
+
+/**
+ * The destination's OWN mark, where the product already has one.
+ *
+ * `LedgerMark` means the record and `HorizonMark` means the horizon field on
+ * Goals everywhere else in the product, so a door wearing them says where it
+ * leads rather than merely that it is a link. Today and Insights have no such
+ * mark, and inventing one for this would be a worse trade than going bare —
+ * doors are imperatives ("Read the letter") where offers are questions ending
+ * in "?", which is what actually tells them apart.
+ */
+function markFor(to: Destination) {
+  if (to === "decisions") return <LedgerMark />;
+  if (to === "goals") return <HorizonMark />;
+  return undefined;
 }
 
 /**
@@ -117,6 +166,7 @@ export function CoachConversation({
   previousAt = null,
   onOpenScenario,
 }: CoachConversationProps) {
+  const router = useRouter();
   const [draft, setDraft] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   /**
@@ -210,6 +260,7 @@ export function CoachConversation({
           segments: reply.segments,
           opens: reply.opens,
           asks: reply.asks,
+          goes: reply.goes,
         },
       ]);
       if (aloud) say(reply.segments);
@@ -261,6 +312,27 @@ export function CoachConversation({
                       onClick={() => onOpenScenario(turn.opens!)}
                     >
                       Try the numbers yourself
+                    </ActionLink>
+                  )}
+
+                  {/* ── ONE WAY ONWARD ──────────────────────────────────
+                      The conversation gives the verdict; the screens give
+                      you something to do about it. Until this, only a
+                      SCENARIO answer said so — "how am I doing?" returned
+                      Today's exact read with nothing to act on, and "what
+                      have I decided?" returned the ledger sentence with no
+                      ledger.
+
+                      `goes.to` is a NAME, not a URL. `core/` does not know
+                      this app's routes; the mapping lives here, which is
+                      also where `?from=` belongs so Decisions can name the
+                      way back. */}
+                  {turn.goes && (
+                    <ActionLink
+                      icon={markFor(turn.goes.to)}
+                      onClick={() => router.push(pathFor(turn.goes!.to))}
+                    >
+                      {turn.goes.label}
                     </ActionLink>
                   )}
 

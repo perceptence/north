@@ -46,6 +46,38 @@ export type Intent =
 
 export type IntentKind = Intent["kind"];
 
+/**
+ * A screen an answer belongs to.
+ *
+ * A NAME, never a URL: `core/` does not know what this app's routes are, and
+ * the day one moves is not a day the engine should have an opinion about. The
+ * caller maps these four to paths.
+ */
+export type Destination = "today" | "decisions" | "goals" | "insights";
+
+/**
+ * The way onward from an answer.
+ *
+ * ── WHY AN ANSWER NEEDS A DOOR ────────────────────────────────────────────
+ * The conversation gives the verdict and the screens give you something to do
+ * about it, and until now only a SCENARIO answer said so. Ask "how am I
+ * doing?" and North returned Today's exact read — same verdict, same figures —
+ * with nothing to act on. "What have I decided?" returned the ledger sentence
+ * with no ledger. "What's changed?" returned the letter with no letter. That
+ * is a text box, and the line docs/STRATEGY.md §9 draws between a coach and
+ * "every GPT wrapper" is on the other side of it.
+ *
+ * The label rides along rather than being derived from `to`, because what you
+ * will find depends on what was just said: `horizon` and `goals` both land on
+ * Goals and should not promise the same thing. It is copy in the coach's
+ * voice, which is what `core/` writes anyway.
+ */
+export interface CoachDoor {
+  to: Destination;
+  /** In the coach's voice, naming what is through it. */
+  label: string;
+}
+
 /** One thing the coach says back. */
 export interface CoachReply {
   /** The answer, as engine segments — rendered AND spoken from one source. */
@@ -67,4 +99,12 @@ export interface CoachReply {
    * fixed.
    */
   asks?: string[];
+  /**
+   * The screen this answer belongs to, offered as one way onward.
+   *
+   * Absent where there is nothing better to offer than the conversation
+   * itself — `capabilities` is a set of questions, not a place, and a scenario
+   * answer already has `opens`, which is a more specific door than any tab.
+   */
+  goes?: CoachDoor;
 }

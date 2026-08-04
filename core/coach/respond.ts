@@ -9,7 +9,7 @@ import { text } from "../prose.ts";
 import { evaluate } from "../waterfall/evaluate.ts";
 import type { EvaluateOptions, ReadSegment } from "../waterfall/types.ts";
 import { offers } from "./offers.ts";
-import type { CoachReply, Intent } from "./types.ts";
+import type { CoachDoor, CoachReply, Intent } from "./types.ts";
 
 /**
  * What the coach says back.
@@ -60,6 +60,29 @@ const CAPABILITIES: ReadSegment[] = [
       "debt first.",
   ),
 ];
+
+/**
+ * The doors, named once.
+ *
+ * Two land on Today and two on Goals, with different labels — what you will
+ * find depends on what was just said, so `horizon` does not promise the same
+ * thing `goals` does even though they share a screen.
+ *
+ * A door is ABSENT wherever the destination would be empty, or wherever the
+ * answer's own next step is to keep talking. "You haven't named a destination
+ * yet — tell me what you're saving for" asks the user to SAY something; a
+ * link to an empty Goals screen would be answering that with navigation. Same
+ * discipline as the offers in `./offers.ts`: never point at "nothing yet".
+ */
+const TO_TODAY: CoachDoor = { to: "today", label: "See it on Today" };
+const TO_LADDER: CoachDoor = {
+  to: "today",
+  label: "See where you stand on Today",
+};
+const TO_RECORD: CoachDoor = { to: "decisions", label: "Open your record" };
+const TO_GOALS: CoachDoor = { to: "goals", label: "See them on Goals" };
+const TO_HORIZON: CoachDoor = { to: "goals", label: "See the full horizon" };
+const TO_LETTER: CoachDoor = { to: "insights", label: "Read the letter" };
 
 /**
  * The honest refusal.
@@ -117,7 +140,7 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
     case "standing": {
       const evaluation = evaluate(profile, options);
       if (evaluation.current) {
-        return { segments: evaluation.current.read.segments };
+        return { segments: evaluation.current.read.segments, goes: TO_TODAY };
       }
       // Every rung settled. The calm answer is a real answer, not an empty one.
       return {
@@ -127,6 +150,7 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
               "is handled, and that is rarer than it sounds.",
           ),
         ],
+        goes: TO_TODAY,
       };
     }
 
@@ -138,6 +162,7 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
           segments: [
             text("Every rung is behind you. I’ll speak up if that changes."),
           ],
+          goes: TO_LADDER,
         };
       }
       const total = evaluation.ladder.length;
@@ -154,6 +179,7 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
               "gone quiet.",
           ),
         ],
+        goes: TO_LADDER,
       };
     }
 
@@ -169,7 +195,7 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
           ],
         };
       }
-      return { segments: summary.read };
+      return { segments: summary.read, goes: TO_RECORD };
     }
 
     case "goals": {
@@ -191,7 +217,7 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
         if (segments.length > 0) segments.push(text(" "));
         segments.push(...line.pacing);
       }
-      return { segments };
+      return { segments, goes: TO_GOALS };
     }
 
     case "horizon": {
@@ -206,7 +232,7 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
           ],
         };
       }
-      return { segments: scene.headline };
+      return { segments: scene.headline, goes: TO_HORIZON };
     }
 
     case "capabilities":
@@ -222,7 +248,15 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
       );
       // A quiet stretch is a real answer, and the letter already knows how to
       // say so without scolding — so it is passed through, not replaced.
-      return { segments: letterSegments(letter) };
+      //
+      // The door only opens onto a letter that exists. On a first run there
+      // is no previous state, so Insights would show the same "this is the
+      // start of the record" sentence the answer just gave — a door to a
+      // repeat of itself is worse than none.
+      return {
+        segments: letterSegments(letter),
+        goes: previousProfile ? TO_LETTER : undefined,
+      };
     }
 
     case "scenario": {

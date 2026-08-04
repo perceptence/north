@@ -10,4 +10,10 @@ export { outOfScope, routeIntent } from "./intent.ts";
 export { parseIntent } from "./parse-intent.ts";
 export { openingOffers, respond } from "./respond.ts";
 export type { CoachContext } from "./respond.ts";
-export type { CoachReply, Intent, IntentKind } from "./types.ts";
+export type {
+  CoachDoor,
+  CoachReply,
+  Destination,
+  Intent,
+  IntentKind,
+} from "./types.ts";

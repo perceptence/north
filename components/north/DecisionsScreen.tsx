@@ -74,12 +74,16 @@ const emptyActions = { action: { commit: "", defer: "" } };
 const ORIGIN = {
   today: { label: "Today", path: "/today" },
   insights: { label: "Insights", path: "/insights" },
+  // The coach can now hand you the ledger straight out of an answer, so
+  // Navigator is a third way in — and Back has to name where you actually
+  // came from, or the drill-down lies about the way out.
+  navigator: { label: "Navigator", path: "/navigator" },
 } as const;
 
 type OriginKey = keyof typeof ORIGIN;
 
 function isOriginKey(value: string | null): value is OriginKey {
-  return value === "today" || value === "insights";
+  return value !== null && value in ORIGIN;
 }
 
 export function DecisionsScreen() {
