@@ -292,7 +292,8 @@ export function DeviceFrame({
                 width,
                 height,
                 borderRadius: 12,
-                background: "var(--surface-page)",
+                // Deep, not paper — see the note on the phone's glass below.
+                background: "var(--surface-deep)",
               }}
             >
               <StatusBar device="tablet" />
@@ -364,7 +365,16 @@ export function DeviceFrame({
               width,
               height,
               borderRadius: 56,
-              background: "var(--surface-page)",
+              /* Deep, not paper. This is the glass BEFORE the app paints, so
+                 the only thing it can ever contribute is a fringe — the glass
+                 is `overflow:hidden` with a large radius, and /preview scales
+                 whole bodies by a fractional factor, so that rounded clip
+                 antialiases against whatever lies under it. Paper put a LIGHT
+                 hairline along the TOP edge, where the app opens on the
+                 deepest sky and a pale line is unmissable. Deep matches the
+                 sky at the top and all but disappears at the bottom against
+                 the #060607 bezel, so it loses at neither end. */
+              background: "var(--surface-deep)",
             }}
           >
             <StatusBar device="phone" />

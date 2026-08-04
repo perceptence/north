@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ChromeApron } from "@/components/north/ChromeApron";
 import { Masthead } from "@/components/north/Masthead";
 import { ProductNav } from "@/components/north/ProductNav";
 import { VoiceLauncher } from "@/components/north/VoiceLauncher";
@@ -51,27 +52,40 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* The dissolve. The sky's gradient ends in opaque paper, so content
-            scrolling under it was CLIPPED mid-glyph at the boundary — half a
-            line of serif hugging the wordmark's heel, which is what reads as
-            content peeking through. A short paper-to-transparent fade lets
-            text disappear instead of being cut.
+        {/* The apron — the chrome's own paper, below the sky.
+            OPAQUE, for the whole of its height.
 
-            Its height matches the content's own top padding, so the fade sits
-            entirely in the gap above the first line and never washes anything
+            ── WHY IT IS NOT A FADE ──────────────────────────────────────────
+            It used to ramp paper → transparent, on the reasoning that a hard
+            boundary CLIPPED content mid-glyph and a fade would let text
+            "disappear instead of being cut". The reasoning was sound and the
+            result was worse: a translucent band is a window. Scrolled text
+            landed in the transparent half and sat there, legible, in the
+            strip directly under the device's status bar — a whole line of the
+            read ghosting above the masthead. Proved with a colour test: with
+            the band tinted red, "You're holding 11 months of outgoings" was
+            plainly readable through it.
+
+            There is no third option here, and it is worth writing down so
+            nobody re-derives the fade. This page scrolls the WINDOW, so a
+            viewport-fixed veil is the only thing that can sit at a constant
+            y — and a veil is either opaque (content is cut at its edge) or
+            translucent (content shows through it). Fading the CONTENT instead
+            does not work either: a `mask-image` on the scrolling column
+            travels with the column, so the soft edge would ride down the page
+            with the text rather than staying under the masthead. A fade
+            demands an app-shell with its own scroll container, which is a
+            different architecture and not one this page has.
+
+            So: opaque, and content is cut at the apron's edge. That is what
+            every app on the device does, and a clean cut on paper reads as
+            text passing under the chrome — which is exactly what it is. The
+            ghost read as a rendering fault, which is worse than an edge.
+
+            Its height still matches the content's own top padding, so at rest
+            the cut sits in the gap above the first line and touches nothing
             you are meant to read. */}
-        <div
-          aria-hidden="true"
-          className="h-7 md:h-9"
-          style={{
-            // Solid paper for the first half, then out. A straight
-            // paper→transparent ramp still let text ghost through its tail;
-            // holding the colour first means the line is genuinely gone
-            // before the gradient starts letting anything through.
-            background:
-              "linear-gradient(to bottom, var(--surface-page) 0%, var(--surface-page) 52%, transparent 100%)",
-          }}
-        />
+        <ChromeApron />
       </div>
 
       {/* Padding on the OUTER element, the measure inside it — the same
@@ -101,8 +115,11 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
               nothing on desktop, without a profile, or where the browser
               cannot both hear and speak. */}
           <VoiceLauncher />
-          {/* Matches the dissolve's height exactly, so the fade lives entirely
-              above the first line and never washes anything readable. */}
+          {/* Matches the APRON's height exactly. That is the invariant the
+              whole shell rests on: chrome = sky + apron, spacer = sky +
+              this, so the first line lands precisely at the apron's edge and
+              the cut has nothing to cut at rest. Change one of these three
+              and you must change the other two. */}
           <div className="pt-7 md:pt-9">{children}</div>
         </div>
       </div>

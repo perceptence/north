@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { useScrolled } from "@/lib/use-scrolled";
 
 /**
  * Minimal by design. MVP has no tab bar — two destinations of unequal weight
@@ -18,14 +18,8 @@ export interface AppBarProps {
 }
 
 export function AppBar({ title, onBack, className }: AppBarProps) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  // Shared with the product shell's apron — see `useScrolled`.
+  const scrolled = useScrolled();
 
   return (
     <header
