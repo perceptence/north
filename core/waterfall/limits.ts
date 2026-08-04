@@ -38,3 +38,41 @@ export const ILLUSTRATIVE_LIMITS: ContributionLimits = {
 export function totalTaxAdvantagedCents(limits: ContributionLimits): Cents {
   return limits.electiveDeferralCents + limits.iraCents;
 }
+
+/**
+ * Days left to use this year's room.
+ *
+ * ── WHY THE ENGINE GETS TO SAY THIS ───────────────────────────────────────
+ * The tax-advantaged read already ends *"and it does not roll over"* — a true
+ * statement with no consequence attached. The room expires on a date North
+ * knows, from a `now` it is already given, so leaving the sentence abstract
+ * was leaving arithmetic on the table. It is not a new fact; it is the same
+ * fact, dated.
+ *
+ * Counted to the end of the LIMITS' year rather than the calendar year the
+ * clock happens to be in. The room belongs to a tax year, and when the demo
+ * runs in a year the fixtures do not describe, the honest answer is that
+ * there are no days left in a year that is over — not a countdown against
+ * limits for some other year.
+ */
+export function daysLeftInTaxYear(
+  limits: ContributionLimits,
+  now: Date,
+): number {
+  // Midnight UTC on 1 January of the following year — the instant the room
+  // is gone. UTC throughout: the engine is deterministic and must not shift
+  // its answer with the reader's timezone.
+  const expiry = Date.UTC(limits.year + 1, 0, 1);
+  const remaining = Math.ceil((expiry - now.getTime()) / 86_400_000);
+  return Math.max(0, remaining);
+}
+
+/**
+ * Whether the deadline is close enough to be worth saying out loud.
+ *
+ * "320 days to use it" in January is not urgency, it is padding — and this
+ * product spends its words carefully. A quarter is the point at which "this
+ * expires" stops being a fact about the calendar and starts being a reason to
+ * act this month.
+ */
+export const DEADLINE_SPEAKS_WITHIN_DAYS = 92;

@@ -489,3 +489,43 @@ describe("every interrogable figure has its working", () => {
     });
   }
 });
+
+/**
+ * ── THE ROOM EXPIRES ON A DATE THE ENGINE KNOWS ───────────────────────────
+ * The tax-advantaged read has always ended "it doesn't roll over" — a true
+ * statement with no consequence attached. These assert the consequence: the
+ * same fact, dated, and only while the date is a reason to act.
+ */
+describe("the tax-advantaged deadline", () => {
+  const unusedRoom = profile({ retirementBps: stated(200) });
+  const said = (now: Date) =>
+    rungById("tax-advantaged")
+      .read({
+        profile: unusedRoom,
+        facts: derive(unusedRoom, { limits: ILLUSTRATIVE_LIMITS, now }),
+        limits: ILLUSTRATIVE_LIMITS,
+        now,
+      })
+      .segments.map((s) => (s.kind === "text" ? s.value : String(s.value)))
+      .join("");
+
+  test("stays silent early in the year, when it would be padding", () => {
+    assert.doesNotMatch(said(new Date("2026-02-01T00:00:00.000Z")), /left to use it/);
+  });
+
+  test("speaks once the deadline is a reason to act", () => {
+    const late = said(new Date("2026-11-15T00:00:00.000Z"));
+    assert.match(late, /left to use it/);
+    // 2026-11-15 → 47 days to 1 January.
+    assert.match(late, /47/);
+  });
+
+  test("says nothing once the year it describes is over", () => {
+    assert.doesNotMatch(said(new Date("2027-03-01T00:00:00.000Z")), /left to use it/);
+  });
+
+  test("the sentence it decorates is unchanged — the read still names the gap", () => {
+    const late = said(new Date("2026-11-15T00:00:00.000Z"));
+    assert.match(late, /tax-advantaged room/);
+  });
+});

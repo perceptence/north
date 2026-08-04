@@ -2,6 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import { pickBaseline } from "@/core/insights";
+import { parseProfile } from "@/core/profile/parse";
 import type { SituationProfile } from "@/core/profile/types";
 
 /**
@@ -47,6 +48,23 @@ function toV3<T extends LegacyProfile>(profile: T): SituationProfile {
   delete rest.goal;
   return { ...(rest as SituationProfile), goals: [legacy] };
 }
+
+/**
+ * The profile fields North re-asks about, and therefore the only ones a
+ * confirmation may re-stamp. Narrower than `keyof SituationProfile` on
+ * purpose: `goals` is a list and `openingConcern` is prose, and neither is a
+ * figure that goes stale.
+ */
+export type FreshnessKey =
+  | "liquidCents"
+  | "monthlyOutCents"
+  | "incomeBand"
+  | "retirementBps"
+  | "employerMatchBps"
+  | "obligations"
+  | "dependents"
+  | "horizonMonths"
+  | "financialConfidence";
 
 export interface ProfileSnapshot {
   /** When this state was superseded. */
@@ -100,31 +118,58 @@ function load(): void {
       profile?: SituationProfile;
     };
 
+    /**
+     * VALIDATED, not cast.
+     *
+     * The version was checked and the shape was not, so a record carrying the
+     * right version and a wrong field went straight into the Waterfall — where
+     * a missing `liquidCents` is not a crash but arithmetic on `undefined`,
+     * and a coach stating a number with total confidence that means nothing.
+     * `parseProfile` refuses the record whole; a `null` here falls through to
+     * the same clear-and-start-clean path a corrupt payload already took,
+     * which routes to onboarding.
+     */
     if (parsed.version === SCHEMA_VERSION && parsed.profile) {
-      profileSnapshot = parsed.profile;
-      historySnapshot = parsed.history ?? [];
-      return;
+      const valid = parseProfile(parsed.profile);
+      if (valid) {
+        profileSnapshot = valid;
+        // History feeds the letter's diff, never the engine, so one bad
+        // snapshot costs a paragraph rather than a read — drop the bad ones
+        // and keep the record.
+        historySnapshot = (parsed.history ?? []).filter((s) =>
+          Boolean(parseProfile(s.profile)),
+        );
+        return;
+      }
     }
 
     // v2 → v3: the single goal becomes the goals list, in the profile and in
     // every snapshot the letter diffs against.
     if (parsed.version === 2 && parsed.profile) {
-      profileSnapshot = toV3(parsed.profile as LegacyProfile);
-      historySnapshot = (parsed.history ?? []).map((snapshot) => ({
-        ...snapshot,
-        profile: toV3(snapshot.profile as LegacyProfile),
-      }));
-      persist();
-      return;
+      const migrated = parseProfile(toV3(parsed.profile as LegacyProfile));
+      if (migrated) {
+        profileSnapshot = migrated;
+        historySnapshot = (parsed.history ?? [])
+          .map((snapshot) => ({
+            ...snapshot,
+            profile: toV3(snapshot.profile as LegacyProfile),
+          }))
+          .filter((s) => Boolean(parseProfile(s.profile)));
+        persist();
+        return;
+      }
     }
 
     // v1 → v3: adopt the profile, start the history. A user's answers are
     // never the price of a schema bump.
     if (parsed.version === 1 && parsed.profile) {
-      profileSnapshot = toV3(parsed.profile as LegacyProfile);
-      historySnapshot = [];
-      persist();
-      return;
+      const migrated = parseProfile(toV3(parsed.profile as LegacyProfile));
+      if (migrated) {
+        profileSnapshot = migrated;
+        historySnapshot = [];
+        persist();
+        return;
+      }
     }
 
     window.localStorage.removeItem(STORAGE_KEY);
@@ -243,6 +288,40 @@ export function saveProfile(profile: SituationProfile): void {
   }
 
   profileSnapshot = profile;
+  persist();
+  emit();
+}
+
+/**
+ * "Still right" — re-stamps a field's `asOf` without touching its value.
+ *
+ * ── WHY CONFIRMING IS A REAL ANSWER ───────────────────────────────────────
+ * When North re-asks a stale figure (see `core/profile/freshness.ts`), the
+ * usual answer is that nothing has changed. Forcing that through the
+ * correction turn would make the person re-enter a number they already gave,
+ * to tell North it was right — which is the form this product refuses, and
+ * which would train people to ignore the question.
+ *
+ * `Field.asOf` has always been documented as "the date the value was learned
+ * OR LAST CONFIRMED", so this is the second half of a meaning the type
+ * already carried and nothing ever wrote. Confirming genuinely changes what
+ * North knows: not the figure, but how current it is.
+ *
+ * No history snapshot, deliberately. The letter diffs states to say what
+ * CHANGED, and a confirmation changes nothing — recording one would put a
+ * beat in the story where nothing happened.
+ */
+export function confirmField(key: FreshnessKey): void {
+  load();
+  if (!profileSnapshot) return;
+
+  const field = profileSnapshot[key];
+  if (!field) return;
+
+  profileSnapshot = {
+    ...profileSnapshot,
+    [key]: { ...field, asOf: new Date().toISOString() },
+  };
   persist();
   emit();
 }

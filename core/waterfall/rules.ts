@@ -3,7 +3,8 @@ import { shortfall } from "../goals/plan.ts";
 import type { Cents } from "../money.ts";
 import { fig, from, text } from "../prose.ts";
 import { THRESHOLDS } from "./derive.ts";
-import type { Read, Rung, RungContext } from "./types.ts";
+import { DEADLINE_SPEAKS_WITHIN_DAYS, daysLeftInTaxYear } from "./limits.ts";
+import type { Read, ReadSegment, Rung, RungContext } from "./types.ts";
 
 /**
  * The seven rungs, in order.
@@ -150,7 +151,29 @@ const taxAdvantaged: Rung = {
 
   satisfied: ({ facts }) => facts.unusedTaxAdvantaged.value <= 0,
 
-  read: ({ profile, facts, limits }): Read => {
+  read: ({ profile, facts, limits, now }): Read => {
+    /**
+     * The room expires on a date the engine already knows, so the sentence
+     * that says "it doesn't roll over" can say WHEN. Only inside the window
+     * where that is a reason to act rather than a fact about the calendar —
+     * see `DEADLINE_SPEAKS_WITHIN_DAYS`.
+     */
+    const daysLeft = daysLeftInTaxYear(limits, now);
+    const deadline: ReadSegment[] =
+      daysLeft > 0 && daysLeft <= DEADLINE_SPEAKS_WITHIN_DAYS
+        ? [
+            text(" You have "),
+            // `count`, with the unit in the prose. `duration` formats months
+            // and there is no days format — widening `FigureFormat` for one
+            // call site would put a unit in the type system that nothing else
+            // needs.
+            fig(daysLeft, "count", "inferred", {
+              label: "days left to use it",
+            }),
+            text(" days left to use it."),
+          ]
+        : [];
+
     const space = from(facts.unusedTaxAdvantaged, "currency", {
       label: `of unused tax-advantaged room for ${limits.year}`,
       interrogable: true,
@@ -180,6 +203,7 @@ const taxAdvantaged: Rung = {
           text(" is sitting still while you have "),
           space,
           text(" of unused tax-advantaged room this year."),
+          ...deadline,
         ],
         action: {
           commit: "Move the excess into tax-advantaged space",
@@ -195,6 +219,7 @@ const taxAdvantaged: Rung = {
         text(
           " of tax-advantaged room going unused this year. It doesn’t roll over.",
         ),
+        ...deadline,
       ],
       action: { commit: "Use the room before it expires", defer: "Not now" },
     };

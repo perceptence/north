@@ -9,10 +9,13 @@ export { evaluate, readToPlainText } from "./evaluate.ts";
 export { costliest, derive, THRESHOLDS } from "./derive.ts";
 export { RUNGS, WATERFALL_LENGTH, rungById } from "./rules.ts";
 export {
+  DEADLINE_SPEAKS_WITHIN_DAYS,
   ILLUSTRATIVE_LIMITS,
+  daysLeftInTaxYear,
   totalTaxAdvantagedCents,
   type ContributionLimits,
 } from "./limits.ts";
+export { monthlyCostOfDelay } from "./delay.ts";
 export type {
   DerivedFacts,
   Evaluation,

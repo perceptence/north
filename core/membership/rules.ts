@@ -95,6 +95,12 @@ export const TIER_LINES: readonly TierLine[] = [
   { what: "Showing the working behind every figure", free: true, plus: true },
   { what: "Asking anything, in writing", free: true, plus: true },
   { what: "Correcting what North knows, any time", free: true, plus: true },
+  /**
+   * The other half of that loop, and free for the same reason: a coach
+   * working from a figure it has never re-checked is giving worse judgment,
+   * not less of it. Gating freshness would gate accuracy.
+   */
+  { what: "North re-asking when a figure goes stale", free: true, plus: true },
   {
     what: "What-ifs you can drag",
     free: "Debt and contributions",
@@ -107,6 +113,19 @@ export const TIER_LINES: readonly TierLine[] = [
   },
   { what: "Talking to North out loud", free: "—", plus: "The whole conversation" },
   { what: "The story of how you got here", free: "—", plus: "Replayed, beat by beat" },
+  /**
+   * Listed here because it is gated, and gating anything unlisted is how a
+   * paywall starts lying. It sits deliberately close to the line NEVER_GATED
+   * draws: the read still names the gap and the action, free — this prices
+   * the WAIT, which is neither the one thing that matters nor what to do
+   * about it. If that ever stops being true, this line moves to `free: true`
+   * rather than the sentence being softened.
+   */
+  {
+    what: "What waiting costs",
+    free: "—",
+    plus: "What another month of not acting adds up to",
+  },
 ];
 
 /**

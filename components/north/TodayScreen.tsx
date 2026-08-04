@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
+  Figure,
   HorizonBand,
   HorizonField,
   RHYTHM,
@@ -23,9 +24,15 @@ import {
   settledRungIds,
 } from "@/core/decisions";
 import { CORRECTABLE } from "@/core/onboarding/correction";
+import { agePhrase, staleAnswer } from "@/core/profile/freshness";
+import type { TurnId } from "@/core/onboarding/script";
 import type { Decision } from "@/core/decisions/types";
 import { project } from "@/core/projection";
-import { evaluate, ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
+import {
+  evaluate,
+  ILLUSTRATIVE_LIMITS,
+  monthlyCostOfDelay,
+} from "@/core/waterfall";
 import type { Read } from "@/core/waterfall";
 import {
   appendDecision,
@@ -36,15 +43,44 @@ import {
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
+  confirmField,
+  type FreshnessKey,
   isPersistent as profilePersists,
   useProfile,
   useProfileHistory,
 } from "@/state/profile-store";
+import { useMembership } from "@/state/membership-store";
 import { CorrectionTurn } from "./CorrectionTurn";
-import { ActionLink, HorizonMark, LedgerMark } from "./ActionGlyphs";
+import {
+  ActionLink,
+  HorizonMark,
+  LedgerMark,
+  SalutationMark,
+} from "./ActionGlyphs";
 import { DerivationSheet } from "./DerivationSheet";
 import { LadderPanel } from "./LadderPanel";
 import { ReadProse } from "./ReadProse";
+
+/**
+ * The profile field each re-askable turn confirms.
+ *
+ * `confirmField` re-stamps a field; `staleAnswer` names a TURN. This is the
+ * one hop between them, and it is deliberately explicit rather than derived:
+ * `core/profile/freshness.ts` already keeps a turn→field map for READING
+ * `asOf`, and a second map that WRITES is a different responsibility living
+ * on the edge, where the store is. A turn missing here simply cannot be
+ * confirmed — the reader still gets "Change it", which is the safe direction.
+ */
+const FRESHNESS_KEY: Partial<Record<TurnId, FreshnessKey>> = {
+  liquid: "liquidCents",
+  monthlyOut: "monthlyOutCents",
+  incomeBand: "incomeBand",
+  retirement: "retirementBps",
+  employerMatch: "employerMatchBps",
+  expensiveDebt: "obligations",
+  dependents: "dependents",
+  horizon: "horizonMonths",
+};
 
 /**
  * Today — the product.
@@ -90,6 +126,7 @@ export function TodayScreen() {
   // `now` is created once and injected. The engine never reads a clock.
   const [now] = useState(() => new Date());
   const hydrated = useHydrated();
+  const membership = useMembership();
   const [sheet, setSheet] = useState<null | "derivation" | "ladder">(null);
   /**
    * WHICH figure was tapped.
@@ -127,6 +164,12 @@ export function TodayScreen() {
    * open one on mount.
    */
   const [asking, setAsking] = useState(false);
+  /**
+   * A staleness question the reader chose to answer. Separate from `asking`
+   * because that one is DERIVED from the ledger — this is the only question
+   * on Today that North raised on its own clock, so it needs its own latch.
+   */
+  const [correcting, setCorrecting] = useState<TurnId | null>(null);
 
   // Reaching Today without a profile is not an error — it is a route
   // (docs/UX-ARCHITECTURE.md §9, ER5).
@@ -152,6 +195,28 @@ export function TodayScreen() {
         rungId,
         summary: read.action.commit,
         outcome: "deferred",
+        amountCents: amountFrom(read),
+      });
+    },
+    [],
+  );
+
+  /**
+   * Acted on already, outside North.
+   *
+   * Recorded `held` rather than `open`, so it never earns a callback — there
+   * is nothing to wait three days to ask about. What it DOES earn is the
+   * catch-up: `held` with a profile older than the decision is exactly the
+   * condition `catchUpDue` watches for, so the next thing North does is ask
+   * what changed. The person told North something true and North's picture
+   * updates, which is the whole loop in one tap.
+   */
+  const alreadyDone = useCallback(
+    (rungId: Parameters<typeof appendDecision>[0]["rungId"], read: Read) => {
+      appendDecision({
+        rungId,
+        summary: read.action.commit,
+        outcome: "held",
         amountCents: amountFrom(read),
       });
     },
@@ -208,7 +273,41 @@ export function TodayScreen() {
    * which on the demo path is not even reachable.
    */
   const owed = catchUpDue(profile, decisions);
+
+  /**
+   * The answer North's own clock says is due, and only when nothing louder is
+   * happening. Precedence is explicit: a callback and a catch-up are both
+   * questions the USER's actions raised, and this one is North's own
+   * housekeeping — it must never push in front of either, or Today becomes a
+   * queue of questions instead of one thing that matters.
+   */
+  const stale = pending || owed ? null : staleAnswer(profile, now);
+  const staleLabel = stale
+    ? (CORRECTABLE.find((c) => c.turnId === stale.turnId)?.label ?? "")
+    : "";
+
+  /**
+   * What another month of waiting costs — Plus, and listed as such in
+   * `TIER_LINES` so the tier sheet cannot misdescribe it. The READ is
+   * untouched and free: it still names the gap and the action. Most rungs
+   * return null here honestly.
+   */
+  const delayCost =
+    membership.tier === "plus" && evaluation.current
+      ? monthlyCostOfDelay(evaluation.current.rung.id, profile, evaluation.facts)
+      : null;
   const catchUp = asking ? owed : null;
+  /**
+   * One sheet, two sources. The catch-up is owed because you acted; the
+   * staleness question is North's own. They can never both be open — the
+   * staleness line does not render while a catch-up is pending — so a single
+   * turn serves both and there is no second overlay to keep in agreement.
+   */
+  const question = catchUp ?? correcting;
+  const closeQuestion = () => {
+    setAsking(false);
+    setCorrecting(null);
+  };
 
   // The situation as it stood the day this was decided, run back through the
   // engine. Null when that day carries nothing worth recalling — the question
@@ -392,6 +491,48 @@ export function TodayScreen() {
                 label={evaluation.current.rung.label}
                 onInterrogate={() => setSheet("ladder")}
               />
+
+              {/* ── NORTH'S OWN CLOCK ──────────────────────────────────────
+                  The half of the loop that needed no prompting. `callbackDue`
+                  and `catchUpDue` both wait for the USER to act first, so
+                  someone who never commits to anything was never spoken to
+                  about their picture again — North worked forever from ten
+                  answers given once, with total confidence.
+
+                  A LINE, not an interrupt. The callback replaces the read
+                  because a commitment is owed an answer; this is
+                  housekeeping, and housekeeping does not get to displace the
+                  one thing that matters. It also never appears alongside
+                  either of the other two — see the precedence above.
+
+                  Two answers, and "Still right" is the real one. Most of the
+                  time nothing has changed, and forcing that through the
+                  correction turn would make someone re-type a number to tell
+                  North it was already correct. Confirming re-stamps `asOf`,
+                  which is what that field has always meant. */}
+              {stale && (
+                <div className={cn("flex flex-col items-start", RHYTHM.pair)}>
+                  <Text variant="meta" tone="tertiary">
+                    {staleLabel} is what you told me {agePhrase(stale.ageDays)}.
+                  </Text>
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <ActionLink
+                      onClick={() => {
+                        const key = FRESHNESS_KEY[stale.turnId];
+                        if (key) confirmField(key);
+                      }}
+                    >
+                      Still right
+                    </ActionLink>
+                    <ActionLink
+                      icon={<SalutationMark />}
+                      onClick={() => setCorrecting(stale.turnId)}
+                    >
+                      Change it
+                    </ActionLink>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* TWO CHOICES, not a button and a footnote. `quiet` gave the
@@ -447,25 +588,74 @@ export function TodayScreen() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  variant="primary"
-                  size="lg"
+              <div className={cn("flex flex-col items-start", RHYTHM.heading)}>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() =>
+                      commit(evaluation.current!.rung.id, evaluation.current!.read)
+                    }
+                  >
+                    {evaluation.current.read.action.commit}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onClick={() =>
+                      defer(evaluation.current!.rung.id, evaluation.current!.read)
+                    }
+                  >
+                    {evaluation.current.read.action.defer}
+                  </Button>
+                </div>
+
+                {/* ── WHAT WAITING COSTS ─────────────────────────────────
+                    Beside the decision, never inside the read: the read
+                    names the gap and the action and stays free, and this
+                    prices the wait. Most rungs honestly have no figure —
+                    `monthlyCostOfDelay` returns null rather than guessing —
+                    and it renders nothing rather than a zero.
+
+                    Stated once, as a rate. It never counts up and never
+                    totals what you did not do: "Not now" is a first-class
+                    answer here, and a running tally of ignored months would
+                    be the scorecard this product refuses. */}
+                {delayCost !== null && (
+                  <Text variant="meta" tone="tertiary">
+                    Waiting costs about{" "}
+                    <Figure
+                      value={delayCost}
+                      format="currency"
+                      confidence="inferred"
+                      context="prose"
+                      label="a month while this waits"
+                    />{" "}
+                    a month.
+                  </Text>
+                )}
+
+                {/* ── ALREADY DONE ───────────────────────────────────────
+                    Tertiary, so the primary action is still one.
+
+                    Someone who acted outside North could previously only
+                    tell it by tapping a figure in the derivation sheet —
+                    the profile and reality diverge here more than anywhere
+                    else. Recording it `held` skips the three-day callback
+                    (there is nothing to wait for) and makes `catchUpDue`
+                    fire, so the next thing North does is ask what changed.
+                    That is the loop closing where it actually happens. */}
+                <ActionLink
+                  icon={<LedgerMark />}
                   onClick={() =>
-                    commit(evaluation.current!.rung.id, evaluation.current!.read)
+                    alreadyDone(
+                      evaluation.current!.rung.id,
+                      evaluation.current!.read,
+                    )
                   }
                 >
-                  {evaluation.current.read.action.commit}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  onClick={() =>
-                    defer(evaluation.current!.rung.id, evaluation.current!.read)
-                  }
-                >
-                  {evaluation.current.read.action.defer}
-                </Button>
+                  I&rsquo;ve already done this
+                </ActionLink>
               </div>
             )}
 
@@ -567,16 +757,20 @@ export function TodayScreen() {
           whose field is newer than the commitment, so `catchUpDue` stops
           returning it and the prompt above goes with it. */}
       <Sheet
-        open={catchUp !== null}
-        onClose={() => setAsking(false)}
-        title={<h2 className="type-label text-text-tertiary">Let&rsquo;s catch up</h2>}
+        open={question !== null}
+        onClose={closeQuestion}
+        title={
+          <h2 className="type-label text-text-tertiary">
+            {catchUp ? "Let\u2019s catch up" : "One question"}
+          </h2>
+        }
       >
-        {catchUp && (
+        {question && (
           <CorrectionTurn
-            turnId={catchUp}
-            label={CORRECTABLE.find((c) => c.turnId === catchUp)?.label}
-            onDone={() => setAsking(false)}
-            onCancel={() => setAsking(false)}
+            turnId={question}
+            label={CORRECTABLE.find((c) => c.turnId === question)?.label}
+            onDone={closeQuestion}
+            onCancel={closeQuestion}
           />
         )}
       </Sheet>
