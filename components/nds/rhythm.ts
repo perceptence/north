@@ -21,6 +21,25 @@
  * The values are deliberately far apart. Two steps that differ by 4px are two
  * steps nobody can tell apart, which is how a scale rots back into eight
  * arbitrary numbers.
+ *
+ * ── THE TRAP, WHICH HAS BEEN FALLEN INTO FOUR TIMES ───────────────────────
+ * The gap is chosen by the CONTAINER, so anything dropped in as a direct
+ * child inherits it — including things that belong to the child above them.
+ * Every recurrence has the same shape: a headline and the sentence explaining
+ * it, both direct children of a `screen` container, so the explanation sits
+ * 40px from the thing it explains and reads as an unrelated block.
+ *
+ * It has been fixed on Navigator (the question and its field), on Insights
+ * (the dateline and its opening), and on Today's calm day (the headline and
+ * the line saying what North is watching). Three fixes, one cause.
+ *
+ * **The rule: a gap belongs to the WEAKER of the two relationships it
+ * separates.** If a sentence explains the thing above it, they are one block
+ * — nest them one level in with `heading` or `block`, and let `screen` fall
+ * only between things that would still make sense on separate screens.
+ *
+ * Put another way: `screen` is a section break. If you would not put a rule
+ * across the page there, it is not a `screen` gap.
  */
 export const RHYTHM = {
   /** 8 — a label and the thing it names. They read as one object. */

@@ -389,18 +389,41 @@ export function TodayScreen() {
                  turns the wait into visible judgment, and puts the rule in
                  core/decisions/callback.ts on screen where it can be read as
                  product rather than as engineering. */
-              <p className="type-voice measure text-text-secondary">
-                {sameDay(new Date(committed.decidedAt), now)
-                  ? "Recorded."
-                  : "You decided this already."}{" "}
-                I&rsquo;ll ask you how it went on{" "}
-                {callbackDueAt(committed).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "short",
-                  day: "numeric",
-                })}
-                .
-              </p>
+              /* ── IT HOLDS THE SLOT THE BUTTONS HELD ─────────────────────
+                 A bare sentence where two large pills used to be made the
+                 screen read as if something had failed to load. This is a
+                 STATE, not an action, so it must not be a button — but it
+                 does have to carry comparable weight, or committing looks
+                 like it emptied the page.
+
+                 So it borrows the ledger's own grammar: the mark that means
+                 "on the record" everywhere else, then the coach's sentence
+                 at voice size. The DATE is inked while the rest is
+                 secondary, because the date is the commitment — it is what
+                 you would want your eye to land on, and it is the part that
+                 proves North is holding something rather than idling. */
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  className="mt-[0.45em] shrink-0 text-text-tertiary"
+                >
+                  <LedgerMark />
+                </span>
+                <p className="type-voice measure text-text-secondary">
+                  {sameDay(new Date(committed.decidedAt), now)
+                    ? "Recorded."
+                    : "You decided this already."}{" "}
+                  I&rsquo;ll ask you how it went on{" "}
+                  <span className="text-text-primary">
+                    {callbackDueAt(committed).toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                  .
+                </p>
+              </div>
             ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <Button
@@ -583,19 +606,29 @@ function CalmScene({
           third state missing its dateline — the cardless screen is the one
           most likely to read as "nothing loaded" rather than "nothing needs
           you", and a date is what tells them apart. */}
-      <div className={cn("flex flex-col", RHYTHM.pair)}>
-        <Dateline now={now} />
-        <Text variant="voice-xl" as="p" measure>
-          Nothing needs your <span className="text-aurora">attention</span>.
-          That&rsquo;s rare.
+      {/* ── ONE BLOCK, NOT TWO ─────────────────────────────────────────────
+          The sentence under the headline EXPLAINS the headline; it is not a
+          separate section. It used to be a direct child of this component's
+          `screen` container, so 40px — the gap reserved for major blocks —
+          sat between "That's rare." and the line telling you why. Nested one
+          level in, the grammar reads correctly: 8 from the dateline to the
+          headline, 16 from the headline to its explanation, and the full 40
+          only before the horizon, which genuinely is a different thing. */}
+      <div className={cn("flex flex-col", RHYTHM.heading)}>
+        <div className={cn("flex flex-col", RHYTHM.pair)}>
+          <Dateline now={now} />
+          <Text variant="voice-xl" as="p" measure>
+            Nothing needs your <span className="text-aurora">attention</span>.
+            That&rsquo;s rare.
+          </Text>
+        </div>
+
+        <Text variant="body" tone="secondary" measure>
+          {watching
+            ? `North is watching your ${watching}, and will say so the moment it moves.`
+            : "Every rung on the ladder is behind you. North will speak up if that changes."}
         </Text>
       </div>
-
-      <Text variant="body" tone="secondary" measure>
-        {watching
-          ? `North is watching your ${watching}, and will say so the moment it moves.`
-          : "Every rung on the ladder is behind you. North will speak up if that changes."}
-      </Text>
 
       {projection ? (
         <div className={cn("flex flex-col xl:-mx-24", RHYTHM.heading)}>
