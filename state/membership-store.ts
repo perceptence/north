@@ -62,6 +62,31 @@ function persist(): void {
   }
 }
 
+/**
+ * Another document on this origin changed the membership — adopt it.
+ *
+ * `storage` fires in every OTHER document sharing the origin, which is
+ * exactly the preview's shape: the tier pills live in `/preview`, the app
+ * runs in an iframe, and a write in the parent left the frame showing a
+ * stale tier until someone reloaded it. It is not a preview hack — two
+ * tabs of the real app now agree too, which is the behaviour anyone would
+ * expect and nobody had.
+ *
+ * Registered once at module scope rather than per subscriber: the listener
+ * is about the STORE, not about any component watching it.
+ */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== null && event.key !== STORAGE_KEY) return;
+    // Force a re-read: `load()` short-circuits on `loaded`, and the value
+    // that changed is in another document's copy of this module.
+    loaded = false;
+    snapshot = FREE;
+    load();
+    emit();
+  });
+}
+
 function subscribe(onChange: () => void): () => void {
   listeners.add(onChange);
   return () => {

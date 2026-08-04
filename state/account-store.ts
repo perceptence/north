@@ -60,6 +60,21 @@ function persist(): void {
   }
 }
 
+/**
+ * Another document on this origin changed the account — adopt it. Same
+ * reasoning as the membership store: `/preview` drives an iframe, and two
+ * tabs of the app should never disagree about who is signed in.
+ */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== null && event.key !== STORAGE_KEY) return;
+    loaded = false;
+    snapshot = null;
+    load();
+    emit();
+  });
+}
+
 function subscribe(onChange: () => void): () => void {
   listeners.add(onChange);
   return () => {
