@@ -429,7 +429,7 @@ export function TodayScreen() {
             </div>
 
             {recollection && (
-              <p className="type-voice measure text-text-secondary">
+              <p className="type-meta measure text-text-secondary">
                 <ReadProse read={{ segments: recollection }} />
               </p>
             )}
@@ -590,7 +590,7 @@ export function TodayScreen() {
                 >
                   <LedgerMark />
                 </span>
-                <p className="type-voice measure text-text-secondary">
+                <p className="type-meta measure text-text-secondary">
                   {sameDay(new Date(committed.decidedAt), now)
                     ? "Recorded."
                     : "You decided this already."}{" "}

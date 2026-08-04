@@ -371,31 +371,37 @@ export function CorrectionMark() {
 }
 
 /**
- * I've already done this — the ground behind you.
+ * I've already done this — the rungs behind you.
  *
- * Chosen in review (Aug 2026) over a cleared rung and a tick sealed in a ring,
- * and it replaces `LedgerMark`, which was borrowed here and means the
- * Decisions surface. This is not a record being kept; it is a fact being
- * reported — the money moved before North asked.
+ * Literally the `RungIndicator`'s own strip: the rungs passed are inked, the
+ * ones ahead are pale. The waterfall is the engine's central idea, the strip
+ * is how the product already draws position on it, and "I did this one
+ * myself" is a rung moving from ahead to behind. The mark is the product's
+ * own grammar rather than a new metaphor.
  *
- * ── AND IT IS DELIBERATELY NOT `BackMark` ─────────────────────────────────
- * The two are close, and that was raised at review: both draw a rule with a
- * leftward head. `BackMark` is a NAVIGATION arrow — a line with an arrowhead
- * and nothing else, meaning "return the way you came". This one carries a
- * filled marker at the near end: the position you are standing in NOW, with
- * the distance already walked running away behind it. The filled shape is the
- * difference, and it is the identity's own device for "this one is real"
- * (the needle's north point, `SpeakMark`'s dot).
+ * Opacity for the rungs ahead follows `AdjustMark`, which already fades the
+ * bearing a signpost used to point at — so the device is established here
+ * rather than invented for this one drawing.
  *
- * They also never appear together: `BackMark` lives on a screen you can leave,
- * and this lives on the decision card.
+ * ── IT REPLACES A MARK THAT COLLIDED ──────────────────────────────────────
+ * The first version drew the ground behind you: a rule, a leftward head, and
+ * a filled marker for where you stand. It was a good idea and an unusable
+ * drawing — `BackMark` is a rule with a leftward head and nothing else, so at
+ * 16px the two were one mark separated by a dot. Set side by side in the
+ * gallery, that was decided in about a second.
+ *
+ * The near neighbour now is `HorizonMark`, which is also ticks — but those
+ * ticks stand ON a baseline rule and spread apart as they run right, being an
+ * axis of years. These have no baseline and even spacing, being a position.
+ * Both are in the gallery, adjacent, so the distinction stays checkable.
  */
 export function BehindMark() {
   return (
     <Mark>
-      <path d="M12.6 8 H4.4" />
-      <path d="M7.4 4.9 L4.4 8 L7.4 11.1" />
-      <circle cx="12.6" cy="8" r="1.5" fill="currentColor" stroke="none" />
+      <path d="M3.2 4.6 V11.4" />
+      <path d="M6.4 4.6 V11.4" />
+      <path d="M9.6 6.4 V9.6" opacity="0.4" />
+      <path d="M12.8 6.4 V9.6" opacity="0.4" />
     </Mark>
   );
 }

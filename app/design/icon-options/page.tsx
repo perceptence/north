@@ -1,29 +1,29 @@
 "use client";
 
 import type { ReactNode } from "react";
-import {
-  ActionLink,
-  BackMark,
-  BehindMark,
-  HorizonMark,
-  LedgerMark,
-} from "@/components/north/ActionGlyphs";
+import { ActionLink, BehindMark, LedgerMark } from "@/components/north/ActionGlyphs";
 
 /**
- * TEMPORARY — replacements for `BehindMark`, the weakest mark in the set.
- * Delete once a pick is made.
+ * TEMPORARY — a mark for the Steady line. Delete once a pick is made.
  *
- * ── WHAT IS ALREADY SPOKEN FOR ────────────────────────────────────────────
- * The shape space is crowded, and that is the actual constraint here. Taken:
- * a rule with a leftward arrowhead (`BackMark`); a rule with vertical ticks
- * (`HorizonMark`); three lines and a tick (`LedgerMark`); an asterisk, a
- * signpost, wind, rewind triangles, a door, a book, a dot with speech, a ring
- * with an arrow entering it, quote marks, a tray, a closed lid, two level
- * rules, a caret. The ring itself belongs to the compass and cannot be spent.
+ * ── THE FAULT ─────────────────────────────────────────────────────────────
+ * "Recorded. I'll ask you how it went on Friday, Aug 7." carries `LedgerMark`
+ * — and so does "1 decision with North · last today", four inches below it on
+ * the same screen. The same drawing, twice, meaning two different things: one
+ * is a STATE the screen is in, the other is a DOOR to the Decisions surface.
+ * `LedgerMark` belongs to the door.
  *
- * `BehindMark` collided with the first of those. Every candidate below is
- * checked against the whole list, and both neighbours it could be confused
- * with are shown beneath it.
+ * ── WHAT THIS MARK HAS TO SAY ─────────────────────────────────────────────
+ * Not "done" — nothing has happened yet; the money has not moved and the read
+ * above is unchanged. Not "recorded" either, or it duplicates the ledger. What
+ * is true is that North is HOLDING something and will come back on a named
+ * day: a promise with a date on it. The mark is about waiting, kept.
+ *
+ * Taken, and unavailable: asterisk, signpost, wind, rule-with-ticks
+ * (HorizonMark), three-lines-and-a-tick (LedgerMark), rewind triangles,
+ * rule-with-arrowhead (BackMark), door, book, dot-with-speech, ring-with-arrow,
+ * quote marks, tray, closed lid, two level rules (UnchangedMark), caret
+ * (CorrectionMark), the rung strip (BehindMark). The ring is the compass.
  */
 
 function Mark({ children }: { children: ReactNode }) {
@@ -43,42 +43,53 @@ function Mark({ children }: { children: ReactNode }) {
   );
 }
 
-/** D1 · The cleared rung. The ladder's own vocabulary — a rung, ticked. */
-const D1 = (
+/** E1 · The day, ringed. A date held open on the calendar — one square, kept. */
+const E1 = (
   <Mark>
-    <path d="M2.6 11.6 H13.4" />
-    <path d="M4.8 8.2 L7 10.4 L11.6 5" />
+    <path d="M2.8 5.2 H13.2 V13 H2.8 Z" />
+    <path d="M2.8 8 H13.2" />
+    <path d="M5.4 5.2 V3" />
+    <path d="M10.6 5.2 V3" />
   </Mark>
 );
 
-/** D2 · The step down. You have come down a rung and are standing here. */
-const D2 = (
+/** E2 · Held. The pause — two uprights, the coach waiting rather than idling. */
+const E2 = (
   <Mark>
-    <path d="M2.6 4.6 H7.4 V9.8 H13.4" />
-    <circle cx="13.4" cy="9.8" r="1.5" fill="currentColor" stroke="none" />
+    <path d="M6 3.6 V12.4" />
+    <path d="M10 3.6 V12.4" />
   </Mark>
 );
 
 /**
- * D3 · The rungs behind you. Literally the RungIndicator's own strip — the
- * ones passed inked, the ones ahead pale. `AdjustMark` already uses opacity
- * this way, so the device is established rather than invented.
+ * E3 · The hourglass, turned. Time running, with the turn already taken —
+ * three days of it, which is the whole of what this line says.
  */
-const D3 = (
+const E3 = (
   <Mark>
-    <path d="M3.2 4.6 V11.4" />
-    <path d="M6.4 4.6 V11.4" />
-    <path d="M9.6 6.4 V9.6" opacity="0.4" />
-    <path d="M12.8 6.4 V9.6" opacity="0.4" />
+    <path d="M4 2.8 H12" />
+    <path d="M4 13.2 H12" />
+    <path d="M4.6 2.8 C4.6 6.4 11.4 9.6 11.4 13.2" />
+    <path d="M11.4 2.8 C11.4 6.4 4.6 9.6 4.6 13.2" />
   </Mark>
 );
 
-/** D4 · Struck through. The classic, and shown mainly to be argued with: a
-    strike means CANCELLED, and this is the opposite of cancelled. */
-const D4 = (
+/** E4 · A thread, tied. The commitment held — a knot on the line. */
+const E4 = (
   <Mark>
-    <path d="M3 8 H13" />
-    <path d="M4.6 11.8 L11.4 4.2" />
+    <path d="M2.4 8 H5.8" />
+    <path d="M10.2 8 H13.6" />
+    <circle cx="8" cy="8" r="2.2" />
+  </Mark>
+);
+
+/**
+ * E5 · The bookmark. A place kept, to be returned to — and the one object in
+ * the set that means "come back to this" without meaning "go there now".
+ */
+const E5 = (
+  <Mark>
+    <path d="M4.4 2.8 H11.6 V13.2 L8 10 L4.4 13.2 Z" />
   </Mark>
 );
 
@@ -90,32 +101,37 @@ interface Option {
 
 const OPTIONS: Option[] = [
   {
-    key: "D1",
-    mark: D1,
+    key: "E1",
+    mark: E1,
     gloss:
-      "The cleared rung — a rung, ticked. Uses the ladder the whole engine runs on. Nearest neighbour is LedgerMark, which is THREE lines and a tick; this is one.",
+      "The day, ringed — a date held open. The most literal: this line's whole content is a named day. Busiest of the five at 16px.",
   },
   {
-    key: "D2",
-    mark: D2,
+    key: "E2",
+    mark: E2,
     gloss:
-      "The step down — you have come down a rung, and the filled marker is where you are standing. No other mark in the set is a stair.",
+      "Held — the pause. Two uprights, which is the universal sign for “waiting, not stopped”. Quietest, and closest to UnchangedMark's two rules turned upright.",
   },
   {
-    key: "D3",
-    mark: D3,
+    key: "E3",
+    mark: E3,
     gloss:
-      "The rungs behind you — the RungIndicator's own strip, passed ones inked and the rest pale. The most in-world, and the busiest at 16px.",
+      "The hourglass, turned. Time running with the turn already taken — three days of it, which is exactly what the line says.",
   },
   {
-    key: "D4",
-    mark: D4,
+    key: "E4",
+    mark: E4,
     gloss:
-      "Struck through. Here to be argued with: a strike reads as CANCELLED, and this action is the opposite of cancelled.",
+      "A thread, tied. The commitment held — a knot on the line, and nothing else in the set is a knot.",
+  },
+  {
+    key: "E5",
+    mark: E5,
+    gloss:
+      "The bookmark. A place kept, to be returned to — the only object here that says “come back to this” without saying “go there now”.",
   },
 ];
 
-/** Shown large and small, because the whole problem was legibility at 16. */
 function Specimen({ mark, label }: { mark: ReactNode; label: string }) {
   return (
     <div className="flex items-center gap-5">
@@ -133,12 +149,13 @@ export default function IconOptionsPage() {
       <div className="flex flex-col gap-3">
         <span className="type-overline text-text-tertiary">For review</span>
         <h1 className="type-voice-md text-text-primary">
-          Replacing BehindMark.
+          A mark for the Steady line.
         </h1>
         <p className="type-body text-text-secondary">
-          It reads as BackMark at the size it is used. Each candidate is shown
-          large and at 16px, and both marks it could be confused with are at the
-          bottom.
+          It borrows <em>LedgerMark</em> — which also sits on &ldquo;1 decision
+          with North&rdquo; on the same screen. It has to say North is holding
+          something and will come back on a named day. Not &ldquo;done&rdquo;:
+          nothing has moved yet.
         </p>
       </div>
 
@@ -148,71 +165,64 @@ export default function IconOptionsPage() {
             <span className="type-overline text-text-tertiary">
               {option.key}
             </span>
-            <Specimen mark={option.mark} label="I’ve already done this" />
+            <Specimen mark={option.mark} label="Recorded. I’ll ask you Friday." />
             <p className="type-meta text-text-tertiary">{option.gloss}</p>
           </div>
         ))}
       </div>
 
+      {/* ── IN PLACE ──────────────────────────────────────────────────────
+          The duplication is only visible with both lines on screen at once,
+          which is how it ships. */}
       <section className="flex flex-col gap-4">
-        <h2 className="type-section text-text-primary">
-          What each must stay clear of
-        </h2>
+        <h2 className="type-section text-text-primary">On the screen</h2>
+        <p className="type-meta text-text-tertiary">
+          Both lines together, as they appear on Today — the Steady line above,
+          the ledger door below.
+        </p>
+        {OPTIONS.map((option) => (
+          <div
+            key={option.key}
+            className="flex flex-col gap-6 rounded-sheet border border-line-control p-5"
+          >
+            <span className="type-overline text-text-tertiary">
+              {option.key}
+            </span>
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-[0.2em] shrink-0 text-text-tertiary"
+              >
+                {option.mark}
+              </span>
+              <p className="type-meta text-text-secondary">
+                Recorded. I&rsquo;ll ask you how it went on{" "}
+                <span className="text-text-primary">Friday, Aug 7</span>.
+              </p>
+            </div>
+            <ActionLink icon={<LedgerMark />} onClick={() => {}}>
+              1 decision with North · last today
+            </ActionLink>
+          </div>
+        ))}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="type-section text-text-primary">Neighbours to clear</h2>
         <div className="flex flex-col gap-5 rounded-sheet border border-line-control p-5">
           <div className="flex flex-col gap-3">
             <span className="type-overline text-text-tertiary">
-              Current — BehindMark
-            </span>
-            <Specimen mark={<BehindMark />} label="I’ve already done this" />
-          </div>
-          <div className="flex flex-col gap-3">
-            <span className="type-overline text-text-tertiary">
-              BackMark — the collision
-            </span>
-            <Specimen mark={<BackMark />} label="Navigator" />
-          </div>
-          <div className="flex flex-col gap-3">
-            <span className="type-overline text-text-tertiary">
-              LedgerMark — D1’s nearest neighbour
+              LedgerMark — what it borrows today
             </span>
             <Specimen mark={<LedgerMark />} label="Everything you’ve decided" />
           </div>
           <div className="flex flex-col gap-3">
             <span className="type-overline text-text-tertiary">
-              HorizonMark — D3’s nearest neighbour
+              BehindMark — E2’s nearest shape
             </span>
-            <Specimen mark={<HorizonMark />} label="The long view" />
+            <Specimen mark={<BehindMark />} label="I’ve already done this" />
           </div>
         </div>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="type-section text-text-primary">On the card</h2>
-        <p className="type-meta text-text-tertiary">
-          Where it actually lives — beneath two pills and a figure, as the quiet
-          third way.
-        </p>
-        {OPTIONS.map((option) => (
-          <div
-            key={option.key}
-            className="flex flex-col gap-2 rounded-sheet border border-line-control p-5"
-          >
-            <span className="type-overline text-text-tertiary">
-              {option.key}
-            </span>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="type-label rounded-full bg-surface-inverse px-5 py-3 text-text-inverse">
-                Clear the expensive debt first
-              </span>
-              <span className="type-label rounded-full border border-action-border px-5 py-3 text-text-primary">
-                Not now
-              </span>
-            </div>
-            <ActionLink icon={option.mark} onClick={() => {}}>
-              I&rsquo;ve already done this
-            </ActionLink>
-          </div>
-        ))}
       </section>
     </main>
   );

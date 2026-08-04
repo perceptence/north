@@ -319,8 +319,13 @@ export function DerivationSheet({
           </ol>
 
           {/* The conclusion, at the coach's size — it is the answer to the
-              question the tap asked, and everything above it is evidence. */}
-          <div className="type-voice measure border-t border-line-hairline pt-4 text-text-primary">
+              question the tap asked, and everything above it is evidence.
+
+              `type-voice-md`, not `type-voice`: that class does not exist and
+              never did, so this had been rendering in the INTERFACE face at
+              body size — the one line on the overlay that is the coach
+              speaking, set as if it were a caption. */}
+          <div className="type-voice-md measure border-t border-line-hairline pt-4 text-text-primary">
             <ReadProse read={{ segments: working.result }} />
           </div>
 
