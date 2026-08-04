@@ -87,6 +87,27 @@ export function useDecisions(): Decision[] {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
+/**
+ * An id, on every browser this product is actually opened in.
+ *
+ * `crypto.randomUUID` is only exposed in SECURE CONTEXTS — https, or
+ * localhost. It is absent over a plain-http LAN address, which is exactly how
+ * anyone checks a phone-first product on a phone. So the primary action on
+ * the home screen threw, silently, on the one device class the whole design
+ * is for.
+ *
+ * The fallback does not need to be cryptographic — this id namespaces rows in
+ * one browser's own ledger, and collisions have no security meaning here.
+ * Time-ordered prefix plus randomness is more than enough to be unique within
+ * a single device's history.
+ */
+function decisionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function appendDecision(
   decision: Omit<Decision, "id" | "decidedAt"> & { decidedAt?: string },
 ): Decision {
@@ -94,7 +115,7 @@ export function appendDecision(
 
   const created: Decision = {
     ...decision,
-    id: crypto.randomUUID(),
+    id: decisionId(),
     decidedAt: decision.decidedAt ?? new Date().toISOString(),
   };
 

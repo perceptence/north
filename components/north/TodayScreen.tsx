@@ -13,7 +13,12 @@ import {
   TRANSITION,
   m,
 } from "@/components/nds";
-import { callbackDue, settledRungIds } from "@/core/decisions";
+import {
+  callbackDue,
+  callbackDueAt,
+  committedOn,
+  settledRungIds,
+} from "@/core/decisions";
 import { CORRECTABLE, FIELD_BEHIND_RUNG } from "@/core/onboarding/correction";
 import type { TurnId } from "@/core/onboarding/script";
 import type { Decision } from "@/core/decisions/types";
@@ -22,12 +27,13 @@ import { evaluate, ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
 import type { Read } from "@/core/waterfall";
 import {
   appendDecision,
+  isPersistent as decisionsPersist,
   resolveDecision,
   useDecisions,
 } from "@/state/decisions-store";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
-import { useProfile } from "@/state/profile-store";
+import { isPersistent as profilePersists, useProfile } from "@/state/profile-store";
 import { CorrectionTurn } from "./CorrectionTurn";
 import { ActionLink, HorizonMark, LedgerMark } from "./ActionGlyphs";
 import { DerivationSheet } from "./DerivationSheet";
@@ -114,6 +120,10 @@ export function TodayScreen() {
   // empty state before redirecting is worse than a blank beat.
   if (!hydrated || !profile) return null;
 
+  // Safe to read here and not before: both flags are set by the stores' own
+  // `load()`, and this sits below the hydration guard above.
+  const storageWorks = profilePersists() && decisionsPersist();
+
   const options = { limits: ILLUSTRATIVE_LIMITS, now };
   // `callbackDue`, not `openDecision`. The ledger records a commitment the
   // instant you make it; the coach waits three days before asking whether it
@@ -123,9 +133,26 @@ export function TodayScreen() {
   const evaluation = evaluate(profile, {
     ...options,
     // Deferral and completion both have to mean something: a rung that already
-    // has an answer is not asked about again.
-    skip: settledRungIds(decisions),
+    // has an answer is not asked about again. Deferral's answer expires — see
+    // `DEFER_HOLDS_DAYS`.
+    skip: settledRungIds(decisions, now),
   });
+
+  /**
+   * The commitment already made on the rung Today is about to offer.
+   *
+   * This is the Steady state (docs/UX-ARCHITECTURE.md §4.3: "the open decision
+   * persists; no new one is surfaced until it resolves"), and without it the
+   * primary action did nothing a person could see. An `open` decision does not
+   * settle its rung — correctly, the money has not moved — so `evaluate`
+   * returned the same rung, the same read, and the same two buttons. Pressing
+   * the largest ink button in the product changed one tertiary line below the
+   * fold, while "Not now" visibly advanced the ladder. The secondary action
+   * worked and the primary appeared broken.
+   */
+  const committed = evaluation.current
+    ? committedOn(decisions, evaluation.current.rung.id)
+    : null;
   const firstRun = decisions.length === 0;
   // The card carries a compact horizon in its footer — the decision and its
   // long-term consequence in one object (the reference-frame card DNA). The
@@ -147,10 +174,20 @@ export function TodayScreen() {
       : TRANSITION.standard,
   });
 
-  /** Changes whenever the card's content changes. */
+  /**
+   * Changes whenever the card's content changes.
+   *
+   * `committed` is in the key so the keyed entrance actually PLAYS on commit.
+   * Keyed on the rung alone, the rung does not change when you commit — so the
+   * card never re-mounted and the motion that exists to say "this is different
+   * now" never ran, which was half of why pressing the button felt like
+   * nothing had happened.
+   */
   const cardKey = pending
     ? `callback:${pending.id}`
-    : (evaluation.current?.rung.id ?? "satisfied");
+    : committed
+      ? `committed:${committed.id}`
+      : (evaluation.current?.rung.id ?? "satisfied");
 
   return (
     <div className={cn("flex flex-col pb-16", RHYTHM.screen)}>
@@ -266,26 +303,51 @@ export function TodayScreen() {
                 may do. They are peers in kind — commit or don't — and only
                 the RECOMMENDATION differs, which the ink already carries.
                 So: same size, same shape, one filled and one outlined. */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() =>
-                  commit(evaluation.current!.rung.id, evaluation.current!.read)
-                }
-              >
-                {evaluation.current.read.action.commit}
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() =>
-                  defer(evaluation.current!.rung.id, evaluation.current!.read)
-                }
-              >
-                {evaluation.current.read.action.defer}
-              </Button>
-            </div>
+            {committed ? (
+              /* STEADY. The read above is unchanged and that is correct — the
+                 money has not moved, so the rung is honestly still current.
+                 What must change is the ASK: North does not offer a decision
+                 that has already been made.
+
+                 The date is the point. A coach that goes quiet for three days
+                 is indistinguishable from one that forgot; naming the day
+                 turns the wait into visible judgment, and puts the rule in
+                 core/decisions/callback.ts on screen where it can be read as
+                 product rather than as engineering. */
+              <p className="type-voice measure text-text-secondary">
+                {sameDay(new Date(committed.decidedAt), now)
+                  ? "Recorded."
+                  : "You decided this already."}{" "}
+                I&rsquo;ll ask you how it went on{" "}
+                {callbackDueAt(committed).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
+                .
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() =>
+                    commit(evaluation.current!.rung.id, evaluation.current!.read)
+                  }
+                >
+                  {evaluation.current.read.action.commit}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() =>
+                    defer(evaluation.current!.rung.id, evaluation.current!.read)
+                  }
+                >
+                  {evaluation.current.read.action.defer}
+                </Button>
+              </div>
+            )}
 
             {projection && (
               <div className="border-t border-line-hairline pt-6">
@@ -340,6 +402,24 @@ export function TodayScreen() {
           {summarise(decisions)} · last{" "}
           {relativeTime(decisions[0].decidedAt, now)}
         </ActionLink>
+      )}
+
+      {/* ── WHEN THIS BROWSER WILL NOT REMEMBER ────────────────────────────
+          `isPersistent()` has been exported by both stores since they were
+          written and called by nobody, so a private-browsing user committed
+          decisions, watched the ledger fill up all session, and found an
+          empty product on reload — having been told nothing.
+
+          Said once, here, in the coach's voice rather than as a banner: this
+          is the screen you come back to, so it is the screen where "I won't
+          remember" is the useful thing to know. Not an error — nothing has
+          failed — which is why it is a quiet line and not `ErrorState`. */}
+      {!storageWorks && (
+        <p className="type-meta measure text-text-tertiary">
+          This browser won&rsquo;t let me remember any of this after you close
+          the tab. Everything still works — I just won&rsquo;t know you next
+          time.
+        </p>
       )}
 
       {/* The loop that closes: you said you did it, so North asks what
@@ -439,6 +519,21 @@ function CalmScene({
 
 /* ── Small presentational helpers ──────────────────────────────────────── */
 
+/**
+ * Whether a commitment was made today, in the reader's own calendar.
+ *
+ * Decides between "Recorded." and "You decided this already." — the first is
+ * an acknowledgement and only true in the moment; on a later visit it reads
+ * as a receipt reprinting itself rather than as a coach who remembers.
+ */
+function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 function lowerFirst(text: string): string {
   return text.charAt(0).toLowerCase() + text.slice(1);
 }
@@ -451,7 +546,15 @@ function summarise(decisions: Decision[]): string {
   return `${decisions.length} decision${decisions.length === 1 ? "" : "s"} with North`;
 }
 
-/** Deliberately coarse. False precision on a timestamp is still false precision. */
+/**
+ * Deliberately coarse. False precision on a timestamp is still false
+ * precision.
+ *
+ * Singular is handled because the boundary cases are the COMMON ones, not the
+ * edge: seven days after a decision the ledger read "last 1 weeks ago", and a
+ * month after, "1 months ago". A coach with a grammatical tic is a coach you
+ * trust slightly less with a number.
+ */
 function relativeTime(iso: string, now: Date): string {
   const days = Math.floor(
     (now.getTime() - new Date(iso).getTime()) / 86_400_000,
@@ -459,6 +562,9 @@ function relativeTime(iso: string, now: Date): string {
   if (days <= 0) return "today";
   if (days === 1) return "yesterday";
   if (days < 7) return `${days} days ago`;
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-  return `${Math.floor(days / 30)} months ago`;
+  if (days < 30) return plural(Math.floor(days / 7), "week");
+  return plural(Math.floor(days / 30), "month");
 }
+
+const plural = (n: number, unit: string) =>
+  `${n} ${unit}${n === 1 ? "" : "s"} ago`;

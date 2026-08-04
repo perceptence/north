@@ -18,7 +18,7 @@ import {
 } from "@/core/insights";
 import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
 import { useDecisions } from "@/state/decisions-store";
-import { usePreviousProfile, useProfile } from "@/state/profile-store";
+import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import {
   ActionLink,
   LedgerMark,
@@ -135,6 +135,7 @@ function spanWord(from: Date, to: Date): string {
     1,
     Math.round((to.getTime() - from.getTime()) / 86_400_000),
   );
+  if (days === 1) return "a day";
   if (days < 14) return `${days} days`;
   const weeks = Math.round(days / 7);
   if (weeks < 9) return `${weeks} weeks`;
@@ -163,10 +164,10 @@ function whenWord(iso: string | undefined, now: Date): string | null {
 export function InsightsScreen() {
   const router = useRouter();
   const profile = useProfile();
-  const previous = usePreviousProfile();
+  const [now] = useState(() => new Date());
+  const previous = useBaselineProfile(now);
   const decisions = useDecisions();
   const hydrated = useHydrated();
-  const [now] = useState(() => new Date());
 
   useEffect(() => {
     if (hydrated && !profile) router.replace("/start");

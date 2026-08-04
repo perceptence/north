@@ -44,8 +44,22 @@ export const BAND_ANNUAL_CENTS: Record<IncomeBand, Cents> = {
   "over-400k": 50_000_000, // $500,000
 };
 
-/** The costliest obligation at or above the high-interest threshold. */
-function costliest(obligations: Obligation[]): Obligation | null {
+/**
+ * The costliest obligation at or above the high-interest threshold.
+ *
+ * Exported because the derivation overlay has to name the SAME obligation the
+ * engine reasoned about. It used to read `obligations.value[0]` into a
+ * variable called `worst` — unsorted, unfiltered, just the first one entered —
+ * so the seeded demo showed its 6.2% mortgage under the label "expensive
+ * debt", beside an onboarding question that says in as many words that a
+ * mortgage does not count.
+ *
+ * That is the overlay docs/UX-ARCHITECTURE.md calls "the interaction most
+ * likely to convince a skeptical reviewer the reasoning is real", two taps
+ * from the landing screen. A reviewer checking the working found the working
+ * wrong at the exact moment the product invited the check.
+ */
+export function costliest(obligations: Obligation[]): Obligation | null {
   return obligations
     .filter(
       (o) => o.balanceCents > 0 && o.rateBps >= THRESHOLDS.highInterestBps,

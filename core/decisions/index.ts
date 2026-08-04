@@ -8,7 +8,12 @@
 
 export { openDecision, settledRungIds } from "./types.ts";
 export type { Decision, DecisionOutcome } from "./types.ts";
-export { CALLBACK_AFTER_DAYS, callbackDue } from "./callback.ts";
+export {
+  CALLBACK_AFTER_DAYS,
+  callbackDue,
+  callbackDueAt,
+  committedOn,
+} from "./callback.ts";
 export { ledgerMonths } from "./timeline.ts";
 export type { LedgerMonth } from "./timeline.ts";
 export { summariseLedger } from "./summary.ts";

@@ -17,7 +17,7 @@ import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useDecisions } from "@/state/decisions-store";
-import { usePreviousProfile, useProfile } from "@/state/profile-store";
+import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import { ActionLink, BackMark } from "./ActionGlyphs";
 import { ReadProse } from "./ReadProse";
 import { Sky } from "./Sky";
@@ -50,11 +50,11 @@ import { TurnGlyph } from "./TurnGlyph";
 export function StoryScreen() {
   const router = useRouter();
   const profile = useProfile();
-  const previous = usePreviousProfile();
+  const [now] = useState(() => new Date());
+  const previous = useBaselineProfile(now);
   const decisions = useDecisions();
   const hydrated = useHydrated();
   const reduce = useReducedMotion();
-  const [now] = useState(() => new Date());
   const [index, setIndex] = useState(0);
   /** Overrides the sky to the product shell's own height while leaving;
    *  null means settled at this screen's natural height (26dvh empty,

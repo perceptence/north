@@ -10,9 +10,11 @@ Premium AI financial coaching. Read these before making decisions:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — folders, state, data models, motion
 - [docs/WATERFALL.md](docs/WATERFALL.md) — the engine's rules and every assumption
 - [docs/BACKLOG.md](docs/BACKLOG.md) — future items, explicitly out of MVP scope
-- [docs/VOICE.md](docs/VOICE.md) — voice mode: researched proposal, **not built**, awaiting review
+- [docs/VOICE.md](docs/VOICE.md) — voice mode: **built** — voice input in
+  onboarding, a typed coach on Navigator, and a full-screen voice mode on
+  phone and tablet
 
-`npm test` — 211 tests, zero dependencies (Node's built-in runner executes the
+`npm test` — 437 tests, zero dependencies (Node's built-in runner executes the
 TypeScript directly). The suite targets business rules, not render output.
 
 **`core/` may not import React, Next, the DOM, or `@/` aliases.** It uses
@@ -79,11 +81,15 @@ Coach observes → surfaces ONE thing → you decide → coach tracks it → che
 ## Stack
 
 Next.js 16 App Router · React 19 · TypeScript strict · Tailwind v4 with a semantic token
-layer · Radix primitives (unstyled) · Motion with a shared spring config · Zod
-at every boundary.
+layer · Motion with a shared spring config. Boundaries are guarded by
+hand-written parsers in `core/` (see `core/coach/parse-intent.ts`) rather than
+by a schema library — `core/` is deliberately dependency-free.
 
-Financial data sits behind a typed interface with a fixture implementation.
-Never import a data provider into a component.
+There is no financial data provider yet: every figure comes from what the user
+answered during onboarding, plus `data/fixtures/personas.ts` for tests and the
+seeded demo. When a real source arrives it goes behind a typed interface — and
+the standing rule holds either way: never import a data provider into a
+component.
 
 ## Visual register
 

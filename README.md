@@ -9,7 +9,7 @@ thing worth doing about it, remembers what you decided, and checks back.
 ```bash
 npm install
 npm run dev     # http://localhost:3000
-npm test        # 211 tests, zero dependencies
+npm test        # 437 tests, zero dependencies
 ```
 
 Open `/` and either **Begin** the conversation or **borrow the demo story** —
@@ -32,10 +32,16 @@ no buffer.
 
 **The engine never calls a model.** Every answer — the daily read, the what-if
 scenarios, the letter, the goal pacing — is computed by pure TypeScript over a
-typed profile. Free text appears in exactly two places, and neither produces an
-answer: onboarding's opening question is captured verbatim and reflected back,
-and the Navigator's field *routes* a typed question to a scenario the engine
-can genuinely compute.
+typed profile. Free text never produces an answer anywhere: onboarding's
+opening question is captured verbatim and reflected back, and the Navigator's
+field and voice mode *route* what you said to something the engine can
+genuinely compute.
+
+A model may optionally sit in front of that router to sharpen the routing. It
+returns one of eleven labels through a forced tool call — never prose, never a
+number — and it is validated on both sides of the network. Delete the API
+route and every question is still answered, because the deterministic route is
+computed before the network is touched.
 
 **Honesty is the interface.** Every figure carries where it came from — stated,
 inferred, assumed — visibly and in its accessible label. Projections are

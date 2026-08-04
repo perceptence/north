@@ -6,7 +6,7 @@
  */
 
 export { evaluate, readToPlainText } from "./evaluate.ts";
-export { derive, THRESHOLDS } from "./derive.ts";
+export { costliest, derive, THRESHOLDS } from "./derive.ts";
 export { RUNGS, WATERFALL_LENGTH, rungById } from "./rules.ts";
 export {
   ILLUSTRATIVE_LIMITS,

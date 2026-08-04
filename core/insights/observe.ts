@@ -240,11 +240,11 @@ export function observe(
 ): InsightsReport {
   const evaluation = evaluate(profile, {
     ...options,
-    skip: settledRungIds(decisions),
+    skip: settledRungIds(decisions, options.now),
   });
   const facts = evaluation.facts;
 
-  const settledIds = new Set(settledRungIds(decisions));
+  const settledIds = new Set(settledRungIds(decisions, options.now));
   const rungs: LadderRung[] = evaluation.ladder.map((rung) => ({
     ...rung,
     settled: settledIds.has(rung.id),

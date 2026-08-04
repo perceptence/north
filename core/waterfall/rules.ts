@@ -1,9 +1,26 @@
 import { derived } from "../confidence.ts";
-import { planGoals } from "../goals/plan.ts";
+import { planGoals, type PlannedGoal } from "../goals/plan.ts";
 import type { Cents } from "../money.ts";
+import type { SituationProfile } from "../profile/types.ts";
 import { fig, from, text } from "../prose.ts";
 import { THRESHOLDS } from "./derive.ts";
 import type { Read, Rung, RungContext } from "./types.ts";
+
+/**
+ * The soonest goal the monthly surplus does not keep up with, if any.
+ *
+ * Deliberately NOT `planGoals().primary`, which is the soonest goal that is
+ * not yet fully saved — a different and much weaker condition. See rung 5's
+ * note. `primary` is left alone because the Goals screen means the other
+ * thing by it: which goal is currently being funded first.
+ */
+function shortfall(profile: SituationProfile, surplus: Cents): PlannedGoal | null {
+  return (
+    planGoals(profile, surplus).goals.find(
+      (g) => !g.funded && g.monthlyShortCents > 0,
+    ) ?? null
+  );
+}
 
 /**
  * The seven rungs, in order.
@@ -200,15 +217,30 @@ const goal: Rung = {
   label: "goal funding",
 
   // Onboarding collects no goal, so this is satisfied until the Goals surface
-  // names one. With several named, the rung speaks for the SOONEST unfunded
-  // one — the surplus is allocated in deadline order (core/goals/plan.ts), so
-  // the rung and the Goals screen can never disagree about who is short.
+  // names one. With several named, the rung speaks for the SOONEST goal that
+  // is short — the surplus is allocated in deadline order
+  // (core/goals/plan.ts), so the rung and the Goals screen can never disagree
+  // about who is short.
+  //
+  // ── SHORT ON PACE, NOT MERELY UNFINISHED ────────────────────────────────
+  // This used to test `plan.primary === null`, and `primary` is the first
+  // goal with `funded === false` — where `funded` means `gapCents === 0`,
+  // i.e. the target is already fully SAVED. So the rung fired for every goal
+  // that was not yet complete, including ones the monthly surplus covers
+  // perfectly. It then asked the user to "Start funding it" above a sentence
+  // saying the money was already there: *"a sabbatical needs about $1,450 a
+  // month … about $1,450 of that is there."* Needs $1,450, has $1,450, no gap
+  // named, ink button still asking.
+  //
+  // A goal being incomplete is not a problem — that is what a goal IS until
+  // its date. A goal being under-funded per month is. On the one product
+  // whose rule is "no number without a read", the read has to agree with the
+  // ask.
   satisfied: ({ profile, facts }) =>
-    planGoals(profile, facts.monthlySurplus.value).primary === null,
+    shortfall(profile, facts.monthlySurplus.value) === null,
 
   read: ({ profile, facts }): Read => {
-    const plan = planGoals(profile, facts.monthlySurplus.value);
-    const primary = plan.primary;
+    const primary = shortfall(profile, facts.monthlySurplus.value);
 
     if (!primary) {
       return {
@@ -218,9 +250,6 @@ const goal: Rung = {
     }
 
     const { label, withinMonths } = primary.goal;
-    // What the surplus can genuinely give this goal, once nearer goals have
-    // taken theirs — never the whole surplus restated per goal.
-    const others = plan.goals.filter((g) => !g.funded).length - 1;
 
     return {
       segments: [
@@ -231,18 +260,17 @@ const goal: Rung = {
         }),
         text(" a month to land in "),
         fig(withinMonths, "duration", primary.confidence, { label: "from now" }),
-        text(
-          others > 0
-            ? `. After what your other ${others === 1 ? "goal takes" : "goals take"}, about `
-            : ". You have about ",
-        ),
+        // The SHORTFALL, which is the whole reason this rung is speaking.
+        // Restating what the goal already receives told the user nothing they
+        // could act on, and read as agreement with a request to act.
+        text(". You're about "),
         fig(
-          others > 0 ? primary.monthlyCoveredCents : facts.monthlySurplus.value,
+          primary.monthlyShortCents,
           "currency",
           derived(facts.monthlySurplus.confidence),
-          { label: "spare each month" },
+          { label: "a month short" },
         ),
-        text(others > 0 ? " of that is there." : " spare."),
+        text(" a month short of that."),
       ],
       action: { commit: "Start funding it", defer: "Not now" },
     };

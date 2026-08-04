@@ -8,7 +8,7 @@ import type { FigureFormat } from "@/core/money";
 import { CORRECTABLE } from "@/core/onboarding/correction";
 import { SCRIPT, type TurnId } from "@/core/onboarding/script";
 import type { SituationProfile } from "@/core/profile/types";
-import type { DerivedFacts } from "@/core/waterfall";
+import { costliest, type DerivedFacts } from "@/core/waterfall";
 import { CorrectionTurn } from "./CorrectionTurn";
 import { RHYTHM } from "@/components/nds";
 
@@ -99,7 +99,10 @@ function told(profile: SituationProfile, turnId: TurnId): Told | null {
     }
 
     case "expensiveDebt": {
-      const worst = profile.obligations.value[0];
+      // The engine's own definition, not the first obligation on file — a
+      // mortgage is not expensive debt, and this overlay exists to show the
+      // working rather than to contradict it.
+      const worst = costliest(profile.obligations.value);
       return {
         node: worst ? (
           <Figure

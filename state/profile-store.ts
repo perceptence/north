@@ -1,6 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
+import { pickBaseline } from "@/core/insights";
 import type { SituationProfile } from "@/core/profile/types";
 
 /**
@@ -75,10 +76,26 @@ function load(): void {
   if (loaded) return;
   loaded = true;
 
+  /**
+   * READING the store and UNDERSTANDING what came back are separate failures,
+   * and conflating them made `isPersistent()` lie.
+   *
+   * One `try` used to wrap both `getItem` — which throws in some privacy
+   * modes — and `JSON.parse`, which throws on a corrupt payload. So a single
+   * malformed record convinced the app that storage was unavailable, on a
+   * browser where it works perfectly. Anything built on that flag would then
+   * warn the wrong people, which is worse than not warning at all.
+   */
+  let raw: string | null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    storageAvailable = false;
+    return;
+  }
+  if (!raw) return;
 
+  try {
     const parsed = JSON.parse(raw) as Partial<Persisted> & {
       profile?: SituationProfile;
     };
@@ -112,7 +129,14 @@ function load(): void {
 
     window.localStorage.removeItem(STORAGE_KEY);
   } catch {
-    storageAvailable = false;
+    // Unreadable, not unavailable. Storage works — this record does not — so
+    // clear it and start clean rather than telling the user their browser
+    // cannot remember them.
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      storageAvailable = false;
+    }
   }
 }
 
@@ -147,7 +171,15 @@ export function useProfile(): SituationProfile | null {
   );
 }
 
-/** The state the current profile replaced, or null on day one. */
+/**
+ * The state the current profile replaced, or null on day one.
+ *
+ * RARELY WHAT YOU WANT — this is literally the previous write, which after any
+ * correction is the profile as it stood seconds ago. For anything that reports
+ * on a period ("what's changed", the letter, the story) use
+ * `useBaselineProfile`, which picks a state old enough to be worth comparing
+ * against. See core/insights/baseline.ts.
+ */
 export function usePreviousProfile(): ProfileSnapshot | null {
   return useSyncExternalStore(
     subscribe,
@@ -159,6 +191,21 @@ export function usePreviousProfile(): ProfileSnapshot | null {
     },
     () => null,
   );
+}
+
+/**
+ * The past state worth measuring against — "last time we looked".
+ *
+ * Built on `useProfileHistory` and a `useMemo` rather than a third
+ * `useSyncExternalStore` selector, deliberately: the choice depends on the
+ * clock, and `getSnapshot` must return a cached value that changes only when
+ * the STORE changes. A time-dependent snapshot getter is the standard way to
+ * trip React's "the result of getSnapshot should be cached" invariant. The
+ * history array is already stable; the selection over it is a render concern.
+ */
+export function useBaselineProfile(now: Date): ProfileSnapshot | null {
+  const history = useProfileHistory();
+  return useMemo(() => pickBaseline(history, now), [history, now]);
 }
 
 export function useProfileHistory(): ProfileSnapshot[] {

@@ -2,9 +2,11 @@
 
 **Status: built (§11, §12).** Voice input in onboarding; a typed coach
 conversation on Navigator; and a full-screen VOICE MODE on phone and tablet
-— enter it, talk, and North talks back (§12). Nothing here uses a model or a
-network call: the router is deterministic and local, and every sentence
-North says is composed by `core/`.
+— enter it, talk, and North talks back (§12). **Every sentence North says is
+composed by `core/`**, and the deterministic local router answers every
+question on its own. A model may now sit in FRONT of that router to sharpen
+classification only (§5.0) — it returns one of eleven labels, never prose,
+never a number, and the product behaves identically without it.
 
 **§3.2's first rule — "voice is never a mode" — has been deliberately
 reversed.** See §12 for why the reason behind it survives the reversal.

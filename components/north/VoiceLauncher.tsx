@@ -8,7 +8,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { speechRecognitionAvailable } from "@/lib/use-speech-recognition";
 import { speechSynthesisAvailable } from "@/lib/use-speech-synthesis";
 import { useDecisions } from "@/state/decisions-store";
-import { usePreviousProfile, useProfile } from "@/state/profile-store";
+import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import { SpeakMark } from "./ActionGlyphs";
 import { VoiceMode } from "./VoiceMode";
 
@@ -56,10 +56,10 @@ import { VoiceMode } from "./VoiceMode";
 export function VoiceLauncher() {
   const hydrated = useHydrated();
   const profile = useProfile();
-  const previous = usePreviousProfile();
+  const [now] = useState(() => new Date());
+  const previous = useBaselineProfile(now);
   const decisions = useDecisions();
   const [open, setOpen] = useState(false);
-  const [now] = useState(() => new Date());
 
   const options = useMemo(
     () => ({ limits: ILLUSTRATIVE_LIMITS, now }),

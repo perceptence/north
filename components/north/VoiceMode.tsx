@@ -254,27 +254,61 @@ export function VoiceMode({
     >
       {/* The sky, radial from the centre rather than a top band — in a mode
           with no page under it there is no horizon to sit on, so the
-          atmosphere gathers around the mark instead. Same three sky tokens,
-          same OKLab interpolation, so every contrast figure still holds. */}
+          atmosphere gathers around the mark instead.
+
+          ── THE RAMP STARTS AT sky-600, NOT sky-300 ──────────────────────────
+          It used to open on sky-300, the LIGHTEST stop, at 0% — and the
+          gradient's centre (42%) lands within a dozen pixels of the state
+          label. So the palest point of the background sat directly behind the
+          text. Measured: `--text-on-deep` on sky-300 is **2.38:1**, and the
+          label's own dimming took it to **1.88:1**, against a WCAG AA floor
+          of 4.5 for body text and 3.0 for large. The comment that used to sit
+          here claimed "every contrast figure still holds"; it was asserted,
+          never measured, and it was false.
+
+          Nothing caught it because `lib/contrast.ts` discards the alpha
+          channel and `/design` only ever proofs sky-900 and sky-600 — the two
+          stops that were already recorded in `globals.css`. sky-300 was never
+          a text ground anywhere else in the product, so no figure existed for
+          it.
+
+          sky-600 → sky-900 keeps the reading the mode was designed around —
+          lighter at the middle, darker at the rim — and every word now sits on
+          6.83:1 or better. The glow the light stop was there for survives as
+          the bounded bloom below, which is confined to the glyph. */}
       <div
         aria-hidden="true"
         className="absolute inset-0"
         style={{
           background:
             "radial-gradient(circle at 50% 42% in oklab, " +
-            "var(--sky-300) 0%, var(--sky-600) 38%, var(--sky-900) 78%)",
+            "var(--sky-600) 0%, var(--sky-900) 78%)",
         }}
       />
 
-      {/* One breath of scale on the whole field, so the atmosphere is alive
-          even in the pause between turns. Slow enough to read as weather. */}
+      {/* One breath of light, so the atmosphere is alive even in the pause
+          between turns. Slow enough to read as weather.
+
+          ── BOUNDED, AND SITTING ON THE GLYPH RATHER THAN THE WORDS ──────────
+          This carries the light stop now, which means it decides the contrast
+          floor — so it is a fixed 200px disc centred on the mark at 26%, not
+          a full-viewport wash centred on the text at 42%. It is fully
+          transparent by 110px, and the state label sits ~120px below the
+          glyph's centre, so the bloom cannot reach any text at any point in
+          its cycle.
+
+          That bound is load-bearing, not cosmetic: at peak opacity this stop
+          over sky-600 measures 3.82:1 for dimmed text — under AA. Widening
+          the disc or raising the opacity re-breaks what the ramp above was
+          changed to fix. The glyph it lights is `aria-hidden` decoration, so
+          nothing behind the bloom has a contrast requirement at all. */}
       {!reduce && (
         <m.div
           aria-hidden="true"
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at 50% 42% in oklab, " +
+              "radial-gradient(circle 200px at 50% 26% in oklab, " +
               "var(--sky-300) 0%, transparent 55%)",
           }}
           animate={{ opacity: state === "listening" ? [0.35, 0.6, 0.35] : [0.2, 0.32, 0.2] }}
@@ -319,7 +353,12 @@ export function VoiceMode({
           initial={reduce ? false : { y: 6 }}
           animate={{ y: 0 }}
           transition={TRANSITION.standard}
-          className="type-overline mt-10 text-text-on-deep opacity-70"
+          // `text-on-deep-dim`, not `opacity-70` on the full token. They look
+          // nearly identical and they are not: the token is alpha .72 and
+          // carries a measured figure (4.72 on sky-600); the ad-hoc opacity
+          // multiplies down to .665 and measures 4.29 — under AA, on the one
+          // label that names the mode's state.
+          className="type-overline mt-10 text-text-on-deep-dim"
         >
           {state === "speaking"
             ? "North is speaking"

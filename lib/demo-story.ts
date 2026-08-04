@@ -20,12 +20,40 @@ import { seedProfile } from "@/state/profile-store";
  * straight to Today. Routing through the interstitial would drop the
  * travelling wordmark for a frame, which is exactly the seam the transition
  * exists to hide.
+ *
+ * ── TWO MOMENTS IN ONE STORY ──────────────────────────────────────────────
+ * `agedDays` slides the WHOLE narrative further into the past, which is what
+ * makes the return state reachable without waiting three real days for it.
+ *
+ * This is docs/STRATEGY.md's MVP item 6 — "a togglable 'three weeks later'
+ * state" — under a heading that reads "Item 6 is the one to protect", and
+ * docs/ARCHITECTURE.md states the requirement outright: *a seeded ledger so
+ * the return state is visible on first load — the differentiator can't be the
+ * thing a reviewer has to wait three weeks to see.* It was exactly that: the
+ * only open commitment sits at `iso(2)` against a three-day callback window,
+ * so the branch Today renders for the product's own moat was dead on the demo
+ * path, on every visit, forever.
+ *
+ * Ageing the story rather than shortening the window is deliberate. Dropping
+ * `CALLBACK_AFTER_DAYS` for the demo would put the nagging behaviour that
+ * constant was written to remove on the very screen meant to show judgment —
+ * demoing the defect instead of the design. And every date here derives from
+ * one `now`, so one subtraction moves the ledger, the letter's dateline and
+ * the story beats together, with nothing left to drift.
  */
 
 const DAY = 86_400_000;
 
-export function seedDemoStory(): void {
-  const now = Date.now();
+export interface DemoStage {
+  /**
+   * Days to age the whole story by. `3` is what ripens the open commitment
+   * past `CALLBACK_AFTER_DAYS`, so Today opens on North asking about it.
+   */
+  agedDays?: number;
+}
+
+export function seedDemoStory({ agedDays = 0 }: DemoStage = {}): void {
+  const now = Date.now() - agedDays * DAY;
   const iso = (daysAgo: number) => new Date(now - daysAgo * DAY).toISOString();
 
   const at = <T,>(value: T, daysAgo: number, confidence = "stated") => ({
@@ -123,14 +151,37 @@ export function seedDemoStory(): void {
    * past the read this whole demo is built around.
    */
   seedDecisions(([
-    {
-      id: "demo-space",
-      rungId: "tax-advantaged",
-      summary: "Move the excess into tax-advantaged space",
-      outcome: "open",
-      decidedAt: iso(2),
-      amountCents: 10_400_000,
-    },
+    /**
+     * The open commitment belongs to the RETURN staging only.
+     *
+     * It used to be seeded always, at `iso(2)`, and the argument for it was
+     * sound while committing did nothing visible: better to land on a coach
+     * holding a commitment than on one re-offering a decision already made.
+     *
+     * Now that Today has a Steady state, seeding it always would cost more
+     * than it buys — the landing screen would open on the acknowledgement and
+     * a reviewer would never see the ink button do anything. Left out of the
+     * base story, the two doors cover the whole loop between them:
+     *
+     *   /demo             the decision is offered · press it · Steady answers
+     *   /demo?at=return   you committed five days ago · North asks how it went
+     *
+     * Nothing else about the base seed changes: no decision settles
+     * `tax-advantaged`, so rung 4 is still current and Home keeps its read,
+     * which is the invariant the note below is protecting.
+     */
+    ...(agedDays > 0
+      ? [
+          {
+            id: "demo-space",
+            rungId: "tax-advantaged",
+            summary: "Move the excess into tax-advantaged space",
+            outcome: "open",
+            decidedAt: iso(2),
+            amountCents: 10_400_000,
+          },
+        ]
+      : []),
     {
       id: "demo-card",
       rungId: "high-interest-debt",

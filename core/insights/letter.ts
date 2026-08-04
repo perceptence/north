@@ -70,7 +70,7 @@ function position(
 ): ReadSegment[] {
   const evaluation = evaluate(current, {
     ...options,
-    skip: settledRungIds(decisions),
+    skip: settledRungIds(decisions, options.now),
   });
   if (!evaluation.current) {
     return [

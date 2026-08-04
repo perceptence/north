@@ -99,22 +99,33 @@ core/ + lib/cn
 `Card` accepts a `Decision`, the design system has become the application and
 `/design` stops being able to render it in isolation.
 
-**The deliberate exceptions — two components, and that is the complete list:**
+**The deliberate exceptions, and this list is checked rather than asserted:**
 
 | Component | Imports | Why it's acceptable |
 |---|---|---|
 | `Figure` | `Confidence`, all four formatters | Rendering a number *is* its job; confidence is part of its accessible name |
 | `HorizonBand` | `formatCurrency`, `Cents` | Builds a plain-string `aria-label` — the alternative is making callers pre-format, which is worse |
+| `HorizonField` | `CONFIDENCE_PHRASE`, `formatCurrency`, `Cents`, `Months` | Same argument as `HorizonBand`; it draws the same figures at full size |
+| `Row`, `OutcomeMark` | `type DecisionOutcome` | **Type-only**, erased at build. Both draw one of three outcomes and the union is the honest way to spell "one of three" |
 
-Both cross the line for the same reason: money formatting and confidence are
-*value types*, not domain logic. That is why `core/money.ts` and
-`core/confidence.ts` must stay dependency-free — they are the only part of
-`core/` the design system is permitted to see.
+The first three cross the line for the same reason: money formatting and
+confidence are *value types*, not domain logic. That is why `core/money.ts`
+and `core/confidence.ts` must stay dependency-free — they are the only part of
+`core/` the design system is permitted to see at runtime.
 
-Verifiable at any time:
+`Row` and `OutcomeMark` are a weaker case and worth naming as such: importing
+a domain union into the design system is real coupling, even erased. It is
+tolerated because the alternative — restating `"open" | "held" | "deferred"`
+in `components/nds/` — is a second copy of a vocabulary that
+`core/decisions/types.ts` argues at length must have exactly three members.
+
+Verifiable at any time. The exclusion list IS the table above, so this
+command failing means either the code or the table is wrong:
 
 ```bash
-grep -rn 'from "@/core/' components/nds/ | grep -v 'money\|confidence'
+grep -rn 'from "@/core/' components/nds/ \
+  | grep -v 'money\|confidence' \
+  | grep -v 'Row.tsx\|OutcomeMark.tsx'
 # must return nothing
 ```
 

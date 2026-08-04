@@ -266,7 +266,7 @@ describe("5 · goal funding", () => {
     );
   });
 
-  test("unsatisfied while a gap remains", () => {
+  test("unsatisfied while the pace does not keep up", () => {
     assert.equal(
       isSatisfied(
         "goal",
@@ -283,6 +283,50 @@ describe("5 · goal funding", () => {
       ),
       false,
     );
+  });
+
+  /**
+   * The distinction the rung used to miss.
+   *
+   * `funded` means the target is fully SAVED, so testing it made the rung
+   * fire for every goal that was merely incomplete — which is what a goal IS
+   * until its date. It then asked "Start funding it" above a sentence saying
+   * the money was already there. A goal being incomplete is not a problem; a
+   * goal being under-funded per month is.
+   */
+  test("satisfied when a gap remains but the monthly pace covers it", () => {
+    const onPace = profile({
+      goals: [
+        stated({
+          label: "A deposit",
+          targetCents: 100_000, // $1,000, well inside the monthly surplus
+          savedCents: 0, // so a gap genuinely remains
+          withinMonths: 24,
+        }),
+      ],
+    });
+    assert.equal(isSatisfied("goal", onPace), true);
+  });
+
+  test("the read names the shortfall, not what the goal already gets", () => {
+    const short = profile({
+      goals: [
+        stated({
+          label: "A deposit",
+          targetCents: 50_000_000,
+          savedCents: 0,
+          withinMonths: 12,
+        }),
+      ],
+    });
+    const read = rungById("goal").read(ctxFor(short));
+    const said = read.segments
+      .map((s) => (s.kind === "text" ? s.value : ""))
+      .join("");
+    assert.match(said, /short of that/, said);
+    // The ask and the read must agree: it may only say "start funding it"
+    // when it has just named a gap.
+    assert.equal(read.action.commit, "Start funding it");
   });
 });
 

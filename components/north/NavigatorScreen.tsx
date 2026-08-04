@@ -37,7 +37,7 @@ import {
 } from "@/core/navigator";
 import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
 import { useDecisions } from "@/state/decisions-store";
-import { usePreviousProfile, useProfile } from "@/state/profile-store";
+import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import { ActionLink, AssumedMark, BackMark } from "./ActionGlyphs";
 import { CoachConversation } from "./CoachConversation";
 import { ExplanationPanel } from "./ExplanationPanel";
@@ -84,9 +84,9 @@ const VERDICT_CLASS: Record<Verdict, string> = {
 export function NavigatorScreen() {
   const router = useRouter();
   const profile = useProfile();
-  const previous = usePreviousProfile();
-  const hydrated = useHydrated();
   const [now] = useState(() => new Date());
+  const previous = useBaselineProfile(now);
+  const hydrated = useHydrated();
 
   const [selected, setSelected] = useState<ScenarioId | null>(null);
   const [params, setParams] = useState<ParamSet>({});

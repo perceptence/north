@@ -41,3 +41,43 @@ export function callbackDue(decisions: Decision[], now: Date): Decision | null {
     ) ?? null
   );
 }
+
+/**
+ * The day North will ask about this commitment.
+ *
+ * The same three days as `callbackDue`, read forwards instead of backwards —
+ * so the screen that records a commitment can NAME the day rather than leaving
+ * the wait unexplained. That is the whole reason this is exported: a coach
+ * that says "I'll ask you on Thursday" has made the waiting legible, where one
+ * that simply goes quiet for three days is indistinguishable from one that
+ * forgot.
+ *
+ * In `core/` beside the rule it derives from, so the date and the decision to
+ * wait can never drift apart — a component computing `decidedAt + 3 days`
+ * itself would be a second copy of `CALLBACK_AFTER_DAYS`.
+ */
+export function callbackDueAt(decision: Decision): Date {
+  return new Date(new Date(decision.decidedAt).getTime() + CALLBACK_AFTER_DAYS * DAY);
+}
+
+/**
+ * The commitment on this rung that is recorded but not yet asked about.
+ *
+ * Distinct from `callbackDue` (what may I ask about) and from `openDecision`
+ * (what is unresolved) — this answers "have they already decided the thing I
+ * am about to offer them?", which is the question Today has to ask before it
+ * renders a decision a second time.
+ *
+ * Without it, committing changed nothing on screen: an `open` decision does
+ * not settle its rung, so the engine returned the same rung, and Today
+ * re-offered the identical decision under the identical button. Pressing it
+ * again filed a duplicate.
+ */
+export function committedOn(
+  decisions: Decision[],
+  rungId: Decision["rungId"],
+): Decision | null {
+  return (
+    decisions.find((d) => d.outcome === "open" && d.rungId === rungId) ?? null
+  );
+}
