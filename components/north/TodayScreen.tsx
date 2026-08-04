@@ -7,6 +7,7 @@ import {
   Figure,
   HorizonBand,
   HorizonField,
+  MarkedLine,
   RHYTHM,
   RungIndicator,
   Sheet,
@@ -584,27 +585,14 @@ export function TodayScreen() {
                  secondary, because the date is the commitment — it is what
                  you would want your eye to land on, and it is the part that
                  proves North is holding something rather than idling. */
-              /* ── ICON AND FIRST LINE, OPTICALLY LEVEL ──────────────────
-                 `items-start` aligns the two BOXES, which is not the same as
-                 aligning the mark with the text — a 16px glyph in an 18px
-                 line box sits 1px high of centre, and the eye reads that as
-                 the mark floating.
-
-                 The offset used to be `mt-[0.45em]`, tuned when this line was
-                 set at a much larger size. `em` scales with font-size, so
-                 dropping the text to `type-meta` silently shrank the nudge to
-                 roughly 6px against an 18px line — the mark hung below its own
-                 sentence. Half the difference between the line box and the
-                 glyph is the honest number, and it holds whatever the type
-                 does next. */
-              <div className="flex items-start gap-2.5">
-                <span
-                  aria-hidden="true"
-                  className="mt-[1px] shrink-0 text-text-tertiary"
-                >
-                  <WaitingMark />
-                </span>
-                <p className="type-meta measure text-text-secondary">
+              /* The type goes on the ROW, because that is what `1lh` inside
+                 `MarkedLine` measures. Before it, this carried an `mt-[0.45em]`
+                 nudge tuned for a much larger line. */
+              <MarkedLine
+                mark={<WaitingMark />}
+                className="type-meta measure text-text-tertiary"
+              >
+                <p className="text-text-secondary">
                   {sameDay(new Date(committed.decidedAt), now)
                     ? "Recorded."
                     : "You decided this already."}{" "}
@@ -618,7 +606,7 @@ export function TodayScreen() {
                   </span>
                   .
                 </p>
-              </div>
+              </MarkedLine>
             ) : (
               <div className={cn("flex flex-col items-start", RHYTHM.heading)}>
                 <div className="flex flex-wrap items-center gap-3">

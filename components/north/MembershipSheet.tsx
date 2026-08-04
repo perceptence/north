@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button, RHYTHM, SectionHeading, Text, Wordmark } from "@/components/nds";
+import {
+  Button,
+  MarkedLine,
+  RHYTHM,
+  SectionHeading,
+  Text,
+  Wordmark,
+} from "@/components/nds";
 import {
   NEVER_GATED,
   PLUS_PRICE_CENTS,
@@ -62,7 +69,7 @@ function Tick() {
     <svg
       aria-hidden="true"
       viewBox="0 0 16 16"
-      className="mt-1 size-4 shrink-0 text-text-tertiary"
+      className="size-4 shrink-0 text-text-tertiary"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.25"
@@ -89,12 +96,15 @@ function YoursNow() {
 
 function PanelRow({ label, note }: { label: string; note?: string }) {
   return (
-    <li className="flex items-start gap-2.5">
-      <Tick />
-      <span className="flex flex-col">
-        <span className="type-body text-text-primary">{label}</span>
-        {note && <span className="type-meta text-text-tertiary">{note}</span>}
-      </span>
+    <li>
+      {/* `type-body` on the ROW: the tick aligns to the LABEL's line, not to
+          the note's smaller one, and `1lh` reads whichever is on the row. */}
+      <MarkedLine mark={<Tick />} className="type-body">
+        <span className="flex flex-col">
+          <span className="text-text-primary">{label}</span>
+          {note && <span className="type-meta text-text-tertiary">{note}</span>}
+        </span>
+      </MarkedLine>
     </li>
   );
 }

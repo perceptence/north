@@ -50,7 +50,11 @@ export function Row({
 }: RowProps) {
   const content = (
     <>
-      <span className="mt-0.5">
+      {/* One line tall, mark centred in it — the same measurement
+          `MarkedLine` makes, inlined because this row also carries a figure
+          and a timestamp and is not a two-slot layout. `type-body` is the
+          first line's type, so `1lh` is 26px here. */}
+      <span className="type-body flex h-[1lh] shrink-0 items-center">
         <OutcomeMark outcome={outcome} />
       </span>
 

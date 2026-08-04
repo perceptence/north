@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { MarkedLine } from "./MarkedLine";
 
 /**
  * Two rules, both specific to financial software.
@@ -41,13 +42,18 @@ export function ErrorState({
         className,
       )}
     >
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden="true"
-          className="mt-2 size-2 shrink-0 rounded-full bg-signal-attention"
-        />
-        <p className="type-voice-md measure text-text-primary">{title}</p>
-      </div>
+      {/* `mt-2` was 8px of nudge for an 8px dot in a 34px line, which needs
+          13 — the signal dot has been sitting five pixels high of its own
+          sentence. `MarkedLine` takes the measurement from the line itself. */}
+      <MarkedLine
+        mark={
+          <span className="size-2 rounded-full bg-signal-attention" />
+        }
+        gap="gap-3"
+        className="type-voice-md measure text-text-primary"
+      >
+        <p>{title}</p>
+      </MarkedLine>
       <p className="type-body measure text-text-secondary">{unaffected}</p>
       {action && <div className="mt-1 self-start">{action}</div>}
     </div>

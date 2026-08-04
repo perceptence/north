@@ -47,6 +47,8 @@ export type { SliderProps } from "./Slider";
 export { Card } from "./Card";
 export type { CardProps, CardVariant } from "./Card";
 export { Row } from "./Row";
+/** A mark set level with the first line beside it — see the file. */
+export { MarkedLine } from "./MarkedLine";
 export type { RowOutcome, RowProps } from "./Row";
 export { Sheet } from "./Sheet";
 export type { SheetProps } from "./Sheet";
