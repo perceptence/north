@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DeviceFrame,
   SAFE_TOP,
@@ -8,6 +8,7 @@ import {
   SHELL,
   type Device,
 } from "./DeviceFrame";
+import { DemoPanel, JOURNEYS, type Journey } from "./DemoPanel";
 
 /**
  * The pitch stage — the window is the control.
@@ -37,7 +38,18 @@ const TABLET_MAX = 1400;
 
 /** Breathing room around a framed body. */
 const MARGIN_X = 56;
+/**
+ * Vertical breathing room around a framed body.
+ *
+ * The PANEL's height is measured rather than guessed and added on top — see
+ * `panelH`. A constant was tried and is wrong by construction: the pills wrap
+ * to a second row on a narrow window, so any single number is right at one
+ * width and short at another, and being short means the page grows a
+ * scrollbar around a device that was meant to fit exactly.
+ */
 const MARGIN_Y = 64;
+/** Stage padding and the gap between panel and device — `py-6` + `gap-6`. */
+const STAGE_GAP = 72;
 
 const VIEWPORT: Record<Device, { width: number; height: number }> = {
   phone: SCREEN.phone,
@@ -46,6 +58,46 @@ const VIEWPORT: Record<Device, { width: number; height: number }> = {
 
 export function PreviewShell() {
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  /**
+   * Which journey the framed app is showing, and how many times it has been
+   * asked for.
+   *
+   * The counter is what makes re-pressing the SAME journey work: the iframe
+   * is keyed on both, so asking for "the reveal" twice re-seeds and reloads
+   * rather than doing nothing because `src` did not change. Pressing a
+   * journey you are already on is the reset.
+   */
+  const [journey, setJourney] = useState<Journey>(JOURNEYS[0]);
+  const [visit, setVisit] = useState(0);
+  /** The panel's real height, so the device is scaled to the room it leaves. */
+  const [panelH, setPanelH] = useState<number | null>(null);
+  const observerRef = useRef<ResizeObserver | null>(null);
+
+  /**
+   * A CALLBACK ref, not `useRef` + an effect.
+   *
+   * The panel does not exist on the first render — nothing renders until the
+   * window has been measured — so an effect with `[]` deps runs once, finds
+   * no node, and never looks again. That left the device gated forever behind
+   * a height that was never taken. A callback ref fires when the node
+   * actually arrives, whenever that is.
+   */
+  const panelRef = useCallback((node: HTMLDivElement | null) => {
+    observerRef.current?.disconnect();
+    if (!node) return;
+    // Observed rather than read once: the pills rewrap as the window narrows,
+    // which changes the panel's height without changing anything else.
+    const observer = new ResizeObserver(([entry]) =>
+      setPanelH(entry.contentRect.height),
+    );
+    observer.observe(node);
+    observerRef.current = observer;
+  }, []);
+
+  const go = (next: Journey) => {
+    setJourney(next);
+    setVisit((n) => n + 1);
+  };
 
   useEffect(() => {
     const measure = () =>
@@ -54,6 +106,9 @@ export function PreviewShell() {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
+
+  // Nothing to disconnect on unmount beyond what the callback ref already
+  // does when React hands it `null`.
 
   // The server cannot know the window, so nothing renders until it is
   // measured. One quiet frame of sky beats a phone that pops into a desktop.
@@ -68,8 +123,31 @@ export function PreviewShell() {
   // of that glass is empty paper. Two devices side by side is what a wide
   // screen is FOR. The desktop layout is still one click away at the app's
   // own URL; it does not need a stage.
+  // The panel has to be in the tree before it can be measured, so the stage
+  // renders first and the hardware waits one frame — the same trade the
+  // window measurement above already makes, and for the same reason.
+  const ready = panelH !== null;
+  /**
+   * Vertical room the hardware does NOT get: margins, the panel, and the
+   * stage's own padding and gap. Computed once and used by both layouts —
+   * subtracting it in only one of them is exactly the bug that shipped a
+   * 128px scrollbar under the side-by-side pair.
+   */
+  const reservedY = MARGIN_Y + (panelH ?? 0) + STAGE_GAP;
+
   if (box.w >= TABLET_MAX) {
-    return <Pair box={box} />;
+    return (
+      <Stage journey={journey} onGo={go} panelRef={panelRef}>
+        {ready && (
+          <Pair
+            box={box}
+            reservedY={reservedY}
+            journey={journey}
+            visit={visit}
+          />
+        )}
+      </Stage>
+    );
   }
 
   const device: Device = box.w >= PHONE_MAX ? "tablet" : "phone";
@@ -79,12 +157,42 @@ export function PreviewShell() {
   const scale = Math.min(
     1,
     (box.w - MARGIN_X) / shell.width,
-    (box.h - MARGIN_Y) / shell.height,
+    (box.h - reservedY) / shell.height,
   );
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center">
-      <Body device={device} scale={scale} />
+    <Stage journey={journey} onGo={go} panelRef={panelRef}>
+      {ready && (
+        <Body device={device} scale={scale} journey={journey} visit={visit} />
+      )}
+    </Stage>
+  );
+}
+
+/**
+ * The stage: the panel, then whatever hardware is standing on it.
+ *
+ * A column rather than a floating overlay, so the panel cannot sit on top of
+ * the glass it is meant to be driving — and so its height is a real part of
+ * the layout the device is scaled to fit.
+ */
+function Stage({
+  journey,
+  onGo,
+  panelRef,
+  children,
+}: {
+  journey: Journey;
+  onGo: (next: Journey) => void;
+  panelRef: (node: HTMLDivElement | null) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative flex min-h-dvh flex-col items-center justify-center gap-6 py-6">
+      <div ref={panelRef}>
+        <DemoPanel active={journey.id} onGo={onGo} />
+      </div>
+      {children}
     </div>
   );
 }
@@ -100,18 +208,31 @@ const PAIR_GAP = 72;
  * lie about the hardware and the first thing an eye checks. The tablet's
  * height governs; the phone sits on the same baseline beside it.
  */
-function Pair({ box }: { box: { w: number; h: number } }) {
+function Pair({
+  box,
+  reservedY,
+  journey,
+  visit,
+}: {
+  box: { w: number; h: number };
+  reservedY: number;
+  journey: Journey;
+  visit: number;
+}) {
   const width = SHELL.tablet.width + PAIR_GAP + SHELL.phone.width;
   const height = SHELL.tablet.height;
 
   const scale = Math.min(
     1,
     (box.w - MARGIN_X) / width,
-    (box.h - MARGIN_Y) / height,
+    (box.h - reservedY) / height,
   );
 
+  // No full-height wrapper of its own — `Stage` owns the centring now, and
+  // nesting a second `min-h-dvh` inside it is what put the panel's height
+  // BELOW the fold instead of taking it out of the device's budget.
   return (
-    <div className="relative flex min-h-dvh items-center justify-center">
+    <div>
       <div style={{ width: width * scale, height: height * scale }}>
         <div
           className="flex items-end"
@@ -123,8 +244,8 @@ function Pair({ box }: { box: { w: number; h: number } }) {
             transformOrigin: "top left",
           }}
         >
-          <Body device="tablet" scale={1} />
-          <Body device="phone" scale={1} />
+          <Body device="tablet" scale={1} journey={journey} visit={visit} />
+          <Body device="phone" scale={1} journey={journey} visit={visit} />
         </div>
       </div>
     </div>
@@ -137,7 +258,17 @@ function Pair({ box }: { box: { w: number; h: number } }) {
  * The outer box carries the SCALED size so flex centring is honest and the
  * page never grows scrollbars around a shrunken device.
  */
-function Body({ device, scale }: { device: Device; scale: number }) {
+function Body({
+  device,
+  scale,
+  journey,
+  visit,
+}: {
+  device: Device;
+  scale: number;
+  journey: Journey;
+  visit: number;
+}) {
   const shell = SHELL[device];
   const screen = SCREEN[device];
   const viewport = VIEWPORT[device];
@@ -173,8 +304,11 @@ function Body({ device, scale }: { device: Device; scale: number }) {
             }}
           >
             <iframe
-              key={device}
-              src="/demo"
+              // Keyed on the journey AND the visit count, so choosing the one
+              // already showing remounts the frame and re-seeds — pressing
+              // where you already are is how you reset.
+              key={`${device}:${journey.id}:${visit}`}
+              src={journey.href}
               title={
                 device === "phone" ? "North on a phone" : "North on a tablet"
               }
