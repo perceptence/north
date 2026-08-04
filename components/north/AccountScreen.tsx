@@ -16,7 +16,13 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { exportBundle, importBundle } from "@/lib/transfer";
 import { updateAccount, useAccount } from "@/state/account-store";
 import { useMembership } from "@/state/membership-store";
-import { ActionLink, AjarMark, LedgerMark } from "./ActionGlyphs";
+import {
+  ActionLink,
+  AjarMark,
+  DownloadMark,
+  ReceiveMark,
+  SalutationMark,
+} from "./ActionGlyphs";
 import { AvatarMark } from "./SignUp";
 import { MembershipSheet } from "./MembershipSheet";
 
@@ -86,7 +92,7 @@ function Arrival({ open: openByDefault = false }: { open?: boolean }) {
 
   if (!open) {
     return (
-      <ActionLink icon={<AjarMark />} onClick={() => setOpen(true)}>
+      <ActionLink icon={<ReceiveMark />} onClick={() => setOpen(true)}>
         Coming from another device instead
       </ActionLink>
     );
@@ -249,7 +255,10 @@ export function AccountScreen() {
             </div>
           </div>
         ) : (
-          <ActionLink onClick={() => setName(account.name)}>
+          <ActionLink
+            icon={<SalutationMark />}
+            onClick={() => setName(account.name)}
+          >
             Call me something else
           </ActionLink>
         )}
@@ -305,7 +314,7 @@ export function AccountScreen() {
                 {copied ? "Copied" : "Copy code"}
               </Button>
               <ActionLink
-                icon={<LedgerMark />}
+                icon={<DownloadMark />}
                 onClick={() => {
                   const blob = new Blob([code], { type: "text/plain" });
                   const url = URL.createObjectURL(blob);

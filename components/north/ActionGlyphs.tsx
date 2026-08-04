@@ -222,6 +222,75 @@ export function OpenBookMark() {
 }
 
 /**
+ * Arriving from another device — the compass, handed on.
+ *
+ * Chosen in review (Aug 2026) over three alternatives: a sheet dropping into
+ * a tray, AjarMark's door with a step through it, and two devices passing
+ * between them. The two devices collapsed into a blob at 16px. The door was
+ * the near miss — but AjarMark is already the door, and it already means
+ * "leave it for now"; a second door would have made the shape ambiguous in
+ * the one screen where both appear. The tray survived, and went to
+ * `DownloadMark` below, where a record landing on this device is literally
+ * what happens.
+ *
+ * So: the instrument itself, received. What crosses between two phones is
+ * not a file, it is the thing North uses to read your position — and this
+ * product owns exactly one drawing of that.
+ */
+export function ReceiveMark() {
+  return (
+    <Mark>
+      <circle cx="10" cy="8" r="4.4" />
+      <path d="M1.6 8 H6.4" />
+      <path d="M4.4 6 L6.4 8 L4.4 10" />
+    </Mark>
+  );
+}
+
+/**
+ * Change what North calls you — the opening quote.
+ *
+ * Chosen in review (Aug 2026) over a nib, a line of address above its rule,
+ * and a name tag. The nib read most immediately as "edit", and the tag most
+ * immediately as "a field on a record" — which is exactly what this is not.
+ *
+ * The name here is the one North SAYS: the salutation at the top of the
+ * letter. A quote mark is print's own sign for speech, so the mark says
+ * "what you are called" rather than "a string you may modify". Legibility
+ * was traded for voice deliberately, and the label carries the meaning
+ * anyway — the mark's job is to say which KIND of thing this is.
+ */
+export function SalutationMark() {
+  return (
+    <Mark>
+      <path d="M5.6 4 C3.4 5.2 2.6 7 2.6 9.2 H5.8 V5.6" />
+      <path d="M12.4 4 C10.2 5.2 9.4 7 9.4 9.2 H12.6 V5.6" />
+    </Mark>
+  );
+}
+
+/**
+ * Take it as a file — the sheet, landing.
+ *
+ * Drawn for "arriving from another device" and reassigned here, which is the
+ * better home for it: downloading the recovery code IS a record dropping
+ * onto this device, and the tray-and-arrow says that without metaphor.
+ *
+ * It replaces `LedgerMark`, which was borrowed for this and means something
+ * else entirely — "the record of what you decided, and whether you held it".
+ * A mark that means the Decisions surface cannot also mean "save a file".
+ */
+export function DownloadMark() {
+  return (
+    <Mark>
+      <path d="M2.6 9.4 V13 H13.4 V9.4" />
+      <path d="M8 2.4 V9.6" />
+      <path d="M5.4 7 L8 9.6 L10.6 7" />
+    </Mark>
+  );
+}
+
+/**
  * North's spoken voice — the coach, speaking.
  *
  * Chosen in review (July 2026) over a hanging quote, a transcript's speaker
