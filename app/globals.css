@@ -465,24 +465,24 @@
       var(--paper-50) 100%
     );
     /**
-     * An OPAQUE FLOOR under the ramp, and it is load-bearing.
+     * NO background-color — and that is a lesson, not an omission.
      *
-     * `background` is a shorthand, so both declarations above reset
-     * `background-color` to `initial` — transparent. The element's only paint
-     * was a gradient IMAGE covering exactly its border box and not one device
-     * pixel more. Behind it sits the app's `body`, which is PAPER.
+     * A previous pass added `background-color: var(--sky-900)` as an "opaque
+     * floor", reasoning that the gradient IMAGE alone left the element's
+     * edges to antialias against the paper body behind it. The floor then
+     * DREW A LINE: at a fractional-scale bottom edge (every /preview render),
+     * the rasterizer gives the image and the color independent partial
+     * coverage, so the navy peeked out along the boundary row at roughly
+     * α(1−α) — a dark hairline across the full glass, exactly where the
+     * chrome meets the page. Verified by toggling the floor live: line with,
+     * no line without.
      *
-     * So every edge of the sky that lands on a fractional device pixel
-     * antialiased against paper, and put a pale hairline down the left and
-     * right of the masthead — the one place the sky is at its darkest and a
-     * white line is unmissable. /preview makes this ordinary rather than
-     * exotic: it scales whole device bodies by a fractional factor, so the
-     * iframe composites at a fractional x on every render.
-     *
-     * Deep, matching the ramp's first stop, so the floor can only ever show
-     * as more sky.
+     * And the white left-edge fringe the floor was meant to fix was never
+     * this element's: the sky spans the full viewport, so its own raster has
+     * no interior edge. That fringe was the IFRAME LAYER's edge compositing
+     * over a paper glass, and the fix lives there — DeviceFrame's glass is
+     * painted deep. An element gets to solve only its own problems.
      */
-    background-color: var(--sky-900);
     pointer-events: none;
   }
 

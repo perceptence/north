@@ -59,7 +59,11 @@ const BAND =
 /* A key is the same metal, lit along its length. */
 const KEY_V = "linear-gradient(180deg,#6a6d74,#35373c 55%,#4d5056)";
 const KEY_H = "linear-gradient(90deg,#6a6d74,#35373c 55%,#4d5056)";
-const GLASS_EDGE = "inset 0 0 1px rgba(255,255,255,.14)";
+/* No glass-edge highlight. The ALBA port drew a 1px white inset ring around
+   the glass for material realism. Against the black bezel it was invisible —
+   except along the TOP, where the app opens on its deepest sky and the ring
+   read as a light leak between the frame and the status bar. It was reported
+   as exactly that. A detail only ever visible as a defect is not a detail. */
 /* Contact + ambient, warm-dark for the paper end of the atmosphere. */
 const SHADOW =
   "0 2px 5px rgba(38,30,22,.35), 0 34px 70px -22px rgba(38,30,22,.55), inset 0 0 1px rgba(255,255,255,.45)";
@@ -267,7 +271,6 @@ export function DeviceFrame({
               padding: 12,
               borderRadius: 24,
               background: "#060607",
-              boxShadow: GLASS_EDGE,
             }}
           >
             {/* Front camera — centred on the landscape (long) edge, so it
@@ -342,7 +345,6 @@ export function DeviceFrame({
             padding: 7,
             borderRadius: 63,
             background: "#060607",
-            boxShadow: GLASS_EDGE,
           }}
         >
           {/* Earpiece — a hairline slit in the glass-to-bezel seam. */}
