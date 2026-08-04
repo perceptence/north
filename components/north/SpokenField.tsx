@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { CoachPresence, RHYTHM } from "@/components/nds";
-import { SpeakMark } from "./ActionGlyphs";
+import { ActionLink, SpeakMark } from "./ActionGlyphs";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useSpeechRecognition } from "@/lib/use-speech-recognition";
@@ -281,52 +281,48 @@ export function SpokenField({
           dictation to help you write it — an assist, not an alternative
           ending.
 
-          So the mic drops to the product's one tertiary shape: a drawn mark
-          and a label under the dotted signal-coach rule, exactly like every
-          other quiet thing you can do here. `SpeakMark` is the right glyph
-          and no longer overloaded — the offers list gave it up, so it means
-          one thing again: North, out loud.
+          So the mic drops to the product's one tertiary shape — and it uses
+          `ActionLink` to get there rather than restating its classes, which
+          is what the first pass did. Two copies of the same eight utilities
+          is how "the one shape for every quiet thing" quietly becomes two
+          shapes: the copy here already differed from the original in its
+          hover and its `self-start`, and nothing would have caught the drift.
 
-          Listening keeps the pill's old job of being unmissable: the
-          presence dot replaces the mark and the label says so. */}
+          `SpeakMark` is the right glyph and no longer overloaded — the offers
+          list gave it up, so it means one thing again: North, out loud.
+
+          Listening keeps the pill's old job of being unmissable, and that is
+          now ActionLink's `pressed` state: the presence dot replaces the
+          mark, the label rises to ink and drops its rule.
+
+          The wrapper span exists because `cn` is a plain joiner, not
+          tailwind-merge — passing `self-auto` to override ActionLink's
+          `self-start` would leave BOTH in the class list and let stylesheet
+          order decide. The span is the flex child instead, so this row's
+          `items-center` governs it. */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         {action}
         {canListen && (
-          <button
-            type="button"
-            aria-pressed={listening}
-            onClick={() => {
-              if (listening) {
-                stopListening();
-                return;
-              }
-              // The transcript is a full re-delivery each update, not a
-              // delta — so THIS field is responsible for remembering what was
-              // already typed and prepending it back on.
-              baseRef.current = value;
-              startListening();
-            }}
-            className={cn(
-              "type-meta hit-target inline-flex cursor-pointer items-center gap-2",
-              "rounded-full select-none",
-              "transition-colors duration-[--motion-micro]",
-              listening
-                ? // The open microphone is this viewport's one signal element —
-                  // live state, honestly announced.
-                  "text-text-primary"
-                : "text-text-tertiary hover:text-text-secondary",
-            )}
-          >
-            {listening ? <CoachPresence size="sm" /> : <SpeakMark />}
-            <span
-              className={cn(
-                !listening &&
-                  "underline decoration-signal-coach decoration-dotted decoration-1 underline-offset-4",
-              )}
+          <span className="inline-flex">
+            <ActionLink
+              pressed={listening}
+              className="select-none"
+              icon={listening ? <CoachPresence size="sm" /> : <SpeakMark />}
+              onClick={() => {
+                if (listening) {
+                  stopListening();
+                  return;
+                }
+                // The transcript is a full re-delivery each update, not a
+                // delta — so THIS field is responsible for remembering what
+                // was already typed and prepending it back on.
+                baseRef.current = value;
+                startListening();
+              }}
             >
               {listening ? "Listening" : "Or say it"}
-            </span>
-          </button>
+            </ActionLink>
+          </span>
         )}
       </div>
     </div>

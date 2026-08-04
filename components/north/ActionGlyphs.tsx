@@ -262,6 +262,16 @@ export interface ActionLinkProps {
    * working unchanged; only callers that need it have to ask for it.
    */
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
+  /**
+   * For a tertiary action that TOGGLES rather than fires once.
+   *
+   * Sets `aria-pressed`, and while it is on the label rises to ink and drops
+   * the dotted rule. That is not decoration either: the rule means *"there
+   * is more behind this"*, and a control currently doing its job is
+   * reporting a state, not offering a way in. Omitted entirely by every
+   * one-shot caller, which is most of them.
+   */
+  pressed?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -291,6 +301,7 @@ export interface ActionLinkProps {
 export function ActionLink({
   icon,
   onClick,
+  pressed,
   children,
   className,
 }: ActionLinkProps) {
@@ -298,15 +309,24 @@ export function ActionLink({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={pressed}
       className={cn(
         "type-meta hit-target inline-flex cursor-pointer items-center gap-2",
-        "self-start rounded-full text-text-tertiary",
-        "transition-colors duration-[--motion-micro] hover:text-text-secondary",
+        "self-start rounded-full",
+        "transition-colors duration-[--motion-micro]",
+        pressed
+          ? "text-text-primary"
+          : "text-text-tertiary hover:text-text-secondary",
         className,
       )}
     >
       {icon}
-      <span className="underline decoration-dotted decoration-signal-coach decoration-1 underline-offset-4">
+      <span
+        className={cn(
+          !pressed &&
+            "underline decoration-dotted decoration-signal-coach decoration-1 underline-offset-4",
+        )}
+      >
         {children}
       </span>
     </button>

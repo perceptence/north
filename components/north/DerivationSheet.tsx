@@ -109,7 +109,14 @@ function Step({
         )}
       >
         {body}
-        <span className="type-meta shrink-0 text-text-tertiary underline decoration-dotted underline-offset-4">
+        {/* The product's rule, not a generic dotted one. This said
+            `decoration-dotted` alone — no `signal-coach`, no `decoration-1` —
+            so the one affordance in the sheet that says "you can fix this"
+            wore a hairline in the text colour while every other quiet action
+            in the app wears the coach's indigo. It is not an `ActionLink`
+            because it cannot be: it is a hint inside a larger tap target, and
+            a button does not nest in a button. The rule is the same rule. */}
+        <span className="type-meta shrink-0 text-text-tertiary underline decoration-dotted decoration-signal-coach decoration-1 underline-offset-4">
           change
         </span>
       </button>
