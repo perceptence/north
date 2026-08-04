@@ -32,6 +32,8 @@ import {
   ActionLink,
   AdjustMark,
   AjarMark,
+  BehindMark,
+  CorrectionMark,
   DownloadMark,
   HiddenMark,
   AssumedMark,
@@ -44,6 +46,7 @@ import {
   ReceiveMark,
   SalutationMark,
   SignpostMark,
+  UnchangedMark,
   StoryMark,
 } from "@/components/north/ActionGlyphs";
 import { AssumptionsPanel } from "@/components/north/AssumptionsPanel";
@@ -997,7 +1000,7 @@ export default function DesignGallery() {
           </Specimen>
           <Specimen
             name="Action marks"
-            note="North has no icon library and will not gain one — every mark comes from the same hairline pen as the glyphs and the horizon fan. Every mark here was chosen in user review — July 2026 for the first set, August for the account\u2019s four — after the losing drawings failed the 16px read. Candidates are judged in the ROW they join, never alone: a mark\u2019s job is to be told apart from its neighbours, and \u201CHide it\u201D beside \u201CDownload it\u201D is where the mirrored-tray candidate died. 1.25 stroke on a 16 grid, a hair lighter than the nav glyphs because they sit beside meta text and must not outweigh it. The mark is OPTIONAL \u2014 \u201CNever mind\u201D goes bare on purpose, being the quiet half of a pair beside a bordered pill."
+            note="North has no icon library and will not gain one — every mark comes from the same hairline pen as the glyphs and the horizon fan. Every mark here was chosen in user review — July 2026 for the first set, August for the account’s four — after the losing drawings failed the 16px read. Candidates are judged in the ROW they join, never alone: a mark’s job is to be told apart from its neighbours, and “Hide it” beside “Download it” is where the mirrored-tray candidate died, and “I’ve already done this” sits next to BackMark for the same reason. 1.25 stroke on a 16 grid, a hair lighter than the nav glyphs because they sit beside meta text and must not outweigh it. The mark is OPTIONAL — “Never mind” goes bare on purpose, being the quiet half of a pair beside a bordered pill."
           >
             <div className="flex flex-col items-start gap-1">
               <ActionLink icon={<AssumedMark />} onClick={() => undefined}>
@@ -1044,6 +1047,21 @@ export default function DesignGallery() {
               </ActionLink>
               <ActionLink icon={<HiddenMark />} onClick={() => undefined}>
                 Hide it
+              </ActionLink>
+              <ActionLink icon={<UnchangedMark />} onClick={() => undefined}>
+                Still right
+              </ActionLink>
+              <ActionLink icon={<CorrectionMark />} onClick={() => undefined}>
+                Change it
+              </ActionLink>
+              <ActionLink icon={<BehindMark />} onClick={() => undefined}>
+                I&rsquo;ve already done this
+              </ActionLink>
+              {/* Adjacent on purpose: these two are the closest pair in the
+                  set, and the gallery is where that has to be checkable. The
+                  filled marker is the whole difference. */}
+              <ActionLink icon={<BackMark />} onClick={() => undefined}>
+                Navigator (BackMark, for comparison)
               </ActionLink>
               {/* The null option is part of the pattern, not an omission. */}
               <ActionLink onClick={() => undefined}>Never mind</ActionLink>

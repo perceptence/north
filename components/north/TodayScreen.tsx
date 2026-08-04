@@ -53,9 +53,11 @@ import { useMembership } from "@/state/membership-store";
 import { CorrectionTurn } from "./CorrectionTurn";
 import {
   ActionLink,
+  BehindMark,
+  CorrectionMark,
   HorizonMark,
   LedgerMark,
-  SalutationMark,
+  UnchangedMark,
 } from "./ActionGlyphs";
 import { DerivationSheet } from "./DerivationSheet";
 import { LadderPanel } from "./LadderPanel";
@@ -517,6 +519,7 @@ export function TodayScreen() {
                   </Text>
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                     <ActionLink
+                      icon={<UnchangedMark />}
                       onClick={() => {
                         const key = FRESHNESS_KEY[stale.turnId];
                         if (key) confirmField(key);
@@ -525,7 +528,7 @@ export function TodayScreen() {
                       Still right
                     </ActionLink>
                     <ActionLink
-                      icon={<SalutationMark />}
+                      icon={<CorrectionMark />}
                       onClick={() => setCorrecting(stale.turnId)}
                     >
                       Change it
@@ -646,7 +649,7 @@ export function TodayScreen() {
                     fire, so the next thing North does is ask what changed.
                     That is the loop closing where it actually happens. */}
                 <ActionLink
-                  icon={<LedgerMark />}
+                  icon={<BehindMark />}
                   onClick={() =>
                     alreadyDone(
                       evaluation.current!.rung.id,

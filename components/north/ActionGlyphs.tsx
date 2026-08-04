@@ -322,6 +322,85 @@ export function HiddenMark() {
 }
 
 /**
+ * Still right — nothing has moved.
+ *
+ * Chosen in review (Aug 2026) over a sealed ring, the needle upright, and a
+ * tick. The tick is the one worth naming: it is every app's mark for "done",
+ * and this is the single action on Today where nothing was DONE. Confirming a
+ * figure changes no money — it changes how current North's picture is, and
+ * borrowing completion's mark would have said the opposite of the truth.
+ *
+ * Two rules at one height, which reads as "equals". That is not a pun on the
+ * meaning, it IS the meaning: the figure North holds and the figure that is
+ * true are the same, and the answer re-stamps `asOf` to say so.
+ */
+export function UnchangedMark() {
+  return (
+    <Mark>
+      <path d="M3 6.2 H13" />
+      <path d="M3 9.8 H13" />
+    </Mark>
+  );
+}
+
+/**
+ * Change it — the proofreader's caret.
+ *
+ * Chosen in review (Aug 2026) over a nib, a turned dial, and `AdjustMark`.
+ *
+ * The nib was the near miss, and interestingly it is the mark REJECTED last
+ * round for "Call me something else" on the grounds that it said "edit" — the
+ * reason it lost there is the reason it nearly won here. It lost anyway: a pen
+ * also means "write", and this action never creates anything. It corrects a
+ * figure that already exists.
+ *
+ * `AdjustMark` was the trap. It exists, it means "adjust", and it is already
+ * spoken for: re-pointing a GOAL. Reaching for it would have been the same
+ * overload this round was called to fix.
+ *
+ * The caret means one thing in the whole of print — this line wants something
+ * different — and print is the register this product is written in.
+ */
+export function CorrectionMark() {
+  return (
+    <Mark>
+      <path d="M2.6 11.4 H13.4" />
+      <path d="M5.4 8.6 L8 5.4 L10.6 8.6" />
+    </Mark>
+  );
+}
+
+/**
+ * I've already done this — the ground behind you.
+ *
+ * Chosen in review (Aug 2026) over a cleared rung and a tick sealed in a ring,
+ * and it replaces `LedgerMark`, which was borrowed here and means the
+ * Decisions surface. This is not a record being kept; it is a fact being
+ * reported — the money moved before North asked.
+ *
+ * ── AND IT IS DELIBERATELY NOT `BackMark` ─────────────────────────────────
+ * The two are close, and that was raised at review: both draw a rule with a
+ * leftward head. `BackMark` is a NAVIGATION arrow — a line with an arrowhead
+ * and nothing else, meaning "return the way you came". This one carries a
+ * filled marker at the near end: the position you are standing in NOW, with
+ * the distance already walked running away behind it. The filled shape is the
+ * difference, and it is the identity's own device for "this one is real"
+ * (the needle's north point, `SpeakMark`'s dot).
+ *
+ * They also never appear together: `BackMark` lives on a screen you can leave,
+ * and this lives on the decision card.
+ */
+export function BehindMark() {
+  return (
+    <Mark>
+      <path d="M12.6 8 H4.4" />
+      <path d="M7.4 4.9 L4.4 8 L7.4 11.1" />
+      <circle cx="12.6" cy="8" r="1.5" fill="currentColor" stroke="none" />
+    </Mark>
+  );
+}
+
+/**
  * North's spoken voice — the coach, speaking.
  *
  * Chosen in review (July 2026) over a hanging quote, a transcript's speaker
