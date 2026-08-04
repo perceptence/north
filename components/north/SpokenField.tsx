@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { CoachPresence, RHYTHM } from "@/components/nds";
+import { SpeakMark } from "./ActionGlyphs";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useSpeechRecognition } from "@/lib/use-speech-recognition";
@@ -272,7 +273,23 @@ export function SpokenField({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      {/* ── THE ACTION, AND THE OTHER WAY TO ANSWER ─────────────────────────
+          These two were matching pills, and that was the mistake: a filled
+          ink capsule beside an outlined one reads as two peer choices, so
+          the composer looked like it was asking which button you wanted.
+          They are not peers. One SUBMITS what you wrote; the other opens
+          dictation to help you write it — an assist, not an alternative
+          ending.
+
+          So the mic drops to the product's one tertiary shape: a drawn mark
+          and a label under the dotted signal-coach rule, exactly like every
+          other quiet thing you can do here. `SpeakMark` is the right glyph
+          and no longer overloaded — the offers list gave it up, so it means
+          one thing again: North, out loud.
+
+          Listening keeps the pill's old job of being unmissable: the
+          presence dot replaces the mark and the label says so. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         {action}
         {canListen && (
           <button
@@ -290,18 +307,25 @@ export function SpokenField({
               startListening();
             }}
             className={cn(
-              "type-label inline-flex min-h-11 cursor-pointer items-center gap-2.5",
-              "rounded-full border px-4 py-3 select-none",
-              "transition-[background-color,border-color,color] duration-[--motion-micro]",
+              "type-meta hit-target inline-flex cursor-pointer items-center gap-2",
+              "rounded-full select-none",
+              "transition-colors duration-[--motion-micro]",
               listening
                 ? // The open microphone is this viewport's one signal element —
                   // live state, honestly announced.
-                  "border-signal-coach text-text-primary"
-                : "border-action-border text-text-secondary hover:border-action-border-hover hover:bg-surface-sunken",
+                  "text-text-primary"
+                : "text-text-tertiary hover:text-text-secondary",
             )}
           >
-            {listening && <CoachPresence size="sm" />}
-            {listening ? "Listening" : "Or say it"}
+            {listening ? <CoachPresence size="sm" /> : <SpeakMark />}
+            <span
+              className={cn(
+                !listening &&
+                  "underline decoration-signal-coach decoration-dotted decoration-1 underline-offset-4",
+              )}
+            >
+              {listening ? "Listening" : "Or say it"}
+            </span>
           </button>
         )}
       </div>
