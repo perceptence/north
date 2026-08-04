@@ -9,6 +9,7 @@ import {
   type Account,
 } from "@/core/account";
 import { cn } from "@/lib/cn";
+import { DEMO_NAME } from "@/lib/demo-story";
 import { digestPassword, saveAccount } from "@/state/account-store";
 import { ActionLink, AjarMark } from "./ActionGlyphs";
 
@@ -104,13 +105,23 @@ export function AvatarMark({
   account: Pick<Account, "name" | "avatar"> & { id?: string };
   size?: number;
 }) {
-  const [failed, setFailed] = useState(false);
+  const [failures, setFailures] = useState(0);
   const label = initials(account.name);
-  // Their own picture first, always. The stand-in only fills a saved
-  // account's vacancy.
-  const src =
-    account.avatar ??
-    (account.id && !failed ? STOCK_PORTRAIT(account.id, size * 2) : undefined);
+
+  /**
+   * Their own picture, then the stand-in, then the initials — and each step
+   * is reached only by the one before it FAILING.
+   *
+   * The first version short-circuited on `account.avatar`, so an avatar that
+   * would not load left a broken image in the circle with no way down. The
+   * demo character's portrait is a file on disk that a fresh clone may not
+   * have yet, which makes that path ordinary rather than exotic.
+   */
+  const chain = [
+    account.avatar,
+    account.id ? STOCK_PORTRAIT(account.id, size * 2) : undefined,
+  ].filter(Boolean) as string[];
+  const src = chain[failures];
 
   return (
     <span
@@ -127,7 +138,7 @@ export function AvatarMark({
         <img
           src={src}
           alt=""
-          onError={() => setFailed(true)}
+          onError={() => setFailures((n) => n + 1)}
           className="h-full w-full object-cover"
         />
       ) : (
@@ -216,7 +227,7 @@ export function SignUp() {
         label="Your name"
         value={name}
         onChange={setName}
-        placeholder="Avery Chen"
+        placeholder={DEMO_NAME}
         autoComplete="name"
         error={tried ? (nameProblem ?? undefined) : undefined}
       />

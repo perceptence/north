@@ -43,10 +43,16 @@ export interface Account {
   name: string;
   email: string;
   /**
-   * A small square data URI, or absent for the drawn initials fallback.
-   * Downscaled at the edge before it reaches here: `localStorage` is a few
-   * megabytes for the WHOLE product, and a phone camera photo is larger
-   * than that on its own.
+   * The picture, or absent to fall through to the stand-in and then to the
+   * drawn initials.
+   *
+   * Normally a small square data URI — an uploaded photo is centre-cropped
+   * and downscaled at the edge before it reaches here, because
+   * `localStorage` is a few megabytes for the WHOLE product and a phone
+   * camera photo is larger than that on its own.
+   *
+   * It may also be a plain URL, which is how the seeded demo character
+   * carries a real portrait out of `public/` without spending storage on it.
    */
   avatar?: string;
   secret?: AccountSecret;

@@ -7,6 +7,27 @@ import { seedDecisions } from "@/state/decisions-store";
 import { seedProfile } from "@/state/profile-store";
 
 /**
+ * Who the demo is about.
+ *
+ * Named here rather than inline because the signup form shows this name as
+ * its placeholder — the example and the character should be one person, and
+ * two string literals in two files is how they stop being.
+ */
+export const DEMO_NAME = "Max Smith";
+export const DEMO_EMAIL = "max@example.com";
+
+/**
+ * The character's portrait, served from `public/`.
+ *
+ * A real file, not the pravatar stand-in: a reviewer meets this person, and
+ * a face fetched from a third party at page load is a dependency the demo
+ * path should not have. If the file is missing the avatar falls through to
+ * the stand-in and then to initials, so a fresh clone is never broken —
+ * only less specific.
+ */
+export const DEMO_PORTRAIT = "/demo/max.jpg";
+
+/**
  * The demo story, as a function rather than a page.
  *
  * Not random impressive numbers: a NARRATIVE, staged so every surface sings at
@@ -127,11 +148,17 @@ export function seedDemoStory({ agedDays = 0 }: DemoStage = {}): void {
    * No `secret`: nobody typed a password here, and inventing a digest for a
    * credential that was never chosen would be a fiction in the one place
    * this product keeps scrupulously honest.
+   *
+   * The portrait is a real file rather than the stock stand-in every other
+   * pictureless account gets: this is the character a reviewer meets, and
+   * the one account in the product worth giving a face on purpose. It also
+   * means the demo path makes no outbound request for it.
    */
   saveAccount({
     id: "acc_demo",
-    name: "Avery Chen",
-    email: "avery@example.com",
+    name: DEMO_NAME,
+    email: DEMO_EMAIL,
+    avatar: DEMO_PORTRAIT,
     createdAt: iso(37),
     consentAt: iso(37),
   });
