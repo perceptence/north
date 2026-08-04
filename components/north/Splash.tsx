@@ -1,95 +1,87 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import {
   AnimatePresence,
+  DURATION,
+  EASE,
   m,
-  TRANSITION,
   useReducedMotion,
   Wordmark,
 } from "@/components/nds";
 
 /**
- * The launch beat — the sky, the mark, then the app.
+ * The launch beat — a radial sky, the mark at its centre, then the app.
  *
- * ── WHAT IT HONESTLY COVERS ───────────────────────────────────────────────
+ * ── EVERY LAUNCH, NOT ONCE A SESSION ──────────────────────────────────────
+ * It used to write a `sessionStorage` flag and skip itself afterwards, on the
+ * theory that a launch is a session thing. In practice that meant the beat
+ * was invisible for the rest of the day — including on the reload you do
+ * immediately after changing something, which is the moment you most want to
+ * see it. A splash is the app OPENING, and a page load IS the app opening,
+ * so it plays on every one of them.
+ *
+ * It still does not play on soft navigation between destinations, and that
+ * needs no flag: the product shell owns this component, the shell survives
+ * client-side routing, so Today → Goals never remounts it. Mount is the
+ * honest definition of launch, and mount is what drives it.
+ *
+ * ── WHAT IT COVERS ────────────────────────────────────────────────────────
  * Everything North knows lives in localStorage, which the server cannot
- * read, so every screen renders empty and fills after hydration. On a phone
- * that is a visible pop-in at the exact moment of first impression. The
- * splash holds the brand over that swap and lifts once the app under it is
- * real — it covers actual work, which is the only condition under which
- * this product draws a wait at all (docs/UX-ARCHITECTURE.md §11). There is
- * NO spinner and NO progress anything: a mark on the sky, then the product.
+ * read, so every screen renders empty and fills after hydration. The splash
+ * holds the brand over that swap — it covers real work, which is the only
+ * condition under which this product draws a wait at all
+ * (docs/UX-ARCHITECTURE.md §11). No spinner, no progress: a mark on the sky,
+ * then the product.
  *
- * ── WHY IT IS RENDERED ON THE SERVER ──────────────────────────────────────
- * A splash that mounts after hydration would appear AFTER the thing it
- * exists to cover. So it server-renders open, and `useSyncExternalStore`'s client
- * snapshot closes it before first paint when this session has seen it. `sessionStorage`
- * rather than localStorage: a launch is a session thing — an installed app
- * cold-starting gets the beat, a tab kept open all day does not get it again
- * on every navigation.
+ * ── THE RADIAL ────────────────────────────────────────────────────────────
+ * A radial ombre, not the linear masthead ramp: the mark sits at the centre
+ * of its own light rather than partway down someone else's gradient. The
+ * three sky tokens are the ones `.atmosphere` already uses, so this is the
+ * product's own weather seen from directly beneath it.
  *
  * ── AND HOW IT LEAVES ─────────────────────────────────────────────────────
- * The whole sky lifts, a curtain rising off the page that is already there.
- * The exit animates the COVER, never the content — "motion never gates
- * visibility" stays true because nothing under it waits for it. Tap skips.
- * Reduced motion removes it without ceremony.
+ * It opens from its own centre. The cover was sliding UPWARD at first, which
+ * is a curtain's exit — coherent over a linear gradient, and nonsense over a
+ * radial one: a light with a middle does not have a top edge to leave by. So
+ * the glow scales up through the viewer and dissolves, and the app is behind
+ * it. Quick, because this is the release of a held breath, not a passage.
  *
- * Below `lg` only: on desktop the app arrives inside a browser chrome that
- * has its own loading affordances, and a full-screen brand moment there
- * reads as an ad. On a phone or tablet — held, launched, full-bleed — it
- * reads as an app opening.
+ * The exit animates the COVER, never the content — "motion never gates
+ * visibility" holds, because nothing underneath ever waited on it. This is
+ * the same exception `motion.ts` grants overlays: a splash renders OVER
+ * content rather than being it, and a dropped frame leaves a stuck cover,
+ * not a blank page. Tap skips. Reduced motion cuts straight to the app.
  */
 
-const SEEN_KEY = "north.splash";
 /** Long enough to register as a beat, short enough to never feel like a gate. */
 const HOLD_MS = 1100;
 
-const noopSubscribe = () => () => {};
+/**
+ * The aperture opening. Far enough past 1 to read as motion toward you at
+ * this speed; not so far that the mark smears on its way out.
+ */
+const ZOOM_TO = 1.35;
 
 /**
- * Whether this session already had its beat — read the way "server and
- * client disagree" is meant to be read. The server snapshot says show (it
- * cannot know), the client snapshot answers from sessionStorage, and React
- * reconciles without a flash or a setState-in-effect. Storage that throws
- * (privacy modes) counts as unseen: every launch a first launch is the
- * harmless direction to fail.
+ * Duration, not a spring. A spring only asymptotes toward its target, and
+ * this element UNMOUNTS at the end — so the last frames of an easing curve
+ * have to actually arrive, or the cover pops rather than opening. `micro` is
+ * a cut at this scale; `standard` is the shortest step that still reads as a
+ * zoom.
  */
-function useSeenThisSession(): boolean {
-  return useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      try {
-        return window.sessionStorage.getItem(SEEN_KEY) !== null;
-      } catch {
-        return false;
-      }
-    },
-    () => false,
-  );
-}
+const OPENING = { duration: DURATION.standard, ease: EASE.out } as const;
 
 export function Splash() {
   const reduce = useReducedMotion();
-  const seen = useSeenThisSession();
-  const [dismissed, setDismissed] = useState(false);
-  const showing = !seen && !dismissed;
-
-  // The flag is written at DISMISSAL, not at mount: the layout persists
-  // across route changes, so this mounts once per real launch — and writing
-  // early would flip the snapshot above mid-beat.
-  const dismiss = () => {
-    setDismissed(true);
-    try {
-      window.sessionStorage.setItem(SEEN_KEY, "1");
-    } catch {
-      /* the beat repeats next launch — harmless */
-    }
-  };
+  const [showing, setShowing] = useState(true);
 
   useEffect(() => {
     if (!showing) return;
-    const timer = window.setTimeout(dismiss, reduce ? 0 : HOLD_MS);
+    const timer = window.setTimeout(
+      () => setShowing(false),
+      reduce ? 0 : HOLD_MS,
+    );
     return () => window.clearTimeout(timer);
   }, [showing, reduce]);
 
@@ -98,22 +90,23 @@ export function Splash() {
       {showing && (
         <m.div
           key="splash"
-          onClick={dismiss}
-          exit={reduce ? { y: "-100%", transition: { duration: 0 } } : { y: "-100%" }}
-          transition={TRANSITION.considered}
-          className="fixed inset-0 z-50 flex items-center justify-center lg:hidden"
+          onClick={() => setShowing(false)}
+          exit={
+            reduce
+              ? { opacity: 0, transition: { duration: 0 } }
+              : { scale: ZOOM_TO, opacity: 0 }
+          }
+          transition={OPENING}
+          className="fixed inset-0 z-50 flex items-center justify-center"
           style={{
-            // The full atmosphere, floor to ceiling — the same ramp every
-            // masthead crops the top of, so the app appearing under this
-            // reads as the splash's own sky settling into the chrome.
+            // The sky, seen from directly beneath it. Same three tokens as
+            // `.atmosphere`, arranged around the mark instead of above it.
             backgroundImage:
-              "linear-gradient(180deg in oklab, var(--sky-900) 0%, var(--sky-600) 55%, var(--sky-300) 85%, var(--paper-50) 100%)",
+              "radial-gradient(circle at 50% 50% in oklab, var(--sky-300) 0%, var(--sky-600) 45%, var(--sky-900) 100%)",
           }}
         >
-          {/* Upper third, where the mark sits against the deep sky — dead
-              centre would put it on the teal, where on-deep ink thins out. */}
-          <div className="-translate-y-16 text-text-on-deep">
-            <Wordmark height={26} strokeWidth={1.6} />
+          <div className="text-text-on-deep">
+            <Wordmark height={30} strokeWidth={1.5} />
           </div>
         </m.div>
       )}

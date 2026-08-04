@@ -68,26 +68,6 @@ export interface SituationProfile {
    */
   openingConcern: Field<string>;
 
-  /**
-   * What to call them — a first name, offered freely and skippable freely.
-   *
-   * The ONLY identity North holds, and that is the design, not a gap:
-   * everything lives on this device, so there is no account, no email, no
-   * password — nothing to authenticate against and therefore nothing
-   * collected. A coach needs a name to address the letter; it does not need
-   * to know who you are to anyone else. Absent when they'd rather not say.
-   */
-  name?: Field<string>;
-
-  /**
-   * The terms, acknowledged — coaching-not-advice, figures-are-readings,
-   * everything-stays-on-device — before the first reveal.
-   *
-   * A plain record, not a `Field`: consent is an event, not a financial fact
-   * with a confidence. Optional at the type level because seeded and legacy
-   * profiles predate it; the onboarding path always records it.
-   */
-  consent?: { at: string };
 
   incomeBand: Field<IncomeBand>;
   /** Cash and cash equivalents available today. */

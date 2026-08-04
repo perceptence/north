@@ -12,6 +12,8 @@ Premium AI financial coaching. Read these before making decisions:
 - [docs/BACKLOG.md](docs/BACKLOG.md) — future items, explicitly out of MVP scope
 - [docs/MEMBERSHIP.md](docs/MEMBERSHIP.md) — Free/Plus: the judgment is never
   paywalled, the time is; gates live at the surface, never in the engine
+- [docs/ACCOUNT.md](docs/ACCOUNT.md) — identity vs situation, the signup
+  order, the credential digest, and how a record moves between devices
 - [docs/VOICE.md](docs/VOICE.md) — voice mode: **built** — voice input in
   onboarding, a typed coach on Navigator, and a full-screen voice mode on
   phone and tablet
@@ -62,7 +64,10 @@ Coach observes → surfaces ONE thing → you decide → coach tracks it → che
   intelligence; it never depends on a model call to produce an answer.
 - **New capability is a state or an overlay** until it proves it needs a surface.
 - **No settings screen.** Correcting what North knows is a one-question
-  conversation off the derivation overlay, never a form.
+  conversation off the derivation overlay, never a form. `/account` is not
+  one: it holds identity, membership and the device transfer — no
+  preferences, nothing financial — and hangs off the masthead avatar rather
+  than the dock, so the four-destination cap is untouched.
 - **No spinners, no workload meters, no "failed" states.** Onboarding's
   wayfinding strip (answered / here / to come) is position, never a
   percentage filling toward "done." See

@@ -219,6 +219,15 @@ export function useProfileHistory(): ProfileSnapshot[] {
   );
 }
 
+/** Read once, outside React — for the transfer bundle. */
+export function readProfileAndHistory(): {
+  profile: SituationProfile | null;
+  history: ProfileSnapshot[];
+} {
+  load();
+  return { profile: profileSnapshot, history: historySnapshot };
+}
+
 export function saveProfile(profile: SituationProfile): void {
   load();
 

@@ -80,6 +80,12 @@ export function useMembership(): Membership {
   );
 }
 
+/** Read once, outside React — for the transfer bundle. */
+export function readMembership(): Membership {
+  load();
+  return snapshot;
+}
+
 export function beginPlus(now: Date = new Date()): void {
   load();
   const renews = new Date(now.getTime() + PERIOD_DAYS * 86_400_000);

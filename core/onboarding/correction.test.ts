@@ -137,8 +137,6 @@ describe("correction agrees with onboarding", () => {
     retirement: said(600),
     employerMatch: said(600),
     horizon: said(240),
-    name: { value: "Avery", confidence: "stated" as const },
-    consent: said("acknowledged"),
   };
 
   test("applying every answer equals building from them", () => {

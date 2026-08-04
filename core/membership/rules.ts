@@ -68,16 +68,54 @@ export function storyIncluded(tier: Tier): boolean {
 }
 
 /**
- * What Plus holds, for anywhere that lists it. Copy in the coach's voice,
- * written once — the sheet and any future surface quote this rather than
- * paraphrasing it apart.
+ * The tiers, line by line, as a COMPARISON.
+ *
+ * ── WHY BOTH COLUMNS, ALWAYS ──────────────────────────────────────────────
+ * A paywall that lists only what you are missing is an advertisement. It
+ * also misrepresents this product specifically: the free tier is a complete
+ * coach, and someone deciding whether to pay deserves to see that written
+ * down next to what they would be adding. So every line names what BOTH
+ * tiers give, and a free reader can see that most of the rows already say
+ * yes.
+ *
+ * `free: true` means the free tier has it in full. Where the tiers differ,
+ * `free` carries the honest description of the smaller version rather than a
+ * dash — "The first one, fully paced" is a real answer; an empty cell is a
+ * shrug.
  */
-export const PLUS_INCLUDES: readonly string[] = [
-  "Every what-if — home, career break, pay cut",
-  "Voice — the whole conversation, out loud",
-  "Every goal you’re carrying, not just the first",
-  "The story of how you got here, replayed",
+export interface TierLine {
+  what: string;
+  free: string | true;
+  plus: string | true;
+}
+
+export const TIER_LINES: readonly TierLine[] = [
+  { what: "The daily read, and the decision behind it", free: true, plus: true },
+  { what: "Your record — decisions, callbacks, the letter", free: true, plus: true },
+  { what: "Showing the working behind every figure", free: true, plus: true },
+  { what: "Asking anything, in writing", free: true, plus: true },
+  { what: "Correcting what North knows, any time", free: true, plus: true },
+  {
+    what: "What-ifs you can drag",
+    free: "Debt and contributions",
+    plus: "All five, including home, career break and pay cut",
+  },
+  {
+    what: "Goals",
+    free: "The first one, fully paced",
+    plus: "Every goal, funded in deadline order",
+  },
+  { what: "Talking to North out loud", free: "—", plus: "The whole conversation" },
+  { what: "The story of how you got here", free: "—", plus: "Replayed, beat by beat" },
 ];
+
+/**
+ * What Plus adds, for anywhere that needs the short version. Derived from
+ * the table above rather than written twice, so the two cannot drift.
+ */
+export const PLUS_INCLUDES: readonly string[] = TIER_LINES.filter(
+  (line) => line.free !== true,
+).map((line) => (typeof line.plus === "string" ? line.plus : line.what));
 
 /**
  * The sentence that keeps the paywall honest, shown wherever Plus is

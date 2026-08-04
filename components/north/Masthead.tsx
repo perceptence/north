@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Wordmark } from "@/components/nds";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
+import { useAccount } from "@/state/account-store";
 import { useMembership } from "@/state/membership-store";
 import { MembershipSheet } from "./MembershipSheet";
+import { AvatarMark } from "./SignUp";
 import { SKY_HEIGHT } from "./Sky";
 
 /**
@@ -40,6 +43,7 @@ import { SKY_HEIGHT } from "./Sky";
 export function Masthead() {
   const hydrated = useHydrated();
   const membership = useMembership();
+  const account = useAccount();
   const [managing, setManaging] = useState(false);
 
   return (
@@ -52,19 +56,35 @@ export function Masthead() {
       <Wordmark height={13} strokeWidth={2} />
 
       {/* Gated on hydration like every localStorage read — the server cannot
-          know the tier, and guessing is a hydration mismatch. */}
-      {hydrated && membership.tier === "plus" && (
-        <button
-          type="button"
-          onClick={() => setManaging(true)}
-          aria-label="Your Plus membership"
-          className={cn(
-            "type-overline hit-target cursor-pointer rounded-full",
-            "opacity-70 transition-opacity duration-[--motion-micro] hover:opacity-100",
+          know the tier or the account, and guessing is a hydration
+          mismatch. */}
+      {hydrated && (
+        <div className="flex items-center gap-3">
+          {membership.tier === "plus" && (
+            <button
+              type="button"
+              onClick={() => setManaging(true)}
+              aria-label="Your Plus membership"
+              className={cn(
+                "type-overline hit-target cursor-pointer rounded-full",
+                "opacity-70 transition-opacity duration-[--motion-micro] hover:opacity-100",
+              )}
+            >
+              Plus
+            </button>
           )}
-        >
-          Plus
-        </button>
+          {/* The avatar is the way into the account — where an account
+              always is, and pointedly NOT a fifth thing in the dock. */}
+          {account && (
+            <Link
+              href="/account"
+              aria-label="Your account"
+              className="rounded-full transition-opacity duration-[--motion-micro] hover:opacity-80"
+            >
+              <AvatarMark account={account} size={28} />
+            </Link>
+          )}
+        </div>
       )}
 
       <MembershipSheet open={managing} onClose={() => setManaging(false)} />

@@ -58,6 +58,8 @@ export { HorizonField } from "./HorizonField";
 export type { HorizonFieldProps } from "./HorizonField";
 export { RungIndicator, WATERFALL_LENGTH } from "./RungIndicator";
 export type { RungIndicatorProps } from "./RungIndicator";
+export { FormField } from "./FormField";
+export type { FormFieldProps } from "./FormField";
 export { RouteMarks } from "./RouteMarks";
 export type {
   RouteMark,

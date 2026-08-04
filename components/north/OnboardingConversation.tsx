@@ -7,7 +7,6 @@ import {
   ChoiceChip,
   ChoiceChipGroup,
   CoachPresence,
-  RHYTHM,
   RouteMarks,
   Text,
   type RouteMark,
@@ -32,7 +31,6 @@ import {
 import { cn } from "@/lib/cn";
 import { saveProfile } from "@/state/profile-store";
 
-import { ActionLink, AjarMark } from "./ActionGlyphs";
 import { Sky } from "./Sky";
 import { SpokenField } from "./SpokenField";
 import { TURN_GLYPH, TurnGlyph } from "./TurnGlyph";
@@ -468,41 +466,7 @@ export function OnboardingConversation() {
                       </Button>
                     }
                   />
-                  {/* The decline, recorded as an EMPTY answer — an answer,
-                      so the conversation moves on; empty, so the profile
-                      holds nothing. Quiet on purpose: it is a real choice,
-                      not the suggested one. */}
-                  {turn.optional && (
-                    <ActionLink
-                      icon={<AjarMark />}
-                      onClick={() => record(turn, toTextAnswer(""))}
-                    >
-                      Rather not say
-                    </ActionLink>
-                  )}
                 </>
-              ) : turn.kind === "acknowledge" ? (
-                <div className={cn("flex flex-col items-start", RHYTHM.block)}>
-                  {/* The terms, one per line, in the coach's reading voice —
-                      body size, not voice-md: this is the one place the
-                      coach slows down and speaks carefully, and setting it
-                      at full speaking size would make a contract SHOUT. */}
-                  <div className={cn("flex flex-col", RHYTHM.pair)}>
-                    {turn.statement.map((line) => (
-                      <Text key={line} variant="body" tone="secondary" measure>
-                        {line}
-                      </Text>
-                    ))}
-                  </div>
-                  <Button
-                    variant="primary"
-                    onClick={() =>
-                      record(turn, { value: "acknowledged", confidence: "stated" })
-                    }
-                  >
-                    {turn.action}
-                  </Button>
-                </div>
               ) : (
                 <>
                   <ChoiceChipGroup label={turn.question} block={turn.block}>

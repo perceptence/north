@@ -21,6 +21,7 @@ import {
 import { storyIncluded } from "@/core/membership";
 import { ILLUSTRATIVE_LIMITS } from "@/core/waterfall";
 import { useDecisions } from "@/state/decisions-store";
+import { useAccount } from "@/state/account-store";
 import { useMembership } from "@/state/membership-store";
 import { useBaselineProfile, useProfile } from "@/state/profile-store";
 import {
@@ -241,6 +242,7 @@ export function InsightsScreen() {
    *  state, not a boolean plus a payload that can disagree with it. */
   const [openBehind, setOpenBehind] = useState<Behind | null>(null);
   const membership = useMembership();
+  const account = useAccount();
   /** The story replay is Plus; the letter itself never is. */
   const [proposing, setProposing] = useState(false);
 
@@ -256,6 +258,7 @@ export function InsightsScreen() {
     profile,
     decisions,
     { limits: ILLUSTRATIVE_LIMITS, now },
+    account?.name,
   );
 
   // "Since June 21" states one edge and makes the reader work out the other

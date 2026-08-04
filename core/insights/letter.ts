@@ -99,10 +99,16 @@ export function composeLetter(
   current: SituationProfile,
   decisions: Decision[],
   options: EvaluateOptions,
+  /**
+   * Who to address it to. Passed in rather than read off the profile: the
+   * name belongs to the ACCOUNT (core/account), and the profile is a
+   * situation, not a person. `core/` never reaches across that line.
+   */
+  name?: string,
 ): Letter {
   const footnote = blindSpots(current);
 
-  const salutation = current.name ? `${current.name.value} —` : null;
+  const salutation = name?.trim() ? `${name.trim()} —` : null;
 
   if (!previous || !sinceIso) {
     return {

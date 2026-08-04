@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import {
   FREE_SCENARIOS,
+  TIER_LINES,
   NEVER_GATED,
   PLUS_PRICE_CENTS,
   canOpenScenario,
@@ -64,6 +65,38 @@ describe("the line between free and plus", () => {
     // also implies the warning stays free, which IS a gateable surface.
     assert.match(NEVER_GATED, /never buys: the read/);
     assert.ok(FREE_SCENARIOS.has("debt-first"), "the copy just became a lie");
+  });
+});
+
+describe("the comparison a reader is shown", () => {
+  /**
+   * The paywall has to show what free ALREADY gives, or it is an
+   * advertisement. This is also the honest claim about this product: most
+   * rows say yes on both sides, and hiding that would misrepresent it.
+   */
+  it("says what both tiers hold, on every line", () => {
+    assert.ok(TIER_LINES.length >= 6, "too thin to be a comparison");
+    for (const line of TIER_LINES) {
+      assert.ok(line.what.length > 0);
+      assert.ok(line.free === true || line.free.length > 0, line.what);
+      assert.ok(line.plus === true || line.plus.length > 0, line.what);
+    }
+  });
+
+  it("free is a complete coach, not a teaser", () => {
+    // The majority of the table is already yours. If a change ever tips this
+    // the other way, the product has become a trial rather than a tier.
+    const whole = TIER_LINES.filter((line) => line.free === true).length;
+    assert.ok(
+      whole > TIER_LINES.length / 2,
+      `only ${whole} of ${TIER_LINES.length} lines are free in full`,
+    );
+  });
+
+  it("the read is one of the lines free holds in full", () => {
+    const read = TIER_LINES.find((line) => /daily read/i.test(line.what));
+    assert.ok(read, "the comparison stopped naming the read");
+    assert.equal(read.free, true);
   });
 });
 

@@ -38,6 +38,15 @@ user because it cannot ask who is asking.
 
 ## Where it lives
 
+- **Compared** first: the sheet shows what BOTH tiers hold, from
+  `TIER_LINES` in core, so a reader sees what they already have next to what
+  they would be adding. A paywall listing only what you lack is an
+  advertisement — and here it would also misrepresent the product, since
+  most lines already say yes on both sides. A test asserts that stays true.
+- **Bought** through a checkout that states the price, the renewal date and
+  how to stop — but takes **no card**. There is no processor, and a card
+  form would be a prop; the button says "demo, no card" and the line beneath
+  it says where a released build would hand off.
 - **Proposed** contextually, never as an interstitial: a locked scenario row
   (marked with a quiet `PLUS` overline — the word, not a padlock), the voice
   launcher on free, a second goal, the story link. Each opens the

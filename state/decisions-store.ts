@@ -108,6 +108,12 @@ function decisionId(): string {
   return `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/** Read once, outside React — for the transfer bundle. */
+export function readDecisions(): Decision[] {
+  load();
+  return snapshot;
+}
+
 export function appendDecision(
   decision: Omit<Decision, "id" | "decidedAt"> & { decidedAt?: string },
 ): Decision {

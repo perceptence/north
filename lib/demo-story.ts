@@ -65,11 +65,6 @@ export function seedDemoStory({ agedDays = 0 }: DemoStage = {}): void {
   /** The situation as it stood five weeks ago — the letter diffs against this. */
   const before = {
     openingConcern: at("I have cash piling up and no idea what to do with it.", 37),
-    // The character has a name so the letter's salutation is part of the
-    // demo, and consent because this profile stands for someone who walked
-    // the conversation — which now closes on the terms.
-    name: at("Avery", 37),
-    consent: { at: iso(37) },
     financialConfidence: at("mostly-ok", 37),
     incomeBand: at("200k-400k", 37),
     liquidCents: at(5_000_000, 37), // $50k → 4 months

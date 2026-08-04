@@ -12,9 +12,11 @@ export {
   NEVER_GATED,
   PLUS_INCLUDES,
   PLUS_PRICE_CENTS,
+  TIER_LINES,
   canOpenScenario,
   goalLimit,
   scenarioTier,
   storyIncluded,
   voiceIncluded,
 } from "./rules.ts";
+export type { TierLine } from "./rules.ts";
