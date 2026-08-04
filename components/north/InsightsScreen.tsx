@@ -12,7 +12,9 @@ import {
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
+  behind,
   composeLetter,
+  type Behind,
   type ChangeKind,
   type Direction,
 } from "@/core/insights";
@@ -25,6 +27,7 @@ import {
   SignpostMark,
   StoryMark,
 } from "./ActionGlyphs";
+import { InsightSheet } from "./InsightSheet";
 import { ReadProse } from "./ReadProse";
 
 /**
@@ -48,6 +51,45 @@ import { ReadProse } from "./ReadProse";
  */
 
 const emptyActions = { action: { commit: "", defer: "" } };
+
+/**
+ * A dispatch, made openable — but only where there is something behind it.
+ *
+ * `behind()` returns `null` when the honest answer is "nothing to add" (an
+ * empty ledger has no record to show), and then this renders a plain block
+ * with no affordance at all. The alternative — always a button, sometimes
+ * opening onto an apology — teaches people the taps are decoration, which is
+ * the same lesson a fixed menu of offers teaches (see core/coach/offers.ts).
+ *
+ * `disabled` rather than a branch on the element type, so the enabled case
+ * can style the label through `group-enabled:` and the dead case simply
+ * doesn't light up.
+ */
+function BehindButton({
+  detail,
+  onOpen,
+  children,
+}: {
+  detail: Behind | null;
+  onOpen: (detail: Behind) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={!detail}
+      onClick={() => detail && onOpen(detail)}
+      aria-label={detail ? `${detail.eyebrow}` : undefined}
+      className={cn(
+        "group flex w-full flex-col text-left",
+        RHYTHM.pair,
+        detail && "cursor-pointer",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 /**
  * The mark for a direction — two ticks on the ground: before, and after.
@@ -168,6 +210,9 @@ export function InsightsScreen() {
   const previous = useBaselineProfile(now);
   const decisions = useDecisions();
   const hydrated = useHydrated();
+  /** The dispatch whose reasoning is open. `null` is closed — one piece of
+   *  state, not a boolean plus a payload that can disagree with it. */
+  const [openBehind, setOpenBehind] = useState<Behind | null>(null);
 
   useEffect(() => {
     if (hydrated && !profile) router.replace("/start");
@@ -196,6 +241,9 @@ export function InsightsScreen() {
     animate: { y: 0 },
     transition: { ...TRANSITION.standard, delay },
   });
+
+  const options = { limits: ILLUSTRATIVE_LIMITS, now };
+  const previousProfile = previous?.profile ?? null;
 
   return (
     <div className={cn("flex flex-col pb-16", RHYTHM.screen)}>
@@ -230,14 +278,31 @@ export function InsightsScreen() {
               <m.li
                 key={`${entry.kind}-${index}`}
                 {...stage(0.06 + index * 0.05)}
-                className={cn(
-                  "flex flex-col border-t border-line-hairline py-6 first:border-t-0 first:pt-0",
-                  RHYTHM.pair,
-                )}
+                className="border-t border-line-hairline py-6 first:border-t-0 first:pt-0"
               >
+                {/* ── THE DISPATCH OPENS ───────────────────────────────────
+                    Every one of these sentences is the visible tip of a real
+                    calculation, and none of it was reachable — the reader who
+                    wanted to know HOW North knows had nowhere to go.
+
+                    The whole entry is the target rather than a trailing link:
+                    the thing you want to know more about is the thing you
+                    just read, so that is the thing you tap. The label wears
+                    the dotted signal-coach rule, which is the product's one
+                    mark for "there is more behind this" — the same rule an
+                    inferred Figure and an interrogable RungIndicator wear.
+
+                    `behind()` returns null where there is nothing honest to
+                    add, and then this stays a plain block. A room that opens
+                    onto "there is nothing here" is worse than a sentence that
+                    never offered to open. */}
+                <BehindButton
+                  detail={behind(entry, previousProfile, profile, decisions, options)}
+                  onOpen={setOpenBehind}
+                >
                 <div className="flex items-center gap-2.5">
                   <EntryMark kind={entry.kind} direction={entry.direction} />
-                  <span className="type-label text-text-primary">
+                  <span className="type-label text-text-primary group-enabled:underline group-enabled:decoration-signal-coach group-enabled:decoration-dotted group-enabled:decoration-1 group-enabled:underline-offset-4">
                     {entry.label}
                   </span>
                   {whenWord(entry.at, now) && (
@@ -264,6 +329,7 @@ export function InsightsScreen() {
                     read={{ ...emptyActions, segments: entry.meaning }}
                   />
                 </div>
+                </BehindButton>
               </m.li>
             ))}
           </ol>
@@ -338,6 +404,10 @@ export function InsightsScreen() {
       >
         <ReadProse read={{ ...emptyActions, segments: letter.footnote }} />
       </m.div>
+
+      {/* The room behind whichever dispatch was opened. One instance, driven
+          by which detail is held — not one sheet per entry. */}
+      <InsightSheet detail={openBehind} onClose={() => setOpenBehind(null)} />
     </div>
   );
 }
