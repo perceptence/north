@@ -284,49 +284,44 @@ function Body({
         }}
       >
         <DeviceFrame device={device}>
-          {/* The app starts below the status bar, the way it would on the
-              device. Its logical height shrinks by the same inset so the
-              scaled result still fills the glass exactly.
+          {/* ── THE APP OWNS THE WHOLE GLASS ─────────────────────────────
+              The iframe fills the screen edge to edge and the status bar is
+              drawn OVER it, exactly as the OS does on hardware. The inset is
+              handed to the app in the URL and it lays its own chrome out
+              beneath it (see `SafeArea` and `--safe-top`).
 
-              The inset carries the SKY, because on a real device the app's
-              background runs edge to edge and the status bar is drawn over it.
-              Left as paper, the strip read as a white letterbox and the white
-              clock vanished into it. Every product screen opens on the deep
-              sky, so continuing it here is the honest join. */}
-          <div
+              This replaces a wrapper that padded the iframe down by the inset
+              and painted the gap deep. That gap was not a background, it was
+              a LID: the app underneath never knew an inset existed, so it
+              began its 64px sky at what it believed was the top of the screen
+              and crammed the entire sky-900 → paper ramp into the strip just
+              below the status bar. On a phone that ramp starts at the top of
+              the glass and runs behind the clock. The framed preview and the
+              real thing were two different pictures.
+
+              The inset is divided by the scale before it is sent, because the
+              app measures in ITS logical pixels, not the device's. */}
+          <iframe
+            // Keyed on the journey AND the visit count, so choosing the one
+            // already showing remounts the frame and re-seeds — pressing
+            // where you already are is how you reset.
+            key={`${device}:${journey.id}:${visit}`}
+            src={`${journey.href}${journey.href.includes("?") ? "&" : "?"}inset=${
+              Math.round((SAFE_TOP[device] / (screen.width / viewport.width)) * 100) / 100
+            }`}
+            title={device === "phone" ? "North on a phone" : "North on a tablet"}
+            className="block border-0"
             style={{
-              // One pixel less inset, and one more of app: the iframe OVERLAPS
-              // the strip. Scaling a framed body to fit lands the iframe's top
-              // edge on a fraction of a pixel, and the sliver that showed
-              // through was a pale hairline running the width of the glass.
-              paddingTop: SAFE_TOP[device] - 1,
+              width: viewport.width,
+              // Deep, not paper. An iframe paints its own background before
+              // the document inside it does, so a paper default is exactly
+              // the wrong colour at the one edge that can ever show it.
               background: "var(--surface-deep)",
+              height: screen.height / (screen.width / viewport.width),
+              transform: `scale(${screen.width / viewport.width})`,
+              transformOrigin: "top left",
             }}
-          >
-            <iframe
-              // Keyed on the journey AND the visit count, so choosing the one
-              // already showing remounts the frame and re-seeds — pressing
-              // where you already are is how you reset.
-              key={`${device}:${journey.id}:${visit}`}
-              src={journey.href}
-              title={
-                device === "phone" ? "North on a phone" : "North on a tablet"
-              }
-              className="border-0"
-              style={{
-                width: viewport.width,
-                // Deep, not paper. An iframe paints its own background before
-                // the document inside it does, so a paper default is exactly
-                // the wrong colour at the one edge that can ever show it.
-                background: "var(--surface-deep)",
-                height:
-                  (screen.height - SAFE_TOP[device] + 1) /
-                  (screen.width / viewport.width),
-                transform: `scale(${screen.width / viewport.width})`,
-                transformOrigin: "top left",
-              }}
-            />
-          </div>
+          />
         </DeviceFrame>
       </div>
     </div>

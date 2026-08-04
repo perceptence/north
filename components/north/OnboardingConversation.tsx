@@ -286,7 +286,12 @@ export function OnboardingConversation() {
           opaque floor of its own — and a question scrolled up under it showed
           through the tail. The ground goes behind the gradient; the gradient
           still paints the sky. */}
-      <header className="fixed inset-x-0 top-0 z-10 h-24 overflow-hidden bg-surface-page md:h-28">
+      <header
+        className="fixed inset-x-0 top-0 z-10 overflow-hidden bg-surface-page"
+        // Inset + bar. The sky is `h-full`, so it covers both and runs one
+        // ramp from the top of the glass — see the product shell's note.
+        style={{ height: "calc(var(--safe-top) + var(--chrome-onboarding))" }}
+      >
         <Sky className="h-full" />
         {/* Same padding-then-column nesting as the sections below, so the
             masthead, the glyph stage, and every question share one left edge
@@ -346,7 +351,9 @@ export function OnboardingConversation() {
           fade out as it goes under, the way it does at the top of the sky. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-24 z-10 md:top-28"
+        className="pointer-events-none fixed inset-x-0 z-10"
+        // Sits directly under the header, so it carries the same inset.
+        style={{ top: "calc(var(--safe-top) + var(--chrome-onboarding))" }}
       >
         <div className="bg-surface-page px-4 pt-6 md:px-6 md:pt-8 lg:px-7">
           <div className="mx-auto w-full max-w-column">

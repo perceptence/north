@@ -77,7 +77,10 @@ export function OpeningFlow() {
 
   return (
     <div className="relative min-h-dvh">
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-10 h-24 md:h-28">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-10"
+        style={{ height: "calc(var(--safe-top) + var(--chrome-onboarding))" }}
+      >
         <Sky className="h-full" />
         <div className="absolute inset-0 flex items-center px-4 md:px-6 lg:px-7">
           <div className="mx-auto w-full max-w-column text-text-on-deep">
@@ -91,7 +94,13 @@ export function OpeningFlow() {
           its own text. The terms are a thing to read and then agree to, and
           an agree button floating directly under the last line reads as the
           end of a paragraph rather than the end of a page. */}
-      <div className="min-h-dvh px-4 pt-28 pb-10 md:px-6 md:pt-32 lg:px-7">
+      <div
+        className="min-h-dvh px-4 pb-10 md:px-6 lg:px-7"
+        // Chrome + inset, plus the 1rem of air the old `pt-28` held over
+        // `h-24` (and `md:pt-32` over `md:h-28`) — one relationship now,
+        // instead of four numbers kept in agreement by hand.
+        style={{ paddingTop: "calc(var(--safe-top) + var(--chrome-onboarding) + 1rem)" }}
+      >
         <m.div
           key={step}
           initial={{ y: 8 }}

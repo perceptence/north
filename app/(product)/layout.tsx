@@ -42,10 +42,35 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
       <div className="pointer-events-none fixed inset-x-0 top-0 z-40">
         {/* `.atmosphere` is position:absolute, so it contributes NO flow
             height — this box supplies it. Without the box, anything placed
-            after the sky stacks on top of it instead of below. */}
-        <div className={cn("relative", SKY_HEIGHT)}>
+            after the sky stacks on top of it instead of below.
+
+            ── THE SKY RUNS BEHIND THE STATUS BAR ────────────────────────────
+            `paddingTop: var(--safe-top)` with `content-box`, so the box is
+            inset + bar and `SKY_HEIGHT` still means the BAR. The sky is
+            `h-full`, and a percentage height on an absolutely positioned
+            child resolves against its containing block's PADDING box — so it
+            covers the inset too, without a second measurement to keep in
+            agreement.
+
+            That is the difference between an app and a page in a frame. On
+            hardware the app owns every pixel of the glass and the OS draws
+            its clock over the app's own background; the ramp starts at the
+            top of the screen. /preview used to fake this from outside by
+            pushing the whole iframe down and painting the gap deep, which
+            left the app laying its FULL ramp out below the status bar —
+            spent before it cleared the masthead, and visibly steeper than the
+            same screen on a phone. */}
+        <div
+          className={cn("relative", SKY_HEIGHT)}
+          style={{ paddingTop: "var(--safe-top)", boxSizing: "content-box" }}
+        >
           <Sky className="h-full" />
-          <div className="absolute inset-0 px-4 md:px-6 lg:px-7">
+          {/* Below the inset, never under the clock. `inset-0` sets top:0;
+              the inline `top` wins and pushes the row clear. */}
+          <div
+            className="absolute inset-0 px-4 md:px-6 lg:px-7"
+            style={{ top: "var(--safe-top)" }}
+          >
             <div className="pointer-events-auto mx-auto h-full w-full max-w-column">
               <Masthead />
             </div>
@@ -108,7 +133,13 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
 
               The nav is `fixed` in both postures — bottom dock, or the lg left
               rail — so it never takes part in this column's flow. */}
-          <div aria-hidden="true" className={SKY_HEIGHT} />
+          {/* Reserves inset + bar, the same way the chrome above spends it —
+              same padding, same `content-box`, so the two cannot drift. */}
+          <div
+            aria-hidden="true"
+            className={SKY_HEIGHT}
+            style={{ paddingTop: "var(--safe-top)", boxSizing: "content-box" }}
+          />
           <ProductNav />
           {/* The floating way into voice mode — fixed like the nav, so it
               belongs to the shell rather than to any screen's flow. Renders

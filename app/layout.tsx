@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { MotionProvider } from "@/components/nds/MotionProvider";
+import { SafeArea } from "@/components/north/SafeArea";
 import { SplashGate } from "@/components/north/SplashGate";
 import "./globals.css";
 
@@ -39,6 +40,17 @@ const figure = Geist_Mono({
  */
 export const viewport: Viewport = {
   themeColor: "#20264E",
+  /**
+   * The app paints to the edges of the glass, including under the status bar,
+   * and lays its own chrome out beneath the inset via `--safe-top`.
+   *
+   * Without `cover`, `env(safe-area-inset-top)` resolves to 0 on every device
+   * — the browser letterboxes the page below the notch and never reports an
+   * inset. The sky would then start below the status bar rather than running
+   * behind it, which is the difference between an app and a web page in a
+   * frame.
+   */
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -67,6 +79,10 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <MotionProvider>
+          {/* The device's top inset, where the OS cannot report one. Ambient
+              and read through CSS, so it must be set before any chrome
+              measures itself against it. */}
+          <SafeArea />
           {/* The launch beat, on every fresh load of the PRODUCT — the gate
               exempts the project tooling. At the root so the first-time
               user's first load (Arrival, onboarding) gets it too. */}

@@ -83,6 +83,35 @@
      a screen the way paper holds the rest, so it does not count against the
      one-signal-per-viewport rule. Content always lands back on paper. */
   --surface-deep: var(--sky-900);
+
+  /**
+   * The safe area at the top of the glass — the strip the OS draws its clock
+   * over.
+   *
+   * On a real device this resolves through `env()` (the root layout asks for
+   * `viewport-fit: cover`, without which it is always 0). Everywhere else it
+   * is 0 and every `calc()` below collapses to the plain layout.
+   *
+   * /preview cannot use `env()` — an iframe has no notch — so it passes the
+   * inset in the URL and `SafeArea` writes it over this variable. The app
+   * then lays out beneath it exactly as it would on hardware, which is the
+   * whole point: the preview must not fake the inset from OUTSIDE the app,
+   * because then the app's sky starts below the status bar and restarts its
+   * whole ramp there instead of running once from the top of the glass.
+   */
+  --safe-top: env(safe-area-inset-top, 0px);
+
+  /**
+   * The onboarding flow's top chrome, as ONE measurement.
+   *
+   * Four places were keyed to it by hand — the conversation's header height,
+   * the wayfinding strip pinned under it, the opening flow's own sky, and the
+   * content padding that clears all three. Adding a safe-area inset meant
+   * touching every one of them and keeping four `calc()`s in agreement, which
+   * is precisely how `SKY_HEIGHT` earned its existence on the product side.
+   */
+  --chrome-onboarding: 6rem;
+
   --text-on-deep: rgb(250 248 245 / 0.95); /* 13.67 on sky-900, 7.35 on sky-600 */
   --text-on-deep-dim: rgb(250 248 245 / 0.72); /* 7.77 / 4.73 */
   --atmosphere: linear-gradient(
@@ -190,6 +219,16 @@
      This stays in CSS: an infinite ambient loop needs no JS, and running it
      through Motion would keep a render loop alive for a pulsing dot. */
   --animate-coach-pulse: coach-pulse 1.6s ease-in-out infinite;
+}
+
+/* The onboarding chrome grows at md, the way its old `md:h-28` did. Declared
+   outside `@theme` because a custom property that changes at a breakpoint is
+   a plain cascade concern, not a design token Tailwind should generate
+   utilities from. */
+@media (width >= 40rem) {
+  :root {
+    --chrome-onboarding: 7rem;
+  }
 }
 
 @keyframes field-breathe {
@@ -425,6 +464,25 @@
       var(--sky-300) 75%,
       var(--paper-50) 100%
     );
+    /**
+     * An OPAQUE FLOOR under the ramp, and it is load-bearing.
+     *
+     * `background` is a shorthand, so both declarations above reset
+     * `background-color` to `initial` — transparent. The element's only paint
+     * was a gradient IMAGE covering exactly its border box and not one device
+     * pixel more. Behind it sits the app's `body`, which is PAPER.
+     *
+     * So every edge of the sky that lands on a fractional device pixel
+     * antialiased against paper, and put a pale hairline down the left and
+     * right of the masthead — the one place the sky is at its darkest and a
+     * white line is unmissable. /preview makes this ordinary rather than
+     * exotic: it scales whole device bodies by a fractional factor, so the
+     * iframe composites at a fractional x on every render.
+     *
+     * Deep, matching the ramp's first stop, so the floor can only ever show
+     * as more sky.
+     */
+    background-color: var(--sky-900);
     pointer-events: none;
   }
 
