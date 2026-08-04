@@ -756,6 +756,7 @@ that is an advantage; used carelessly it is manipulation.
 
 | Moment | Treatment | Rationale |
 |---|---|---|
+| **Launch, phone and tablet** *(August 2026)* | The splash: the full atmosphere with the wordmark, ~1.1s, tap to skip, once per session | Everything North knows hydrates from localStorage, so first paint pops in. The splash covers that real swap with the brand — no spinner, no progress, and the exit lifts the cover off content already there. Desktop goes without: in browser chrome a full-screen brand moment reads as an ad. |
 | **Between conversation turns** | ~400–600ms considered pause with a subtle presence indicator | A coach that answers instantly reads as a lookup table. This is the one place latency is *added*, deliberately. |
 | **The reveal** (onboarding → Today) | 1–2s, ceremonial, purposeful transition | The highest-value moment in the product. Rushing it wastes it. |
 | **Recompute after correction** | Brief, and *visible* — the number and the read visibly change | Proves the system reasoned rather than refreshed |

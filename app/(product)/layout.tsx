@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Masthead } from "@/components/north/Masthead";
 import { ProductNav } from "@/components/north/ProductNav";
+import { Splash } from "@/components/north/Splash";
 import { VoiceLauncher } from "@/components/north/VoiceLauncher";
 import { cn } from "@/lib/cn";
 import { Sky, SKY_HEIGHT } from "@/components/north/Sky";
@@ -25,6 +26,10 @@ import { Sky, SKY_HEIGHT } from "@/components/north/Sky";
 export default function ProductLayout({ children }: { children: ReactNode }) {
   return (
     <div className="relative min-h-dvh">
+      {/* The launch beat, phone and tablet — server-rendered open so it is
+          the FIRST paint, closed before paint on any later navigation this
+          session. See the component for why it is honest. */}
+      <Splash />
       {/* The coach's sky and the mark it carries are FIXED. They are the
           app's frame, not part of the page: on a device the brand sits still
           while the content moves under it, and a masthead that scrolls away
