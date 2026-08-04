@@ -9,6 +9,7 @@ import {
   type CoachDoor,
   type CoachReply,
   type Destination,
+  type Intent,
 } from "@/core/coach";
 import { resolveIntent } from "@/lib/route-intent";
 import type { Scenario, ScenarioId } from "@/core/navigator";
@@ -189,6 +190,8 @@ export function CoachConversation({
   const nextId = useRef(0);
   /** The last thing North said, so "say that again" has something to repeat. */
   const lastReply = useRef<ReadSegment[]>([]);
+  /** What was answered last, so a continuation has something to continue. */
+  const lastIntent = useRef<Intent | null>(null);
   /** Live register for callbacks that fire outside React's render cycle. */
   const registerRef = useRef<SpeechRegister>("discreet");
 
@@ -230,7 +233,7 @@ export function CoachConversation({
       // Awaited, but never blocking on the network for an answer — the local
       // route is already decided inside `resolveIntent`, and the model only
       // ever gets a fixed budget to improve on it. See lib/route-intent.ts.
-      const intent = await resolveIntent(said, scenarios);
+      const intent = await resolveIntent(said, scenarios, lastIntent.current);
 
       if (intent.kind === "stop") {
         stop();
@@ -251,6 +254,7 @@ export function CoachConversation({
       });
 
       lastReply.current = reply.segments;
+      lastIntent.current = intent;
       // The "you" turn is already on screen — appended before the await above.
       setTurns((current) => [
         ...current,

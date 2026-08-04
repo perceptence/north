@@ -8,7 +8,7 @@ import {
   useMotionValue,
   useReducedMotion,
 } from "@/components/nds";
-import { openingOffers, respond } from "@/core/coach";
+import { openingOffers, respond, type Intent } from "@/core/coach";
 import { resolveIntent } from "@/lib/route-intent";
 import type { Decision } from "@/core/decisions";
 import type { Scenario } from "@/core/navigator";
@@ -55,6 +55,15 @@ import { VoiceGlyph } from "./VoiceGlyph";
  * is the truth.
  */
 
+/** One exchange, kept. */
+interface VoiceTurn {
+  id: number;
+  /** What you said, as recognition finally heard it. */
+  said: string;
+  /** What North answered — engine segments, rendered and spoken from one source. */
+  segments: ReadSegment[];
+}
+
 export interface VoiceModeProps {
   profile: SituationProfile;
   decisions: Decision[];
@@ -75,8 +84,30 @@ export function VoiceMode({
   onClose,
 }: VoiceModeProps) {
   const reduce = useReducedMotion();
+  /**
+   * What is being said RIGHT NOW — interim dictation, replaced as you speak.
+   * It becomes a turn once the utterance ends.
+   */
   const [heard, setHeard] = useState("");
-  const [answer, setAnswer] = useState<ReadSegment[]>([]);
+  /**
+   * ── THE WHOLE CONVERSATION, NOT THE LAST EXCHANGE ────────────────────────
+   * This used to be one `heard` and one `answer`, each replaced wholesale on
+   * every turn — so asking a follow-up visibly wiped the question that
+   * prompted it, and by the third exchange there was no evidence the first
+   * two had happened. A voice surface needs the record MORE than a typed one,
+   * not less: the file's own header says "the glyph is the theatre; the
+   * transcript is the truth", above a component that held one line of it.
+   */
+  const [turns, setTurns] = useState<VoiceTurn[]>([]);
+  const turnId = useRef(0);
+  /** The last thing North said, so "say that again" has something to repeat. */
+  const lastAnswer = useRef<ReadSegment[]>([]);
+  /**
+   * What was answered last, so a continuation has something to continue.
+   * A ref, not state: it is read inside a callback that fires outside the
+   * render that recorded it.
+   */
+  const lastIntent = useRef<Intent | null>(null);
   /** Working out what was asked — see `answerNow`. */
   const [routing, setRouting] = useState(false);
   /** The sentences worth saying, conditioned on what is true of this person. */
@@ -90,6 +121,7 @@ export function VoiceMode({
 
   const amplitude = useMotionValue(0);
   const heardRef = useRef("");
+  const transcriptRef = useRef<HTMLDivElement>(null);
   /**
    * Set the instant we start leaving, and checked by `onEnd`.
    *
@@ -127,7 +159,7 @@ export function VoiceMode({
       setRouting(true);
       let intent;
       try {
-        intent = await resolveIntent(said, scenarios);
+        intent = await resolveIntent(said, scenarios, lastIntent.current);
       } finally {
         setRouting(false);
       }
@@ -141,7 +173,7 @@ export function VoiceMode({
         return;
       }
       if (intent.kind === "repeat") {
-        speak(spoken(answer, "full"));
+        speak(spoken(lastAnswer.current, "full"));
         return;
       }
 
@@ -152,7 +184,16 @@ export function VoiceMode({
         previousProfile,
         previousAt,
       });
-      setAnswer(reply.segments);
+      lastAnswer.current = reply.segments;
+      lastIntent.current = intent;
+      // Appended, never replaced — the exchange joins the record rather than
+      // erasing the one before it.
+      setTurns((current) => [
+        ...current,
+        { id: turnId.current++, said, segments: reply.segments },
+      ]);
+      // The interim line has become a turn; clear it so it is not shown twice.
+      setHeard("");
       // FULL register here, unlike everywhere else. Entering a spoken
       // conversation on purpose is choosing to hear it; eliding the figures
       // now would be protecting someone from the thing they asked for. The
@@ -167,7 +208,6 @@ export function VoiceMode({
       previousProfile,
       previousAt,
       speak,
-      answer,
     ],
   );
 
@@ -212,6 +252,27 @@ export function VoiceMode({
   }, [stopListening, leave]);
 
   useMicAmplitude(listening, amplitude);
+
+  /**
+   * Keep the newest exchange in view.
+   *
+   * A record that scrolls off the bottom is no more use than one that erased
+   * itself — in a mode where the user is TALKING rather than looking, nobody
+   * is going to notice an answer arriving below the fold and reach out to
+   * drag it up. Older turns stay above and can be scrolled back to, which is
+   * the whole point of keeping them.
+   *
+   * `heard` is in the deps as well as `turns`: the interim line grows as you
+   * speak, and the thing being written should stay visible while it is.
+   */
+  useEffect(() => {
+    const node = transcriptRef.current;
+    if (!node) return;
+    node.scrollTo({
+      top: node.scrollHeight,
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }, [turns, heard, reduce]);
 
   /**
    * The loop: listen, answer, listen again.
@@ -383,19 +444,31 @@ export function VoiceMode({
           flex child — without `min-h-0` a long child refuses to shrink and
           overflows its parent instead of scrolling, which is the bug that
           put the whole Insights letter on top of the glyph. */}
-      <div className="relative flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-12">
+      <div
+        ref={transcriptRef}
+        className="relative flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-12"
+      >
+        {/* Every exchange, oldest first, the way a conversation reads. Your
+            words in italic at reduced weight, North's as real `Figure`s
+            carrying their confidence — the same grammar the typed thread
+            uses, so one surface is not quietly more trustworthy than the
+            other. */}
+        {turns.map((turn) => (
+          <div key={turn.id} className="flex flex-col gap-3">
+            <Text variant="voice-md" tone="inverse" measure as="p">
+              <span className="italic opacity-60">{turn.said}</span>
+            </Text>
+            <div className="type-voice-md measure text-text-on-deep">
+              <ReadProse read={{ segments: turn.segments }} onDeep />
+            </div>
+          </div>
+        ))}
+
+        {/* What is being said right now, before it becomes a turn. */}
         {heard && (
           <Text variant="voice-md" tone="inverse" measure as="p">
             <span className="italic opacity-60">{heard}</span>
           </Text>
-        )}
-        {answer.length > 0 && (
-          <div className="type-voice-md measure text-text-on-deep">
-            <ReadProse
-              read={{ segments: answer }}
-              onDeep
-            />
-          </div>
         )}
         {/* ── WHAT TO SAY, NOT WHAT YOU COULD ASK ────────────────────────
             This was a paragraph describing the territory. It is now the
@@ -406,7 +479,7 @@ export function VoiceMode({
             Deliberately NOT tappable, unlike the typed surface. You entered a
             mode to talk; putting controls in it would undercut that. These
             are a script. */}
-        {!heard && answer.length === 0 && (
+        {!heard && turns.length === 0 && (
           <div className="flex flex-col gap-4">
             <ul className="flex flex-col gap-2">
               {opening.map((question) => (

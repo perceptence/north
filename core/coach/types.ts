@@ -37,6 +37,15 @@ export type Intent =
    * met, and the one question a refusal is the worst possible answer to.
    */
   | { kind: "capabilities" }
+  /**
+   * "Why?" / "How do I bring it down?" — go a layer deeper on the last
+   * answer, rather than repeating it.
+   *
+   * `of` is what was just answered, so the elaboration knows what it is
+   * elaborating. A continuation means nothing on its own, which is exactly
+   * why it used to fall through to the default and return the same read.
+   */
+  | { kind: "elaborate"; of: IntentKind }
   /** "Say that again." Handled by the caller, which holds the last turn. */
   | { kind: "repeat" }
   /** "Stop." Also the caller's to act on. */

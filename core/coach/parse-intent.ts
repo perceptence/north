@@ -59,6 +59,12 @@ export function parseIntent(
   const candidate = value as { kind?: unknown; id?: unknown };
   if (!isKind(candidate.kind)) return null;
 
+  // `elaborate` carries what it is elaborating, and only the CALLER knows
+  // that — it is the previous turn, not something in this payload. A model
+  // returning "elaborate" is returning half a value, so it is rejected
+  // rather than completed with a guess.
+  if (candidate.kind === "elaborate") return null;
+
   if (candidate.kind !== "scenario") return { kind: candidate.kind };
 
   const offered = available.map((scenario) => scenario.id as string);

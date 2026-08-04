@@ -52,8 +52,10 @@ const BUDGET_MS = 1200;
 export async function resolveIntent(
   transcript: string,
   available: Scenario[],
+  /** What was answered immediately before, so "why" has something to mean. */
+  last?: Intent | null,
 ): Promise<Intent> {
-  const local = routeIntent(transcript, available);
+  const local = routeIntent(transcript, available, last);
 
   // The refusal and the control words are decided locally, full stop. See
   // the note above — these are not classification problems.

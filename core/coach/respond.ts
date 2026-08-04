@@ -8,6 +8,7 @@ import type { SituationProfile } from "../profile/types.ts";
 import { text } from "../prose.ts";
 import { evaluate } from "../waterfall/evaluate.ts";
 import type { EvaluateOptions, ReadSegment } from "../waterfall/types.ts";
+import { SCENARIO_BEHIND_RUNG } from "./elaborate.ts";
 import { offers } from "./offers.ts";
 import type { CoachDoor, CoachReply, Intent } from "./types.ts";
 
@@ -233,6 +234,65 @@ function compose(intent: Intent, context: CoachContext): CoachReply {
         };
       }
       return { segments: scene.headline, goes: TO_HORIZON };
+    }
+
+    /**
+     * A layer deeper on what was just said — never the same words again.
+     *
+     * The answer is the SCENARIO that models acting on the current rung,
+     * because that is the honest form of "how do I bring it down": the
+     * engine clearing the debt against this person's real numbers, with the
+     * verdict and what it costs. It is composed by `answerScenario`, the
+     * same function the Navigator's own answer uses, so an elaboration
+     * cannot claim anything a scenario view would not.
+     *
+     * Where no scenario models the rung — `liquidity`, deliberately — the
+     * elaboration is the rung's own recommended action, stated as the thing
+     * to do. Still a suggestion, still from the engine, just without a
+     * what-if behind it.
+     */
+    case "elaborate": {
+      const evaluation = evaluate(profile, options);
+      const current = evaluation.current;
+
+      if (!current) {
+        return {
+          segments: [
+            text(
+              "There is nothing underneath it — every rung is behind you, " +
+                "which is why I have stopped asking.",
+            ),
+          ],
+          goes: TO_TODAY,
+        };
+      }
+
+      const scenarioId = SCENARIO_BEHIND_RUNG[current.rung.id];
+      if (scenarioId) {
+        const scenario = scenarioById(scenarioId);
+        const answer = answerScenario(
+          scenario,
+          profile,
+          scenario.defaults,
+          options,
+        );
+        return {
+          segments: [
+            text(`${answer.recommendation.headline} ${answer.recommendation.tradeoff}`),
+          ],
+          // The full what-if, with its sliders — "what if the deposit were
+          // bigger" is a thing you drag, not a thing you say.
+          opens: scenarioId,
+        };
+      }
+
+      return {
+        segments: [
+          text(`${current.read.action.commit}. `),
+          ...current.read.segments,
+        ],
+        goes: TO_TODAY,
+      };
     }
 
     case "capabilities":

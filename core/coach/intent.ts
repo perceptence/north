@@ -1,4 +1,5 @@
 import { isDecisive, matchQuestion } from "../navigator/match.ts";
+import { CONTINUATIONS } from "./elaborate.ts";
 import type { Scenario } from "../navigator/types.ts";
 import type { Intent, IntentKind } from "./types.ts";
 
@@ -56,7 +57,10 @@ import type { Intent, IntentKind } from "./types.ts";
  * "doing" alone is noise.
  */
 const TERMS: Record<
-  Exclude<IntentKind, "scenario" | "unknown" | "stop" | "repeat">,
+  Exclude<
+    IntentKind,
+    "scenario" | "unknown" | "stop" | "repeat" | "elaborate"
+  >,
   string[]
 > = {
   capabilities: [
@@ -229,11 +233,16 @@ const REPEAT_COMMANDS = new Set([
  * Checked both as spoken and with the filler removed, so "stop" and "please
  * stop now" are the same command and "is that enough" is neither.
  */
-function command(text: string): "stop" | "repeat" | null {
-  const stripped = text
+/** The utterance without the politeness wrapped around it. */
+function stripFiller(text: string): string {
+  return text
     .split(" ")
     .filter((word) => !FILLER.has(word))
     .join(" ");
+}
+
+function command(text: string): "stop" | "repeat" | null {
+  const stripped = stripFiller(text);
 
   for (const candidate of [text, stripped]) {
     if (STOP_COMMANDS.has(candidate)) return "stop";
@@ -435,7 +444,20 @@ function score(text: string, terms: string[]): number {
  * every question it did not anticipate is worse than both, and that is what
  * the previous default made this. See the header note.
  */
-export function routeIntent(transcript: string, available: Scenario[]): Intent {
+export function routeIntent(
+  transcript: string,
+  available: Scenario[],
+  /**
+   * What was answered immediately before, if anything.
+   *
+   * Only continuations need it, and they need it absolutely: "why" is a
+   * question about the previous answer or it is nothing at all. Optional so
+   * every existing caller and test keeps working unchanged — without it the
+   * router behaves exactly as it did, which is also the correct behaviour on
+   * the first turn.
+   */
+  last?: Intent | null,
+): Intent {
   const text = normalize(transcript);
   if (text.length < 2) return { kind: "unknown" };
 
@@ -447,18 +469,31 @@ export function routeIntent(transcript: string, available: Scenario[]): Intent {
   const control = command(text);
   if (control) return { kind: control };
 
-  // 2 · The refusal, on positive evidence — BEFORE any matching, so a
+  // 2 · A continuation — but only when there is something to continue. Also
+  //     whole-utterance, for the same reason commands are: these are built
+  //     from the commonest words in English, and "why" matching inside "why
+  //     is my buffer short" would swallow the question.
+  //
+  //     Elaborating an elaboration walks back to what was originally asked,
+  //     so "why" then "tell me more" both deepen the same answer instead of
+  //     recursing into nothing.
+  if (last && last.kind !== "unknown" && CONTINUATIONS.has(stripFiller(text))) {
+    const of = last.kind === "elaborate" ? last.of : last.kind;
+    return { kind: "elaborate", of };
+  }
+
+  // 3 · The refusal, on positive evidence — BEFORE any matching, so a
   //     markets question can never be talked into a topic by the words
   //     standing around it ("should I buy nvidia" shares three words with
   //     "what should I do").
   if (OUT_OF_SCOPE.some((term) => hasTerm(text, term))) return { kind: "unknown" };
 
-  // 3 · A scenario, when one wins clearly. Deliberately reuses the Navigator's
+  // 4 · A scenario, when one wins clearly. Deliberately reuses the Navigator's
   //     own matcher — one definition of what a scenario question sounds like.
   const scenarios = matchQuestion(transcript, available);
   const scenarioWon = scenarios.length > 0 && isDecisive(scenarios);
 
-  // 4 · Topics. `capabilities` sits here rather than with the control words
+  // 5 · Topics. `capabilities` sits here rather than with the control words
   //     because "what can you do" is a real question, not a command — but it
   //     must be able to beat a scenario, or "what can I ask about a house"
   //     opens the house scenario instead of explaining itself.
@@ -495,7 +530,7 @@ export function routeIntent(transcript: string, available: Scenario[]): Intent {
     return { kind: "scenario", id: scenarios[0].scenario.id };
   }
 
-  // 5 · Nothing matched, and nothing said this was out of scope. So it is a
+  // 6 · Nothing matched, and nothing said this was out of scope. So it is a
   //     question about this person's money phrased in a way no list
   //     anticipated — which is the normal case, not the exception.
   //

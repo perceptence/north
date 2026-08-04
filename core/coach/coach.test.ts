@@ -268,6 +268,87 @@ describe("routeIntent — phrasings nobody wrote a term for", () => {
   }
 });
 
+/**
+ * The follow-up that used to repeat itself.
+ *
+ * Ask "how am I doing", hear about the debt, ask "how do I bring it down" —
+ * and get the identical sentence back, because every continuation fell
+ * through to `standing`. A continuation is not ABOUT anything on its own, so
+ * the router had nothing to match and used its default.
+ */
+describe("routeIntent — continuations", () => {
+  const squeezed = availableScenarios(SQUEEZED);
+  const after = (q: string, last: Parameters<typeof routeIntent>[2]) =>
+    routeIntent(q, squeezed, last);
+
+  it("means nothing on the first turn, so it is not a continuation", () => {
+    // No previous answer: "why" is just a word, and the default still applies.
+    assert.notEqual(route("why").kind, "elaborate");
+    assert.notEqual(route("tell me more").kind, "elaborate");
+  });
+
+  it("goes a layer deeper once there is something to go deeper on", () => {
+    for (const q of [
+      "why",
+      "tell me more",
+      "how do I bring it down",
+      "what should I do about it",
+      "go on",
+    ]) {
+      const intent = after(q, { kind: "standing" });
+      assert.equal(intent.kind, "elaborate", q);
+      assert.equal(intent.kind === "elaborate" && intent.of, "standing", q);
+    }
+  });
+
+  /**
+   * Whole-utterance, exactly like the commands — these are built from the
+   * commonest words in English, and matching them loosely would swallow half
+   * the questions anyone asks.
+   */
+  it("does not swallow a real question that starts the same way", () => {
+    for (const q of [
+      "why is my buffer short",
+      "how do I buy a house",
+      "what should I focus on",
+      "tell me more about my goals",
+    ]) {
+      assert.notEqual(after(q, { kind: "standing" }).kind, "elaborate", q);
+    }
+  });
+
+  it("walks back to what was originally asked, not to itself", () => {
+    // "why" then "tell me more" both deepen the same answer rather than
+    // recursing into an elaboration of an elaboration.
+    const once = after("why", { kind: "standing" });
+    const twice = after("tell me more", once);
+    assert.equal(twice.kind === "elaborate" && twice.of, "standing");
+  });
+
+  it("never continues a refusal", () => {
+    // "Why?" after "I can't answer that" is not a request to elaborate on
+    // markets — there is nothing there to deepen.
+    assert.notEqual(after("why", { kind: "unknown" }).kind, "elaborate");
+  });
+
+  it("answers with a suggestion, not the sentence just said", () => {
+    const ctx = {
+      profile: SQUEEZED,
+      decisions: [],
+      options: OPTIONS,
+    };
+    const first = respond({ kind: "standing" }, ctx);
+    const deeper = respond({ kind: "elaborate", of: "standing" }, ctx);
+    const said = (r: typeof first) =>
+      r.segments.map((s) => (s.kind === "text" ? s.value : "#")).join("");
+
+    assert.notEqual(said(deeper), said(first), "elaboration repeated the read");
+    // The debt rung is modelled by a scenario, so the deeper answer is that
+    // what-if — a verdict AND its tradeoff, from the engine.
+    assert.equal(deeper.opens, "debt-first");
+  });
+});
+
 describe("routeIntent — it can say no", () => {
   it("refuses on evidence, across the whole out-of-scope set", () => {
     // The one list that has to be complete, and the one that can be. If a
