@@ -37,7 +37,10 @@ import { DURATION, EASE, TRANSITION } from "./motion";
  *
  * A Sheet always has a live parent — it is never a root route.
  *
- * Opening pushes a history entry so the system back gesture dismisses it.
+ * Opening pushes a history entry so the system back gesture dismisses it. The
+ * pop that entry's removal causes is counted and ignored, so the sheet never
+ * mistakes its own tidying-up for the user pressing Back — see `selfPopRef`.
+ * That is what lets a Sheet be open on mount, which it could not be before.
  *
  * ── Why the dialog outlives `open` ────────────────────────────────────────
  * `dialog.close()` removes the element from the top layer immediately, which
@@ -112,24 +115,71 @@ export function Sheet({ open, onClose, title, children, className }: SheetProps)
     if (open && dialog && !dialog.open) dialog.showModal();
   }, [open]);
 
+  /**
+   * Pops this component caused and is still waiting to hear about.
+   *
+   * `history.back()` is ASYNCHRONOUS — the `popstate` it triggers arrives on a
+   * later task, by which time the effect that called it has been torn down and
+   * possibly replaced. Without a way to recognise our own pop, the sheet reads
+   * it as the user pressing Back.
+   */
+  const selfPopRef = useRef(0);
+
+  // Read inside the always-on listener below, which must not re-subscribe when
+  // `open` changes — see why in that effect.
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  /**
+   * ── ONE LISTENER, FOR THE COMPONENT'S WHOLE LIFE ──────────────────────────
+   * This used to be attached inside the `open` effect below and removed in its
+   * cleanup — which cannot work, because that same cleanup calls
+   * `history.back()`, and the resulting `popstate` lands AFTER the cleanup has
+   * finished.
+   *
+   * In React's StrictMode, mount effects run twice: effect → cleanup → effect.
+   * So for a sheet that is open when it mounts, the first cleanup fired a
+   * `back()` whose `popstate` was then caught by the listener the SECOND effect
+   * had just attached — and the sheet closed itself, instantly, having never
+   * been touched. A Sheet could not be opened on mount at all. Nothing had
+   * exercised it because every existing sheet opens from a click.
+   *
+   * Keeping the listener alive for the component's lifetime, and counting the
+   * pops we cause, separates the two questions that were being conflated: *did
+   * the user press Back* is not the same as *did a pop happen*.
+   */
+  useEffect(() => {
+    const handlePop = () => {
+      // A pop we asked for, arriving late. Swallow exactly one.
+      if (selfPopRef.current > 0) {
+        selfPopRef.current -= 1;
+        return;
+      }
+      // A real Back gesture. Our entry is already gone, so the cleanup below
+      // must not pop again on top of it.
+      pushedRef.current = false;
+      if (openRef.current) onCloseRef.current();
+    };
+
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
 
     window.history.pushState({ ndsSheet: true }, "");
     pushedRef.current = true;
 
-    const handlePop = () => {
-      pushedRef.current = false;
-      onCloseRef.current();
-    };
-    window.addEventListener("popstate", handlePop);
-
     return () => {
-      window.removeEventListener("popstate", handlePop);
       // Closed by button, Esc, or drag rather than by back — retire our entry
-      // so the history stack doesn't accumulate dead states.
+      // so the history stack doesn't accumulate dead states. The pop this
+      // causes is ours, and the listener above is told to expect it.
       if (pushedRef.current) {
         pushedRef.current = false;
+        selfPopRef.current += 1;
         window.history.back();
       }
     };

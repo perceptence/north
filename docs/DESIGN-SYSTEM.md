@@ -532,6 +532,7 @@ dismiss path from here rather than reimplementing its own.
 - **Origin:** animates from the element that spawned it — the derivation sheet rises from the tapped `Figure`, not from the screen edge. **Not yet implemented** — currently rises from its resting edge instead (bottom on a sheet, a short rise in place for a pane).
 - **Always has a live parent.** Never a root route.
 - Focus trap, `Esc` to dismiss, focus returns to the trigger. Pushes a history entry so system back dismisses it.
+- **May be open on mount.** It could not be until August 2026: the popstate listener lived inside the `open` effect, whose own cleanup calls `history.back()` — and that pop arrives on a later task. Under StrictMode's double-invoked mount effects, the first cleanup's pop was caught by the second effect's listener, so a sheet that opened on mount instantly closed itself. Every existing caller opened from a click, so nothing had exercised it. The listener now lives for the component's lifetime and counts the pops the component itself causes, which separates *the user pressed Back* from *a pop happened*. Don't move it back inside the `open` effect.
 
 ### 8.4 Data
 
