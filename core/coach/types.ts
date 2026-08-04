@@ -57,4 +57,14 @@ export interface CoachReply {
    * not a thing you say.
    */
   opens?: ScenarioId;
+  /**
+   * Two or three follow-ups, phrased as the user would say them.
+   *
+   * A tap sends the sentence itself back through the router, so tapping and
+   * speaking reach the same answer by the same path — there is no second code
+   * route, and no offer that can lead somewhere speaking could not. See
+   * `./offers.ts` for why they are conditioned on the profile rather than
+   * fixed.
+   */
+  asks?: string[];
 }

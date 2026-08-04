@@ -8,7 +8,7 @@ import {
   useMotionValue,
   useReducedMotion,
 } from "@/components/nds";
-import { respond } from "@/core/coach";
+import { openingOffers, respond } from "@/core/coach";
 import { resolveIntent } from "@/lib/route-intent";
 import type { Decision } from "@/core/decisions";
 import type { Scenario } from "@/core/navigator";
@@ -79,6 +79,14 @@ export function VoiceMode({
   const [answer, setAnswer] = useState<ReadSegment[]>([]);
   /** Working out what was asked — see `answerNow`. */
   const [routing, setRouting] = useState(false);
+  /** The sentences worth saying, conditioned on what is true of this person. */
+  const opening = openingOffers({
+    profile,
+    decisions,
+    options,
+    previousProfile,
+    previousAt,
+  });
 
   const amplitude = useMotionValue(0);
   const heardRef = useRef("");
@@ -389,13 +397,33 @@ export function VoiceMode({
             />
           </div>
         )}
+        {/* ── WHAT TO SAY, NOT WHAT YOU COULD ASK ────────────────────────
+            This was a paragraph describing the territory. It is now the
+            actual sentences, chosen by the same `openingOffers` the typed
+            conversation opens with — so voice mode stops suggesting "what's
+            changed" to someone with no history to diff.
+
+            Deliberately NOT tappable, unlike the typed surface. You entered a
+            mode to talk; putting controls in it would undercut that. These
+            are a script. */}
         {!heard && answer.length === 0 && (
-          <Text variant="body" tone="inverse" measure as="p">
-            <span className="opacity-60">
-              Ask how you&rsquo;re doing, what you&rsquo;re working toward, or
-              think a decision through. Say &ldquo;stop&rdquo; to leave.
-            </span>
-          </Text>
+          <div className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-2">
+              {opening.map((question) => (
+                <li
+                  key={question}
+                  className="type-voice-md measure text-text-on-deep opacity-70"
+                >
+                  &ldquo;{question}&rdquo;
+                </li>
+              ))}
+            </ul>
+            <Text variant="meta" tone="inverse" measure as="p">
+              <span className="opacity-60">
+                Or ask in your own words. Say &ldquo;stop&rdquo; to leave.
+              </span>
+            </Text>
+          </div>
         )}
       </div>
     </div>

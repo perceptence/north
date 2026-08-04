@@ -8,6 +8,7 @@ import type { SituationProfile } from "../profile/types.ts";
 import { text } from "../prose.ts";
 import { evaluate } from "../waterfall/evaluate.ts";
 import type { EvaluateOptions, ReadSegment } from "../waterfall/types.ts";
+import { offers } from "./offers.ts";
 import type { CoachReply, Intent } from "./types.ts";
 
 /**
@@ -76,7 +77,39 @@ const REFUSAL: ReadSegment[] = [
   ),
 ];
 
+/**
+ * What to offer asking next, for this answer and this person.
+ *
+ * Attached HERE rather than inside each branch, so a new intent cannot ship
+ * without offers by forgetting a line — eleven branches is eleven chances to
+ * forget. See `./offers.ts` for why they are conditioned rather than fixed.
+ */
 export function respond(intent: Intent, context: CoachContext): CoachReply {
+  const reply = compose(intent, context);
+
+  // `repeat` and `stop` render nothing — the caller owns them — so there is
+  // no answer for an offer to sit under. The REFUSAL deliberately does get
+  // them: "ask me what you can ask" is a sentence that should come with the
+  // questions attached.
+  if (intent.kind === "repeat" || intent.kind === "stop") return reply;
+
+  return { ...reply, asks: offers(intent, offerContext(context)) };
+}
+
+/** The offers to open with, before anything has been asked. */
+export function openingOffers(context: CoachContext): string[] {
+  return offers(null, offerContext(context));
+}
+
+const offerContext = (context: CoachContext) => ({
+  profile: context.profile,
+  decisions: context.decisions,
+  // Null on a first run. "What's changed?" against nothing is a paragraph
+  // explaining that there is nothing, which is not worth offering.
+  hasPrevious: context.previousProfile != null,
+});
+
+function compose(intent: Intent, context: CoachContext): CoachReply {
   const { profile, decisions, options, previousProfile, previousAt } =
     context;
 

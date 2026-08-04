@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { RHYTHM, Button, Text, TRANSITION, m } from "@/components/nds";
-import { respond, type CoachReply } from "@/core/coach";
+import { openingOffers, respond, type CoachReply } from "@/core/coach";
 import { resolveIntent } from "@/lib/route-intent";
 import type { Scenario, ScenarioId } from "@/core/navigator";
 import { spoken, type SpeechRegister } from "@/core/speech";
@@ -56,6 +56,44 @@ interface Turn {
   segments?: ReadSegment[];
   /** A scenario this answer belongs to, offered as a way in. */
   opens?: ScenarioId;
+  /** What to ask next, chosen by the engine from what is true of you. */
+  asks?: string[];
+}
+
+/**
+ * What to ask next, as questions you can tap.
+ *
+ * `ActionLink` rather than buttons: these are tertiary in weight — the
+ * composer is still the primary way in — and the product's one tertiary
+ * action is an ActionLink everywhere else.
+ *
+ * Tapping calls `ask()` with the sentence, so the question lands in the
+ * thread as the user having said it and travels the same router a spoken one
+ * would. There is deliberately no shortcut from an offer to an intent.
+ */
+function Offers({
+  asks,
+  onAsk,
+}: {
+  asks?: string[];
+  onAsk: (question: string) => void;
+}) {
+  if (!asks || asks.length === 0) return null;
+  return (
+    // NO icon, deliberately. `SpeakMark` was stamped on each of these at
+    // first, which put the same glyph on screen five times with three
+    // different meanings — the Talk launcher, "Say the numbers too", and
+    // every offer. A list of questions does not need a mark repeated down
+    // its side; the dotted rule already says these are tappable, and leaving
+    // `•=` alone keeps it meaning one thing.
+    <ul className="flex flex-col items-start gap-1">
+      {asks.map((question) => (
+        <li key={question}>
+          <ActionLink onClick={() => onAsk(question)}>{question}</ActionLink>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export interface CoachConversationProps {
@@ -81,6 +119,18 @@ export function CoachConversation({
 }: CoachConversationProps) {
   const [draft, setDraft] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
+  /**
+   * The questions to open with, chosen the same way every later set is —
+   * so the cold start is not a hand-written menu that drifts from what
+   * `respond()` offers after an answer.
+   */
+  const opening = openingOffers({
+    profile,
+    decisions,
+    options,
+    previousProfile,
+    previousAt,
+  });
   const [register, setRegister] = useState<SpeechRegister>("discreet");
   const { available: canSpeak, speaking, speak, stop } = useSpeechSynthesis();
 
@@ -159,6 +209,7 @@ export function CoachConversation({
           from: "north",
           segments: reply.segments,
           opens: reply.opens,
+          asks: reply.asks,
         },
       ]);
       if (aloud) say(reply.segments);
@@ -212,6 +263,14 @@ export function CoachConversation({
                       Try the numbers yourself
                     </ActionLink>
                   )}
+
+                  {/* What to ask next, on the LAST answer only — older turns
+                      keep their offers as history would, and stacking a live
+                      choice under every past answer turns a thread into a
+                      form. */}
+                  {turn.id === turns[turns.length - 1]?.id && (
+                    <Offers asks={turn.asks} onAsk={(q) => ask(q, false)} />
+                  )}
                 </>
               )}
             </m.li>
@@ -255,12 +314,23 @@ export function CoachConversation({
         </div>
       )}
 
+      {/* ── THE COLD START ─────────────────────────────────────────────────
+          This was a paragraph telling people what they COULD ask, which on a
+          phone, on a live link, in ninety seconds, nobody reads and nobody
+          acts on — seven of the eleven things this coach can answer had no
+          tap path anywhere in the product, so all the engine composition
+          behind them was unreachable by clicking.
+
+          The sentence stays, shortened to the part that is not obvious (the
+          modality rule), and the questions become the questions. */}
       {turns.length === 0 && (
-        <Text variant="meta" tone="tertiary" measure>
-          Ask how you&rsquo;re doing, what you&rsquo;re working toward, what
-          you&rsquo;ve decided — or think a decision through. Speak and
-          North answers out loud; type and it stays quiet.
-        </Text>
+        <div className={cn("flex flex-col", RHYTHM.pair)}>
+          <Offers asks={opening} onAsk={(q) => ask(q, false)} />
+          <Text variant="meta" tone="tertiary" measure>
+            Or ask in your own words. Speak and North answers out loud; type
+            and it stays quiet.
+          </Text>
+        </div>
       )}
     </div>
   );
