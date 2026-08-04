@@ -403,11 +403,11 @@ function GoalAdjustment({
       </Text>
 
       <ConversationTurn question={turn.question}>
-        <ChoiceChipGroup label={turn.question} block={turn.block}>
+        <ChoiceChipGroup label={turn.question} block>
           {turn.options.map((choice) => (
             <ChoiceChip
               key={choice.label}
-              block={turn.block}
+              block
               onSelect={() => answer(choice)}
             >
               {choice.label}
@@ -470,11 +470,11 @@ function GoalConversation({
             {turn.note}
           </Text>
         )}
-        <ChoiceChipGroup label={turn.question} block={turn.block}>
+        <ChoiceChipGroup label={turn.question} block>
           {turn.options.map((choice) => (
             <ChoiceChip
               key={choice.label}
-              block={turn.block}
+              block
               onSelect={() => answer(choice)}
             >
               {choice.label}

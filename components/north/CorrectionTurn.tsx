@@ -117,11 +117,11 @@ export function CorrectionTurn({
           </Text>
         )}
 
-        <ChoiceChipGroup label={turn.question} block={turn.block}>
+        <ChoiceChipGroup label={turn.question} block>
           {turn.options.map((choice) => (
             <ChoiceChip
               key={choice.label}
-              block={turn.block}
+              block
               onSelect={() => answer(choice)}
             >
               {choice.label}

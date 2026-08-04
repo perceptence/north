@@ -18,6 +18,14 @@ import type { Confidence } from "../confidence.ts";
  * used exactly once, where the answer's CONTENT matters more than its
  * parseability — and it is never parsed, only reflected back.
  *
+ * NO LAYOUT HERE. A turn used to carry `block` to force a single column when
+ * its labels ran long, which left onboarding rendering two different shapes:
+ * seven turns stacked full width, seven wrapping into ragged pills of six
+ * different widths across three rows. The reader met both while answering one
+ * conversation. Layout is the screen's business and it stacks uniformly now —
+ * a script that describes what is ASKED has no business describing how wide
+ * the answers are.
+ *
  * CONCRETE VALUES, NOT RANGES. A chip reading "About $8,000" is something the
  * user ASSERTED, so it lands as `stated`. Offering "$6,000–$10,000" and storing
  * the midpoint would be our assumption wearing the user's voice — and would
@@ -106,8 +114,6 @@ export interface TextTurn extends TurnBase {
 export interface ChoiceTurn extends TurnBase {
   kind: "choice";
   options: Choice[];
-  /** Force a single column when labels run long. */
-  block?: boolean;
 }
 
 export type Turn = TextTurn | ChoiceTurn;
@@ -128,7 +134,6 @@ export const SCRIPT: readonly Turn[] = [
     id: "confidence",
     kind: "choice",
     question: "And how do you feel about money, day to day?",
-    block: true,
     options: [
       { label: "Honestly, pretty lost", value: "lost" },
       { label: "I get by, but I’m unsure", value: "unsure" },
@@ -140,7 +145,6 @@ export const SCRIPT: readonly Turn[] = [
     id: "incomeBand",
     kind: "choice",
     question: "Roughly what does your household bring in?",
-    block: true,
     options: [
       { label: "Under $100k", value: "under-100k" },
       { label: "$100k – $200k", value: "100k-200k" },
@@ -181,7 +185,6 @@ export const SCRIPT: readonly Turn[] = [
     kind: "choice",
     question: "Is anything charging you serious interest?",
     note: "Roughly 7% or more. A mortgage or a cheap car loan doesn’t count.",
-    block: true,
     options: [
       { label: "No, nothing expensive", value: "none" },
       { label: "A credit card", value: "card" },
@@ -216,7 +219,6 @@ export const SCRIPT: readonly Turn[] = [
     id: "retirement",
     kind: "choice",
     question: "How much of your pay goes to retirement?",
-    block: true,
     options: [
       { label: "Nothing yet", value: 0 },
       { label: "About 3%", value: 300 },
@@ -230,7 +232,6 @@ export const SCRIPT: readonly Turn[] = [
     id: "employerMatch",
     kind: "choice",
     question: "Does your employer match any of it?",
-    block: true,
     options: [
       { label: "No match", value: 0 },
       { label: "Up to 3%", value: 300 },
@@ -243,7 +244,6 @@ export const SCRIPT: readonly Turn[] = [
     id: "horizon",
     kind: "choice",
     question: "How far ahead are you thinking?",
-    block: true,
     options: [
       { label: "The next few years", value: 60 },
       { label: "About ten years", value: 120 },
@@ -256,7 +256,6 @@ export const SCRIPT: readonly Turn[] = [
     stage: "goal",
     kind: "choice",
     question: "What are you working toward?",
-    block: true,
     options: [
       { label: "A home deposit", value: "A home deposit" },
       { label: "A sabbatical", value: "A sabbatical" },

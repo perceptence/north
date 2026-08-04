@@ -451,6 +451,13 @@ export function OnboardingConversation() {
                       const said = (drafts[turn.id] ?? "").trim();
                       if (said) record(turn, toTextAnswer(said));
                     }}
+                    /* NOT full width, unlike the page-level actions in the
+                       opening flow. Inside the composer this is one of a
+                       PAIR — Continue and "Or say it" share a row — and
+                       stretching it broke the pair twice over: the mic
+                       wrapped to a line of its own, and the disabled state
+                       became a grey slab filling a box whose whole job is
+                       to look like a place to write. */
                     action={
                       <Button
                         variant="primary"
@@ -469,7 +476,7 @@ export function OnboardingConversation() {
                 </>
               ) : (
                 <>
-                  <ChoiceChipGroup label={turn.question} block={turn.block}>
+                  <ChoiceChipGroup label={turn.question} block>
                     {turn.options.map((choice) => {
                       const chosen =
                         answers[turn.id] !== undefined &&
@@ -480,7 +487,7 @@ export function OnboardingConversation() {
                       return (
                         <ChoiceChip
                           key={choice.label}
-                          block={turn.block}
+                          block
                           selected={held || chosen}
                           className={
                             picked === null || !picked.startsWith(`${turn.id}:`)

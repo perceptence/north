@@ -216,7 +216,10 @@ export function SignUp() {
         </Text>
       </div>
 
-      <Button variant="primary" onClick={submit} disabled={working}>
+      {/* Full width, like every other action in the opening flow: these are
+          the one thing to do on their screen, and a pill hugging its own
+          label reads as one option among several when it is the only one. */}
+      <Button variant="primary" fullWidth onClick={submit} disabled={working}>
         {working ? "Setting up…" : "Create account"}
       </Button>
     </div>

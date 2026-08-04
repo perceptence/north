@@ -144,6 +144,7 @@ export function OpeningFlow() {
               <div className="mt-auto pt-8">
               <Button
                 variant="primary"
+                fullWidth
                 onClick={() =>
                   updateAccount({ consentAt: new Date().toISOString() })
                 }
