@@ -173,11 +173,26 @@ buys the right to never mention competitors again.
 
 **User goal:** Be understood, without filling in a form.
 
-**The shape — one question per viewport, on a vertical line** *(July 2026
-amendment; replaces the receding-stack layout)*. Each turn owns a full
-snap-scrolled viewport; answering carries you down to the next, and scrolling
-up revisits any earlier answer, live and re-answerable. The conversation is a
-place with a direction, not a stack — going back is literally going back up.
+**The shape — one question per viewport, on a line** *(July 2026 amendment;
+replaces the receding-stack layout)*. Each turn owns a full snap-scrolled
+viewport; answering carries you to the next, and travelling back revisits any
+earlier answer, live and re-answerable. The conversation is a place with a
+direction, not a stack — going back is literally going back.
+
+**The direction follows the markers** *(August 2026 amendment)*. A route drawn
+one way and walked another tells the reader two different things about where
+they are, so the travel axis is whichever axis the wayfinding strip is drawn
+on at that breakpoint:
+
+| | strip | travel | back |
+| --- | --- | --- | --- |
+| below `lg` | across the masthead, left→right | pages in a row | swipe right |
+| `lg` and up | rail in the left margin, top→bottom | the column falls | scroll up |
+
+Both are native scroll snapping over one DOM — the axis is a breakpoint away
+and every travel call passes `block` *and* `inline`, so the browser turns the
+page with the platform's own physics rather than a gesture handler
+approximating them.
 
 **Information hierarchy**
 1. The sky, pinned: a masthead naming the current step's essence
@@ -231,9 +246,10 @@ user's words, and both land `stated`.
 
 **Primary actions**
 - **Answer** — select, or speak/type for the opening question.
-- **Revisit** — scroll up, or the desktop rail. The Back button is gone; the
-  gesture replaced it. Re-answering an earlier question travels you forward
-  again, because answering always means moving.
+- **Revisit** — swipe right on phone and tablet, scroll up on desktop, or the
+  desktop rail. The Back button is gone; the gesture replaced it, which is why
+  the gesture has to point the way the strip does. Re-answering an earlier
+  question travels you forward again, because answering always means moving.
 
 **The pause, relocated.** The scripted ~500ms "thinking" beat between stacked
 turns is gone; the scroll travel between viewports is the considered pause

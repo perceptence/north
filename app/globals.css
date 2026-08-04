@@ -343,10 +343,12 @@
    * and keyboard, wheel and touch all still work.
    */
   @media (width < 64rem) {
-    html {
+    html,
+    .no-track {
       scrollbar-width: none;
     }
-    html::-webkit-scrollbar {
+    html::-webkit-scrollbar,
+    .no-track::-webkit-scrollbar {
       display: none;
     }
   }
