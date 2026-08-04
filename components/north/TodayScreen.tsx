@@ -17,6 +17,8 @@ import {
   callbackDue,
   callbackDueAt,
   committedOn,
+  profileWhen,
+  recollect,
   settledRungIds,
 } from "@/core/decisions";
 import { CORRECTABLE, FIELD_BEHIND_RUNG } from "@/core/onboarding/correction";
@@ -33,7 +35,11 @@ import {
 } from "@/state/decisions-store";
 import { cn } from "@/lib/cn";
 import { useHydrated } from "@/lib/use-hydrated";
-import { isPersistent as profilePersists, useProfile } from "@/state/profile-store";
+import {
+  isPersistent as profilePersists,
+  useProfile,
+  useProfileHistory,
+} from "@/state/profile-store";
 import { CorrectionTurn } from "./CorrectionTurn";
 import { ActionLink, HorizonMark, LedgerMark } from "./ActionGlyphs";
 import { DerivationSheet } from "./DerivationSheet";
@@ -78,6 +84,8 @@ export function TodayScreen() {
   const router = useRouter();
   const profile = useProfile();
   const decisions = useDecisions();
+  // Every past state, so the return callback can recall the day it was made.
+  const history = useProfileHistory();
 
   // `now` is created once and injected. The engine never reads a clock.
   const [now] = useState(() => new Date());
@@ -153,6 +161,17 @@ export function TodayScreen() {
   const committed = evaluation.current
     ? committedOn(decisions, evaluation.current.rung.id)
     : null;
+
+  // The situation as it stood the day this was decided, run back through the
+  // engine. Null when that day carries nothing worth recalling — the question
+  // then stands alone rather than reaching for something to say.
+  const recollection = pending
+    ? recollect(
+        pending,
+        profileWhen(history, pending.decidedAt, profile),
+        options,
+      )
+    : null;
   const firstRun = decisions.length === 0;
   // The card carries a compact horizon in its footer — the decision and its
   // long-term consequence in one object (the reference-frame card DNA). The
@@ -225,10 +244,32 @@ export function TodayScreen() {
       >
         {pending ? (
           <>
-            <div className="type-voice-xl measure text-text-primary">
-              You said you&rsquo;d {lowerFirst(pending.summary)}. Did that
-              happen?
+            {/* ── THE RETURN, IN TWO SENTENCES ─────────────────────────────
+                docs/STRATEGY.md §5 Stage 5 specifies both, and only the
+                question was built. The question alone proves North kept a
+                RECORD — a competitor's notification could produce it from
+                the string you typed. The recollection proves MEMORY, because
+                it describes the situation as it stood at the time, and only
+                something holding your history can say it.
+
+                It is composed by `recollect()` from the engine run over the
+                profile of that day, so it can never contradict the reads
+                around it, and it is absent rather than approximated when
+                that day carries nothing worth recalling. */}
+            <div className={cn("flex flex-col", RHYTHM.pair)}>
+              <Dateline now={now} />
+              <div className="type-voice-xl measure text-text-primary">
+                You said you&rsquo;d {lowerFirst(pending.summary)}. Did that
+                happen?
+              </div>
             </div>
+
+            {recollection && (
+              <p className="type-voice measure text-text-secondary">
+                <ReadProse read={{ segments: recollection }} />
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant="primary"
@@ -267,15 +308,7 @@ export function TodayScreen() {
                 column already capped at 600px, which broke it into short
                 ragged lines with empty paper beside them. */}
             <div className={cn("flex flex-col", RHYTHM.pair)}>
-              <h1 className="type-overline text-text-tertiary">
-                Today ·{" "}
-                {now
-                  .toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })
-                  .toUpperCase()}
-              </h1>
+              <Dateline now={now} />
               <div className="text-text-primary">
                 <ReadProse
                   read={evaluation.current.read}
@@ -482,10 +515,17 @@ function CalmScene({
 
   return (
     <div className={cn("flex flex-col py-4", RHYTHM.screen)}>
-      <Text variant="voice-xl" as="p" measure>
-        Nothing needs your <span className="text-aurora">attention</span>.
-        That&rsquo;s rare.
-      </Text>
+      {/* The calm day is still a day, and it still gets named. This was the
+          third state missing its dateline — the cardless screen is the one
+          most likely to read as "nothing loaded" rather than "nothing needs
+          you", and a date is what tells them apart. */}
+      <div className={cn("flex flex-col", RHYTHM.pair)}>
+        <Dateline now={now} />
+        <Text variant="voice-xl" as="p" measure>
+          Nothing needs your <span className="text-aurora">attention</span>.
+          That&rsquo;s rare.
+        </Text>
+      </div>
 
       <Text variant="body" tone="secondary" measure>
         {watching
@@ -518,6 +558,30 @@ function CalmScene({
 }
 
 /* ── Small presentational helpers ──────────────────────────────────────── */
+
+/**
+ * The date this screen speaks for.
+ *
+ * One component because all THREE of Today's states need it and only one had
+ * it: the dateline used to live inside the `evaluation.current` branch, so on
+ * the one day the return callback fires — the stage docs/STRATEGY.md calls
+ * the moat — Today named nothing at all, and the calm day named nothing
+ * either. docs/UX-ARCHITECTURE.md says plainly that Today carries a dateline;
+ * it carried one in the common case and dropped it in both rarer ones.
+ *
+ * Still an `h1`, and still exactly one per render — it is the page's heading
+ * whichever state the page is in.
+ */
+function Dateline({ now }: { now: Date }) {
+  return (
+    <h1 className="type-overline text-text-tertiary">
+      Today ·{" "}
+      {now
+        .toLocaleDateString("en-US", { month: "short", day: "numeric" })
+        .toUpperCase()}
+    </h1>
+  );
+}
 
 /**
  * Whether a commitment was made today, in the reader's own calendar.

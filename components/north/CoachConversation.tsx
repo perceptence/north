@@ -197,10 +197,7 @@ export function CoachConversation({
                 <>
                   <div className="type-voice-md measure text-text-primary">
                     <ReadProse
-                      read={{
-                        action: { commit: "", defer: "" },
-                        segments: turn.segments ?? [],
-                      }}
+                      read={{ segments: turn.segments ?? [] }}
                     />
                   </div>
                   {/* The conversation gives the verdict; the scenario view

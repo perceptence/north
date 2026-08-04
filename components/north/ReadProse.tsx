@@ -37,7 +37,17 @@ import type { Read, ReadSegment } from "@/core/waterfall";
  */
 
 export interface ReadProseProps {
-  read: Read;
+  /**
+   * Only the segments are ever read — `action` belongs to the caller, which
+   * renders the buttons itself. Typed as `Pick<Read, "segments">` rather than
+   * `Read` so prose the engine composes OUTSIDE a rung can be rendered here
+   * too, without inventing a commit/defer pair that nothing will draw.
+   *
+   * The return callback's recollection is the case that forced this: it is a
+   * genuine engine-composed read with figures and confidence, and it has no
+   * actions of its own because the question above it already has two.
+   */
+  read: Pick<Read, "segments">;
   /** Opens the derivation sheet for an interrogable figure. */
   onInterrogate?: (segment: Extract<ReadSegment, { kind: "figure" }>) => void;
   /** Reveal choreography — first-run only. */

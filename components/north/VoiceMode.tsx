@@ -384,7 +384,7 @@ export function VoiceMode({
         {answer.length > 0 && (
           <div className="type-voice-md measure text-text-on-deep">
             <ReadProse
-              read={{ action: { commit: "", defer: "" }, segments: answer }}
+              read={{ segments: answer }}
               onDeep
             />
           </div>
