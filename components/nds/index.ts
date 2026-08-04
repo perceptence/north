@@ -58,6 +58,12 @@ export { HorizonField } from "./HorizonField";
 export type { HorizonFieldProps } from "./HorizonField";
 export { RungIndicator, WATERFALL_LENGTH } from "./RungIndicator";
 export type { RungIndicatorProps } from "./RungIndicator";
+export { RouteMarks } from "./RouteMarks";
+export type {
+  RouteMark,
+  RouteMarksProps,
+  RouteMarkState,
+} from "./RouteMarks";
 
 // Navigation
 export { AppBar } from "./AppBar";

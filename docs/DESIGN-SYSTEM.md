@@ -560,7 +560,30 @@ reasoning behind a whole answer, meant to be read, not one number's arithmetic.
 - **Primary form is typographic:** *"4 of 7 · tax-advantaged space"* in `type-meta`.
 - Optional: seven 2px ticks, `radius-full`, `signal-coach` filled / `text-disabled` inactive.
 - **Hard constraint: never celebrate advancement.** No animation on rung change, no completion state, no color shift to "done." The moment it reads as a progress ring, North is a game about money.
-- **Don't:** confuse this with onboarding's wayfinding strip. The rung ladder is financial standing; the wayfinding strip is position on a scrolled route ([UX-ARCHITECTURE §4.2](UX-ARCHITECTURE.md)). Neither fills toward "done."
+- **Don't:** confuse this with onboarding's wayfinding strip (`RouteMarks`). The rung ladder is financial standing; the wayfinding strip is position on a scrolled route ([UX-ARCHITECTURE §4.2](UX-ARCHITECTURE.md)). Neither fills toward "done."
+
+#### `RouteMarks` *(August 2026)*
+
+Position on a route: **answered / here / still to come**. Onboarding's
+wayfinding, in both orientations.
+
+It exists because onboarding drew this **twice, in two visual languages** — the
+phone strip used equal-width bars separated only by opacity, the desktop rail
+used varying length plus three colour tokens — so the same information changed
+vocabulary at 1024px, and the two copies could drift about what counted as
+answered. There is one vocabulary now, the richer of the two:
+
+| state | length | weight |
+| --- | --- | --- |
+| here | `w-8`, 3px | full |
+| answered | `w-4`, 2px | 55% |
+| to come | `w-4`, 2px | 20% |
+
+- **Length *and* weight carry it**, so it survives a glance in a masthead and never rests on colour alone.
+- **Marks paint in `bg-current`.** The strip hangs on the sky and the rail on paper, so the grounds genuinely need different ink — the caller sets `text-text-on-deep` or `text-text-primary` and one definition serves both.
+- **`onJump` is optional**, like `RungIndicator`'s `onInterrogate`. A desktop margin has room to give every mark a real 44px target; a phone masthead does not (ten of those is 440px of target in 375px of screen), so the strip renders decorative and going back there is the swipe.
+- **Gate visibility on a wrapper, not on `className`.** `cn` is a plain joiner by design, so a caller's `hidden` and the component's `flex` would both survive and the winner would be whichever Tailwind emitted last.
+- **Same hard constraint as `RungIndicator`:** this is position on a route, never a meter filling toward "done."
 
 ### 8.5 Navigation
 
