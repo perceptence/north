@@ -25,14 +25,18 @@ import { cn } from "@/lib/cn";
  */
 
 /** Ink box of the full lockup, including stroke overhang. */
-const WORD_VIEW = "45.2 33.2 139.6 29.6";
-const WORD_RATIO = 139.6 / 29.6;
+export const WORD_VIEW = "45.2 33.2 139.6 29.6";
+export const WORD_RATIO = 139.6 / 29.6;
+
+/** Ink box of the Plus lockup — the same drawing, plus the ensign. */
+const PLUS_VIEW = "45.2 33.2 162.6 29.6";
+const PLUS_RATIO = 162.6 / 29.6;
 
 /** Ink box of the compass alone. Square, so icons need no padding maths. */
 const MARK_VIEW = "73.2 33.2 29.6 29.6";
 
 /** The letters. The O is absent — the compass stands in for it. */
-const LETTERS = [
+export const LETTERS = [
   "M46 62 V34",
   "M46 34 L65 62",
   "M65 62 V34",
@@ -47,14 +51,47 @@ const LETTERS = [
 ];
 
 /** The instrument: ring, west tick, east tick, then the needle's south half. */
-const COMPASS = [
+export const COMPASS = [
   "M74.8 48 H78.2",
   "M97.8 48 H101.2",
   "M84.9 48 L88 58.6 L91.1 48 Z",
 ];
 
 /** The needle's north half — filled AND stroked, so both halves share a pen. */
-const NEEDLE_NORTH = "M88 37.4 L91.1 48 L84.9 48 Z";
+export const NEEDLE_NORTH = "M88 37.4 L91.1 48 L84.9 48 Z";
+
+/** Where the needle turns: the compass's own centre. */
+export const COMPASS_CENTER = { x: 88, y: 48 } as const;
+
+/**
+ * The Plus ensign — a compass rose, seated after the H at cap register.
+ *
+ * ── THE PLAY ON THE MARK, WITHOUT TOUCHING THE MARK ───────────────────────
+ * The wordmark is locked, so membership is not drawn INTO it — no filled
+ * ring, no gilded needle. The lockup EXTENDS instead, the way a masthead
+ * sets a device after a name: the same optical gap (9 units, H ends at
+ * 184) and the same pen. Members' chrome carries the rose; everyone
+ * else's carries NORTH alone; the drawing both share never changes.
+ *
+ * And the ensign is not a typographic "+" — it is the identity's own
+ * instrument again, smaller. A four-point rose: the vertical axis is the
+ * NEEDLE'S OWN GEOMETRY at half scale, its north point filled exactly as
+ * the needle's is (the identity's one filled shape, restated, never a
+ * second kind of fill), and the east–west points ride behind it as an open
+ * stroke, the way the bezel's ticks flank the ring. Premium is drawn as
+ * more compass, because that is the only ornament this identity owns.
+ *
+ * Centred at (197, 39.4) — the rose hangs in the cap's upper register like
+ * a superscript, its tip level with the needle's own.
+ */
+export const PLUS_ENSIGN = {
+  /** East–west points: one open diamond lying across the axis. */
+  strokes: ["M190.9 39.4 L197 37.3 L203.1 39.4 L197 41.5 Z"],
+  /** South half of the vertical needle, open like the big needle's. */
+  south: "M195.3 39.4 L197 45.1 L198.7 39.4 Z",
+  /** North half — filled, the needle's own shape at half scale. */
+  north: "M197 33.7 L198.7 39.4 L195.3 39.4 Z",
+} as const;
 
 function Compass({ strokeWidth }: { strokeWidth: number }) {
   return (
@@ -77,32 +114,39 @@ function Compass({ strokeWidth }: { strokeWidth: number }) {
 export interface WordmarkProps {
   /** Cap-box height in px. Width follows the locked ratio. */
   height?: number;
+  /** Renders the Plus lockup — NORTH with the ensign. Membership chrome. */
+  plus?: boolean;
   /**
    * Stroke weight in the mark's own units (cap height = 28). The default is
    * the drawn weight; nudge it up only where a surface renders the mark small
    * enough that the hairline would wash out.
    */
   strokeWidth?: number;
-  /** Accessible name. Set to "" when an adjacent heading already says it. */
+  /**
+   * Accessible name. Defaults to "North" — or "North Plus" with the ensign —
+   * and may be set to "" when an adjacent heading already says it.
+   */
   label?: string;
   className?: string;
 }
 
 export function Wordmark({
   height = 14,
+  plus = false,
   strokeWidth = 1.6,
-  label = "North",
+  label,
   className,
 }: WordmarkProps) {
+  const name = label ?? (plus ? "North Plus" : "North");
   return (
     <svg
-      viewBox={WORD_VIEW}
-      width={Math.round(height * WORD_RATIO)}
+      viewBox={plus ? PLUS_VIEW : WORD_VIEW}
+      width={Math.round(height * (plus ? PLUS_RATIO : WORD_RATIO))}
       height={height}
       fill="none"
-      role={label ? "img" : undefined}
-      aria-label={label || undefined}
-      aria-hidden={label ? undefined : "true"}
+      role={name ? "img" : undefined}
+      aria-label={name || undefined}
+      aria-hidden={name ? undefined : "true"}
       className={cn("block", className)}
     >
       <g
@@ -115,6 +159,15 @@ export function Wordmark({
         {LETTERS.map((d) => (
           <path key={d} d={d} />
         ))}
+        {plus && (
+          <>
+            {PLUS_ENSIGN.strokes.map((d) => (
+              <path key={d} d={d} />
+            ))}
+            <path d={PLUS_ENSIGN.south} />
+            <path d={PLUS_ENSIGN.north} fill="currentColor" />
+          </>
+        )}
       </g>
       <Compass strokeWidth={strokeWidth} />
     </svg>

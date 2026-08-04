@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { MotionProvider } from "@/components/nds/MotionProvider";
+import { SplashGate } from "@/components/north/SplashGate";
 import "./globals.css";
 
 /**
@@ -29,6 +30,17 @@ const figure = Geist_Mono({
   display: "swap",
 });
 
+/**
+ * The browser's own chrome — the status bar on an installed or mobile tab —
+ * takes the deepest sky, so the splash and every masthead meet the OS with
+ * no seam. The literal is `--sky-900`; metadata cannot read CSS custom
+ * properties, so the token's value is repeated here at the edge, like the
+ * favicon.
+ */
+export const viewport: Viewport = {
+  themeColor: "#20264E",
+};
+
 export const metadata: Metadata = {
   title: "North",
   description:
@@ -54,7 +66,13 @@ export default function RootLayout({
       className={`${voice.variable} ${ui.variable} ${figure.variable} h-full`}
     >
       <body className="min-h-full">
-        <MotionProvider>{children}</MotionProvider>
+        <MotionProvider>
+          {/* The launch beat, on every fresh load of the PRODUCT — the gate
+              exempts the project tooling. At the root so the first-time
+              user's first load (Arrival, onboarding) gets it too. */}
+          <SplashGate />
+          {children}
+        </MotionProvider>
       </body>
     </html>
   );

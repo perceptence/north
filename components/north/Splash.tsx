@@ -6,71 +6,143 @@ import {
   DURATION,
   EASE,
   m,
+  SPRING,
   useReducedMotion,
   Wordmark,
 } from "@/components/nds";
+import {
+  COMPASS,
+  COMPASS_CENTER,
+  LETTERS,
+  NEEDLE_NORTH,
+  WORD_RATIO,
+  WORD_VIEW,
+} from "@/components/nds/Wordmark";
 
 /**
- * The launch beat — a radial sky, the mark at its centre, then the app.
+ * The launch beat — the compass finds north, and the name writes itself.
  *
- * ── EVERY LAUNCH, NOT ONCE A SESSION ──────────────────────────────────────
- * It used to write a `sessionStorage` flag and skip itself afterwards, on the
- * theory that a launch is a session thing. In practice that meant the beat
- * was invisible for the rest of the day — including on the reload you do
- * immediately after changing something, which is the moment you most want to
- * see it. A splash is the app OPENING, and a page load IS the app opening,
- * so it plays on every one of them.
+ * ── THE CHOREOGRAPHY ──────────────────────────────────────────────────────
+ * This is the first thing anyone sees, so it carries the identity's whole
+ * argument in about two seconds:
  *
- * It still does not play on soft navigation between destinations, and that
- * needs no flag: the product shell owns this component, the shell survives
- * client-side routing, so Today → Goals never remounts it. Mount is the
- * honest definition of launch, and mount is what drives it.
+ *   1. The RING draws in — the instrument arrives first.
+ *   2. The NEEDLE wakes pointing the wrong way and swings to north on a
+ *      critically damped spring: it SETTLES, it never wobbles. The one
+ *      filled shape in the identity earns its fill by doing its job.
+ *   3. The LETTERS write themselves outward from the O — N to the left,
+ *      R, T, H to the right — each stroke drawing the way every glyph in
+ *      the product draws. The compass is the origin; the name grows from it.
+ *   4. A held beat, then the whole sky opens through the viewer.
  *
- * ── WHAT IT COVERS ────────────────────────────────────────────────────────
- * Everything North knows lives in localStorage, which the server cannot
- * read, so every screen renders empty and fills after hydration. The splash
- * holds the brand over that swap — it covers real work, which is the only
- * condition under which this product draws a wait at all
- * (docs/UX-ARCHITECTURE.md §11). No spinner, no progress: a mark on the sky,
- * then the product.
+ * Not one path here is new. The geometry is imported from the locked mark —
+ * this file choreographs the drawing; it never redraws it.
  *
- * ── THE RADIAL ────────────────────────────────────────────────────────────
- * A radial ombre, not the linear masthead ramp: the mark sits at the centre
- * of its own light rather than partway down someone else's gradient. The
- * three sky tokens are the ones `.atmosphere` already uses, so this is the
- * product's own weather seen from directly beneath it.
+ * ── WHY IT PLAYS EVERY LAUNCH ─────────────────────────────────────────────
+ * A page load IS the app opening. The shell survives client-side routing, so
+ * moving between destinations never remounts this — mount is the honest
+ * definition of launch, and the only flag needed is none.
  *
- * ── AND HOW IT LEAVES ─────────────────────────────────────────────────────
- * It opens from its own centre. The cover was sliding UPWARD at first, which
- * is a curtain's exit — coherent over a linear gradient, and nonsense over a
- * radial one: a light with a middle does not have a top edge to leave by. So
- * the glow scales up through the viewer and dissolves, and the app is behind
- * it. Quick, because this is the release of a held breath, not a passage.
+ * ── THE BACKDROP REACHES FULL DEPTH ───────────────────────────────────────
+ * The radial lands on sky-900 by 82% of its run, so every EDGE of the screen
+ * is uniformly the deepest sky — the top row of pixels included, which is
+ * what the OS status bar (and the preview frame's drawing of one) sits over.
+ * The first version ran the ramp to 100%, which left the top-centre a shade
+ * lighter than the corners: a pale smile under the status bar, reading as a
+ * seam between the app and the phone. The page's `themeColor` is pinned to
+ * the same deep sky for the same reason.
  *
- * The exit animates the COVER, never the content — "motion never gates
- * visibility" holds, because nothing underneath ever waited on it. This is
- * the same exception `motion.ts` grants overlays: a splash renders OVER
- * content rather than being it, and a dropped frame leaves a stuck cover,
- * not a blank page. Tap skips. Reduced motion cuts straight to the app.
+ * Reduced motion: the finished lockup, a beat, and a cut — the identity
+ * without the performance.
  */
 
-/** Long enough to register as a beat, short enough to never feel like a gate. */
-const HOLD_MS = 1100;
+/** Draw (~1.2s), then a held beat with the finished mark. */
+const HOLD_MS = 2100;
+
+/** The needle wakes pointing south-west, and swings home. */
+const NEEDLE_FROM_DEG = -150;
 
 /**
- * The aperture opening. Far enough past 1 to read as motion toward you at
- * this speed; not so far that the mark smears on its way out.
+ * The letters, outward from the compass: N leftward as R, T, H write
+ * rightward. Delays in seconds; each stroke within a letter follows its
+ * predecessor by a pen-lift.
  */
-const ZOOM_TO = 1.35;
+const LETTER_DELAY: readonly number[] = [
+  0.5, 0.56, 0.62, // N
+  0.62, 0.68, 0.74, // R
+  0.74, 0.8, // T
+  0.86, 0.92, 0.98, // H
+];
 
-/**
- * Duration, not a spring. A spring only asymptotes toward its target, and
- * this element UNMOUNTS at the end — so the last frames of an easing curve
- * have to actually arrive, or the cover pops rather than opening. `micro` is
- * a cut at this scale; `standard` is the shortest step that still reads as a
- * zoom.
- */
-const OPENING = { duration: DURATION.standard, ease: EASE.out } as const;
+/** One stroke of the mark, drawing itself. */
+function Drawn({ d, delay, fill }: { d: string; delay: number; fill?: boolean }) {
+  return (
+    <m.path
+      d={d}
+      fill={fill ? "currentColor" : "none"}
+      initial={{ pathLength: 0, fillOpacity: fill ? 0 : undefined }}
+      animate={{ pathLength: 1, fillOpacity: fill ? 1 : undefined }}
+      transition={{
+        pathLength: { duration: 0.45, ease: EASE.out, delay },
+        fillOpacity: { duration: 0.3, ease: EASE.out, delay: delay + 0.2 },
+      }}
+    />
+  );
+}
+
+/** The lockup, performing. Exactly the Wordmark's geometry, choreographed. */
+function DrawnWordmark({ height }: { height: number }) {
+  return (
+    <m.svg
+      viewBox={WORD_VIEW}
+      width={Math.round(height * WORD_RATIO)}
+      height={height}
+      fill="none"
+      aria-hidden="true"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      // The whole mark eases up to size as it draws — arrival, not assembly.
+      initial={{ scale: 0.94 }}
+      animate={{ scale: 1 }}
+      transition={SPRING.considered}
+      className="overflow-visible"
+    >
+      {/* The instrument first: ring, then its bezel ticks. */}
+      <m.circle
+        cx={COMPASS_CENTER.x}
+        cy={COMPASS_CENTER.y}
+        r={14}
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.55, ease: EASE.out }}
+      />
+      <Drawn d={COMPASS[0]} delay={0.4} />
+      <Drawn d={COMPASS[1]} delay={0.4} />
+
+      {/* The needle — both halves on one pivot, waking wrong and settling
+          on north. Critically damped: it arrives, it does not wobble. */}
+      <m.g
+        initial={{ rotate: NEEDLE_FROM_DEG }}
+        animate={{ rotate: 0 }}
+        transition={{ ...SPRING.considered, delay: 0.25 }}
+        style={{
+          transformBox: "view-box",
+          transformOrigin: `${COMPASS_CENTER.x}px ${COMPASS_CENTER.y}px`,
+        }}
+      >
+        <Drawn d={COMPASS[2]} delay={0.2} />
+        <Drawn d={NEEDLE_NORTH} delay={0.2} fill />
+      </m.g>
+
+      {/* The name, writing outward from the O. */}
+      {LETTERS.map((d, index) => (
+        <Drawn key={d} d={d} delay={LETTER_DELAY[index] ?? 0.9} />
+      ))}
+    </m.svg>
+  );
+}
 
 export function Splash() {
   const reduce = useReducedMotion();
@@ -80,7 +152,7 @@ export function Splash() {
     if (!showing) return;
     const timer = window.setTimeout(
       () => setShowing(false),
-      reduce ? 0 : HOLD_MS,
+      reduce ? 600 : HOLD_MS,
     );
     return () => window.clearTimeout(timer);
   }, [showing, reduce]);
@@ -94,19 +166,23 @@ export function Splash() {
           exit={
             reduce
               ? { opacity: 0, transition: { duration: 0 } }
-              : { scale: ZOOM_TO, opacity: 0 }
+              : { scale: 1.35, opacity: 0 }
           }
-          transition={OPENING}
+          transition={{ duration: DURATION.standard, ease: EASE.out }}
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{
-            // The sky, seen from directly beneath it. Same three tokens as
-            // `.atmosphere`, arranged around the mark instead of above it.
+            // Deep at every edge by 82% — see the backdrop note above.
             backgroundImage:
-              "radial-gradient(circle at 50% 50% in oklab, var(--sky-300) 0%, var(--sky-600) 45%, var(--sky-900) 100%)",
+              "radial-gradient(circle at 50% 50% in oklab, var(--sky-300) 0%, var(--sky-600) 42%, var(--sky-900) 82%)",
+            backgroundColor: "var(--sky-900)",
           }}
         >
           <div className="text-text-on-deep">
-            <Wordmark height={30} strokeWidth={1.5} />
+            {reduce ? (
+              <Wordmark height={30} strokeWidth={1.5} />
+            ) : (
+              <DrawnWordmark height={30} />
+            )}
           </div>
         </m.div>
       )}
