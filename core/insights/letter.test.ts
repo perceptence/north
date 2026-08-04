@@ -41,7 +41,7 @@ describe("the letter", () => {
       OPTIONS,
     );
     assert.equal(letter.quiet, true);
-    assert.match(whole(letter), /Nothing changed\. That's fine/);
+    assert.match(whole(letter), /Nothing changed\. That’s fine/);
   });
 
   test("a buffer that moved is named with both figures", () => {
@@ -81,7 +81,7 @@ describe("the letter", () => {
     const letter = composeLetter(
       UNADVISED_EARNER, SINCE, UNADVISED_EARNER, decisions, OPTIONS,
     );
-    assert.match(whole(letter), /held 1 decision you'd made/);
+    assert.match(whole(letter), /held 1 decision you’d made/);
   });
 
   test("never scolds — no failure vocabulary in any letter", () => {
@@ -112,7 +112,7 @@ describe("the letter", () => {
     );
     const letter = composeLetter(UNADVISED_EARNER, SINCE, named, [], OPTIONS);
     assert.equal(letter.quiet, false);
-    assert.match(whole(letter), /named where you're going — a home deposit/);
+    assert.match(whole(letter), /named where you’re going — a home deposit/);
   });
 
   test("every letter closes on the current position", () => {

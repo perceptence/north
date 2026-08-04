@@ -49,7 +49,7 @@ describe("spoken — the full register", () => {
     assert.equal(out, "You have a hundred and forty thousand dollars set aside.");
   });
 
-  it("keeps the screen's abbreviation when the figure carries it", () => {
+  it("keeps the screen’s abbreviation when the figure carries it", () => {
     // $1.5M on screen should be "one point five million" in the ear — the
     // reader is looking at the abbreviated form while hearing this.
     const out = spoken([fig(150_000_000, "currency", "assumed", { abbreviate: true })], "full");
@@ -84,7 +84,7 @@ describe("spoken — the full register", () => {
     assert.equal(out.match(/roughly/g)?.length, 1, out);
   });
 
-  it("drops a number's own 'and' inside a range, so it has exactly one", () => {
+  it("drops a number’s own 'and' inside a range, so it has exactly one", () => {
     // "Between roughly five hundred AND seventy-eight thousand dollars AND
     // one point five million" — the number's internal "and" and the range's
     // land in one breath, and the listener back-tracks. Caught by reading
@@ -215,7 +215,7 @@ describe("spoken — the discreet register", () => {
     assert.ok(!out.includes("eleven"));
   });
 
-  it("stays grammatical against the engine's real copy", () => {
+  it("stays grammatical against the engine’s real copy", () => {
     const out = spoken(read, "discreet");
     assert.equal(
       out,
@@ -246,7 +246,7 @@ describe("spoken — said like a person, not read like a form", () => {
     assert.match(spoken([fig(145_000, "currency")], "full"), /fourteen hundred and fifty dollars/i);
   });
 
-  it("keeps the plain form outside the money idiom's range", () => {
+  it("keeps the plain form outside the money idiom’s range", () => {
     // 14,000 is not "a hundred and forty hundred".
     assert.match(spoken([fig(1_400_000, "currency")], "full"), /fourteen thousand dollars/i);
   });
@@ -277,7 +277,7 @@ describe("spoken — punctuation a speaker can hear", () => {
   });
 
   it("does not leave doubled punctuation where a figure was elided", () => {
-    const out = spoken([text("About "), fig(11, "duration"), text(" — that's the floor.")], "discreet");
+    const out = spoken([text("About "), fig(11, "duration"), text(" — that’s the floor.")], "discreet");
     assert.ok(!out.includes(", ,"));
     assert.ok(!out.includes(" ,"));
     assert.ok(!out.includes("  "));

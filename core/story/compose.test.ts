@@ -90,7 +90,7 @@ test("more real changes make a longer story — never a fixed length", () => {
   assert.ok(two.beats.length > one.beats.length);
 });
 
-test("the opening carries the OLD horizon and the closing today's", () => {
+test("the opening carries the OLD horizon and the closing today’s", () => {
   const story = composeStory(
     profile(),
     AS_OF,

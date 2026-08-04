@@ -75,7 +75,7 @@ function position(
   if (!evaluation.current) {
     return [
       text(
-        "Nothing is waiting on you. The next move is to keep doing what you're doing.",
+        "Nothing is waiting on you. The next move is to keep doing what you’re doing.",
       ),
     ];
   }
@@ -131,8 +131,8 @@ export function composeLetter(
       meaning: [
         text(
           grew
-            ? "That's more months you could go without income before anything else has to change."
-            : "That's fewer months you could go without income before something else has to give.",
+            ? "That’s more months you could go without income before anything else has to change."
+            : "That’s fewer months you could go without income before something else has to give.",
         ),
       ],
     });
@@ -159,7 +159,7 @@ export function composeLetter(
       ],
       meaning: [
         text(
-          "The ladder is ordered, so clearing one means North stops asking about it and starts asking about what's underneath.",
+          "The ladder is ordered, so clearing one means North stops asking about it and starts asking about what’s underneath.",
         ),
       ],
     });
@@ -186,8 +186,8 @@ export function composeLetter(
         fig(held, "count", "stated", { label: "decisions" }),
         text(
           held === 1
-            ? " decision you'd made with North."
-            : " decisions you'd made with North.",
+            ? " decision you’d made with North."
+            : " decisions you’d made with North.",
         ),
       ],
       meaning: [
@@ -218,13 +218,13 @@ export function composeLetter(
       segments: [
         text(
           goalsBefore === 0
-            ? `You named where you're going — ${phrase}.`
-            : `You added ${phrase} to what you're working toward.`,
+            ? `You named where you’re going — ${phrase}.`
+            : `You added ${phrase} to what you’re working toward.`,
         ),
       ],
       meaning: [
         text(
-          "A named goal enters the ladder, so it competes for what's spare instead of waiting for whatever is left.",
+          "A named goal enters the ladder, so it competes for what’s spare instead of waiting for whatever is left.",
         ),
       ],
     });
@@ -234,7 +234,7 @@ export function composeLetter(
 
   return {
     opening: quiet
-      ? [text("Nothing changed. That's fine — nothing needed to.")]
+      ? [text("Nothing changed. That’s fine — nothing needed to.")]
       : [
           text(
             entries.length === 1

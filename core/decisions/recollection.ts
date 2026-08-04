@@ -59,7 +59,7 @@ export function recollect(
     ...recalled.segments,
     // The invitation, not a second question — the question is the sentence
     // above this one, and two questions in a row is an interrogation.
-    text(". Let's see where you landed."),
+    text(". Let’s see where you landed."),
   ];
 }
 

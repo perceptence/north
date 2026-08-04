@@ -56,19 +56,36 @@ describe("matching a purely qualitative turn (confidence)", () => {
   const t = turn("confidence");
 
   test("a close paraphrase matches", () => {
-    const m = matchChoice(t, "I'd say mostly fine");
+    const m = matchChoice(t, "I’d say mostly fine");
     assert.equal(m?.value, "mostly-ok");
   });
 
-  test("a hedge word doesn't stop the match", () => {
-    const m = matchChoice(t, "honestly, I'm pretty lost");
+  /**
+   * Both apostrophes, explicitly.
+   *
+   * `normalize` strips `'`, `‘` and `’` alike, and every other test in this
+   * file now uses the curly form — which is what dictation actually emits, so
+   * it is the realistic input. That left the straight form, which is what a
+   * keyboard emits, covered by nothing. Whichever way someone's device writes
+   * it, the match must be identical.
+   */
+  test("a straight apostrophe and a curly one match the same", () => {
+    assert.deepEqual(
+      matchChoice(t, "I'd say mostly fine"),
+      matchChoice(t, "I’d say mostly fine"),
+    );
+    assert.equal(matchChoice(t, "I'd say mostly fine")?.value, "mostly-ok");
+  });
+
+  test("a hedge word doesn’t stop the match", () => {
+    const m = matchChoice(t, "honestly, I’m pretty lost");
     assert.equal(m?.value, "lost");
   });
 
   test("the longer, more specific phrase wins over a shorter partial echo", () => {
     // "I've got a handle on it" shares no words with "unsure" at all, and
     // shares only "I" (stopworded) with nothing else — should resolve clean.
-    const m = matchChoice(t, "I've got a handle on it, mostly");
+    const m = matchChoice(t, "I’ve got a handle on it, mostly");
     assert.equal(m?.value, "confident");
   });
 
@@ -131,8 +148,8 @@ describe("matching a dollar-amount turn with qualitative outliers (liquid)", () 
   test("a large, imprecise amount is not silently forced onto the wrong option", () => {
     // A genuinely ambiguous case between "About $100,000" and "More than
     // that" — refusing is the correct behaviour, not a coin flip.
-    const m = matchChoice(t, "quite a lot, I don't really know");
-    const ranked = rankChoices(t, "quite a lot, I don't really know");
+    const m = matchChoice(t, "quite a lot, I don’t really know");
+    const ranked = rankChoices(t, "quite a lot, I don’t really know");
     assert.equal(m, null, `expected no confident match, ranked: ${JSON.stringify(ranked)}`);
   });
 });
@@ -164,13 +181,13 @@ describe("matching percent-based turns with a qualitative escape hatch (retireme
     assert.equal(m?.value, 600);
   });
 
-  test("'I don't know' matches the assumed-confidence option, not a 0% guess", () => {
-    const m = matchChoice(t, "I don't know");
+  test("'I don’t know' matches the assumed-confidence option, not a 0% guess", () => {
+    const m = matchChoice(t, "I don’t know");
     assert.equal(m?.value, 0);
     assert.equal(m?.confidence, "assumed");
   });
 
-  test("'nothing yet' is distinguished from 'I don't know' even though both are 0", () => {
+  test("'nothing yet' is distinguished from 'I don’t know' even though both are 0", () => {
     // Both options share value 0 — the label text is the only signal.
     const m = matchChoice(t, "nothing yet");
     assert.equal(m?.label, "Nothing yet");

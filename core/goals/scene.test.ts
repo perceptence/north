@@ -70,7 +70,7 @@ describe("the scene", () => {
       OPTIONS,
     );
     const pacing = spoken(scene.goals[0].pacing);
-    assert.match(pacing, /isn't there yet/);
+    assert.match(pacing, /isn’t there yet/);
     assert.doesNotMatch(pacing, /fail|behind|missed/i);
   });
 

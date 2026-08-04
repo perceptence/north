@@ -92,12 +92,12 @@ describe("applyAnswers", () => {
     assert.deepEqual(UNADVISED_EARNER, snapshot);
   });
 
-  test("carries the answer's own confidence across", () => {
+  test("carries the answer’s own confidence across", () => {
     const turn = SCRIPT.find((t) => t.id === "retirement")!;
     assert.equal(turn.kind, "choice");
     if (turn.kind !== "choice") return;
 
-    const dontKnow = turn.options.find((o) => o.label === "I don't know")!;
+    const dontKnow = turn.options.find((o) => o.label === "I don’t know")!;
     const patched = applyAnswers(
       UNADVISED_EARNER,
       { retirement: toAnswer(dontKnow) },

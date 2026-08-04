@@ -30,7 +30,7 @@ describe("the recollection — the second sentence of the return", () => {
     const out = recollect(decision("liquidity"), UNADVISED_EARNER, OPTIONS);
     assert.ok(out, "the hero has cash, so there is something to recall");
     assert.match(said(out), /^Last time we spoke you were holding ⟨fig⟩ of cover/);
-    assert.match(said(out), /Let's see where you landed\.$/);
+    assert.match(said(out), /Let’s see where you landed\.$/);
   });
 
   test("recalls the debt and its rate for a debt decision", () => {

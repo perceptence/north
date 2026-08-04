@@ -58,7 +58,7 @@ const liquidity: Rung = {
       fig(facts.liquidityFloorMonths, "duration", "assumed", {
         label: "the buffer floor",
       }),
-      text(" is the floor, and everything else can wait until it's there."),
+      text(" is the floor, and everything else can wait until it’s there."),
     ],
     action: { commit: "Build the buffer first", defer: "Not now" },
   }),
@@ -86,7 +86,7 @@ const match: Rung = {
 
     return {
       segments: [
-        text("You're contributing "),
+        text("You’re contributing "),
         from(profile.retirementBps, "percent", { label: "of your income" }),
         text(" and your employer matches up to "),
         from(profile.employerMatchBps, "percent", { label: "of your income" }),
@@ -101,7 +101,7 @@ const match: Rung = {
           ),
           { label: "a year in unclaimed match", interrogable: true, emphasis: true },
         ),
-        text(" a year you're leaving behind."),
+        text(" a year you’re leaving behind."),
       ],
       action: { commit: "Raise it to the match", defer: "Not now" },
     };
@@ -133,7 +133,7 @@ const highInterestDebt: Rung = {
 
     return {
       segments: [
-        text("You're carrying "),
+        text("You’re carrying "),
         fig(obligation.balanceCents, "currency", confidence, {
           label: `of ${obligation.kind} debt`,
           interrogable: true,
@@ -173,7 +173,7 @@ const taxAdvantaged: Rung = {
         segments: [
           text("Your "),
           from(profile.liquidCents, "currency", { label: "in cash" }),
-          text(" in cash is the problem, not the win. You're holding "),
+          text(" in cash is the problem, not the win. You’re holding "),
           from(facts.liquidityMonths, "duration", { label: "of outgoings" }),
           text(" of outgoings — "),
           fig(facts.liquidityFloorMonths, "duration", "assumed", {
@@ -201,7 +201,7 @@ const taxAdvantaged: Rung = {
         text("You have "),
         space,
         text(
-          " of tax-advantaged room going unused this year. It doesn't roll over.",
+          " of tax-advantaged room going unused this year. It doesn’t roll over.",
         ),
       ],
       action: { commit: "Use the room before it expires", defer: "Not now" },
@@ -263,7 +263,7 @@ const goal: Rung = {
         // The SHORTFALL, which is the whole reason this rung is speaking.
         // Restating what the goal already receives told the user nothing they
         // could act on, and read as agreement with a request to act.
-        text(". You're about "),
+        text(". You’re about "),
         fig(
           primary.monthlyShortCents,
           "currency",
@@ -314,7 +314,7 @@ const optimization: Rung = {
 
   read: ({ facts }): Read => ({
     segments: [
-      text("Everything else is handled, and you're still holding "),
+      text("Everything else is handled, and you’re still holding "),
       from(facts.liquidityMonths, "duration", { label: "of outgoings" }),
       text(" of outgoings in cash. About "),
       from(facts.excessCash, "currency", {

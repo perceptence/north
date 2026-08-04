@@ -119,10 +119,10 @@ export const SCRIPT: readonly Turn[] = [
   {
     id: "openingConcern",
     kind: "text",
-    question: "What's the money thing you keep meaning to deal with?",
+    question: "What’s the money thing you keep meaning to deal with?",
     // The composer's hanging quote already frames the answer as speech, so
     // the note no longer has to disclaim anything — it just invites.
-    note: "However you'd say it out loud.",
+    note: "However you’d say it out loud.",
   },
   {
     id: "confidence",
@@ -131,9 +131,9 @@ export const SCRIPT: readonly Turn[] = [
     block: true,
     options: [
       { label: "Honestly, pretty lost", value: "lost" },
-      { label: "I get by, but I'm unsure", value: "unsure" },
+      { label: "I get by, but I’m unsure", value: "unsure" },
       { label: "Mostly fine", value: "mostly-ok" },
-      { label: "I've got a handle on it", value: "confident" },
+      { label: "I’ve got a handle on it", value: "confident" },
     ],
   },
   {
@@ -180,13 +180,13 @@ export const SCRIPT: readonly Turn[] = [
     id: "expensiveDebt",
     kind: "choice",
     question: "Is anything charging you serious interest?",
-    note: "Roughly 7% or more. A mortgage or a cheap car loan doesn't count.",
+    note: "Roughly 7% or more. A mortgage or a cheap car loan doesn’t count.",
     block: true,
     options: [
       { label: "No, nothing expensive", value: "none" },
       { label: "A credit card", value: "card" },
       { label: "Something else", value: "other" },
-      { label: "I'm not sure", value: "unsure", confidence: "assumed" },
+      { label: "I’m not sure", value: "unsure", confidence: "assumed" },
     ],
   },
   {
@@ -223,7 +223,7 @@ export const SCRIPT: readonly Turn[] = [
       { label: "About 6%", value: 600 },
       { label: "10% or more", value: 1_000 },
       { label: "I max it out", value: 2_100 },
-      { label: "I don't know", value: 0, confidence: "assumed" },
+      { label: "I don’t know", value: 0, confidence: "assumed" },
     ],
   },
   {
@@ -236,7 +236,7 @@ export const SCRIPT: readonly Turn[] = [
       { label: "Up to 3%", value: 300 },
       { label: "Up to 4%", value: 400 },
       { label: "Up to 6%", value: 600 },
-      { label: "I don't know", value: 0, confidence: "assumed" },
+      { label: "I don’t know", value: 0, confidence: "assumed" },
     ],
   },
   {

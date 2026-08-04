@@ -110,6 +110,24 @@ describe("routeIntent — control words win", () => {
     assert.equal(route("say that again").kind, "repeat");
     assert.equal(route("what did you say").kind, "repeat");
   });
+
+  /**
+   * `normalize` deletes `'`, `‘` and `’` rather than spacing them, so
+   * "what's next" collapses to "whats next" and matches the term as written.
+   * The phrasings above now use the curly form, because that is what
+   * dictation emits — which left the straight form, what a keyboard emits,
+   * asserted nowhere.
+   */
+  it("routes the same whichever apostrophe the device wrote", () => {
+    for (const [straight, curly] of [
+      ["what's next", "what’s next"],
+      ["how's my money", "how’s my money"],
+      ["what's changed", "what’s changed"],
+      ["what's bitcoin doing", "what’s bitcoin doing"],
+    ]) {
+      assert.deepEqual(route(straight), route(curly), straight);
+    }
+  });
 });
 
 describe("routeIntent — the topics a coach is actually asked", () => {
@@ -118,7 +136,7 @@ describe("routeIntent — the topics a coach is actually asked", () => {
     ["where do I stand", "standing"],
     ["what should I do", "standing"],
     ["why that", "ladder"],
-    ["what's next", "ladder"],
+    ["what’s next", "ladder"],
     ["what have I decided", "decisions"],
     ["what am I working toward", "goals"],
     ["where am I heading", "horizon"],
@@ -179,12 +197,12 @@ describe("routeIntent — the phrasings people actually use", () => {
   const answerable = [
     "what can you do", "what can I ask", "help", "what do you know about me",
     "how am I doing", "am I doing ok", "am I doing alright",
-    "how are things looking", "how's my money", "what's my situation",
-    "give me an update", "what should I focus on", "what's the priority",
+    "how are things looking", "how’s my money", "what’s my situation",
+    "give me an update", "what should I focus on", "what’s the priority",
     "why that one", "what have I decided", "what did I commit to",
     "show me my record", "what am I saving for", "how are my goals",
     "am I on track for my goals", "how much will I have",
-    "where will I end up", "what's changed", "anything new", "catch me up",
+    "where will I end up", "what’s changed", "anything new", "catch me up",
     "can I buy a house", "should I quit my job", "should I save more",
   ];
 
@@ -195,7 +213,7 @@ describe("routeIntent — the phrasings people actually use", () => {
   }
 
   it("still refuses what it genuinely cannot reason about", () => {
-    for (const q of ["should I buy nvidia", "what's bitcoin doing"]) {
+    for (const q of ["should I buy nvidia", "what’s bitcoin doing"]) {
       assert.equal(route(q).kind, "unknown", `should have refused: ${q}`);
     }
   });
@@ -232,15 +250,15 @@ describe("routeIntent — the phrasings people actually use", () => {
 describe("routeIntent — phrasings nobody wrote a term for", () => {
   const unrehearsed = [
     "so where am I at", "give it to me straight", "talk to me about my money",
-    "is my cash doing anything", "am I wasting money", "what's the damage",
+    "is my cash doing anything", "am I wasting money", "what’s the damage",
     "tell me something useful", "what would you do in my shoes",
-    "I'm worried about money", "should I be worried",
-    "is there anything I'm missing", "what am I getting wrong",
-    "how far off am I", "how long until I'm okay", "can I afford to relax",
-    "am I behind", "what's my biggest problem", "where's the money going",
+    "I’m worried about money", "should I be worried",
+    "is there anything I’m missing", "what am I getting wrong",
+    "how far off am I", "how long until I’m okay", "can I afford to relax",
+    "am I behind", "what’s my biggest problem", "where’s the money going",
     "when can I stop working", "how did I do this month",
     "did I keep my promises", "what should I sort out first",
-    "what's the one thing", "is the sabbatical realistic",
+    "what’s the one thing", "is the sabbatical realistic",
   ];
 
   for (const q of unrehearsed) {
@@ -258,7 +276,7 @@ describe("routeIntent — it can say no", () => {
     for (const q of [
       "is the S&P overvalued",
       "which ETF should I pick",
-      "how's the market doing",
+      "how’s the market doing",
       "should I hold bonds",
       "what about gold right now",
       "is now a good time to buy the dip",
@@ -281,12 +299,12 @@ describe("routeIntent — it can say no", () => {
     for (const q of [
       "how are markets doing today",
       "are markets up",
-      "what's a good investment right now",
+      "what’s a good investment right now",
       "how should I invest my savings",
       "is real estate a good investment",
       "should I buy apple",
-      "how's the S and P 500 doing", // dictation writes the ampersand out
-      "how's my portfolio doing",
+      "how’s the S and P 500 doing", // dictation writes the ampersand out
+      "how’s my portfolio doing",
     ]) {
       assert.equal(route(q).kind, "unknown", `escaped the refusal: ${q}`);
     }
@@ -378,8 +396,8 @@ describe("parseIntent — nothing gets in unvalidated", () => {
     // caught that; the assertion now says which outcome it expects.
     for (const value of [
       "standing",
-      "You're doing fine.",
-      { text: "You're doing fine." },
+      "You’re doing fine.",
+      { text: "You’re doing fine." },
       null,
       undefined,
       [],
@@ -417,12 +435,12 @@ describe("parseIntent — nothing gets in unvalidated", () => {
 
 describe("outOfScope — decidable without the model", () => {
   it("is true for exactly what the router refuses", () => {
-    for (const q of ["should I buy nvidia", "which ETF", "how's the market"]) {
+    for (const q of ["should I buy nvidia", "which ETF", "how’s the market"]) {
       assert.equal(outOfScope(q), true, q);
     }
   });
 
-  it("is false for questions about this person's own money", () => {
+  it("is false for questions about this person’s own money", () => {
     for (const q of ["am I behind", "how am I doing", "can I buy a house"]) {
       assert.equal(outOfScope(q), false, q);
     }
@@ -443,7 +461,7 @@ describe("respond — every answer comes from the engine", () => {
     const reply = respond({ kind: "ladder" }, ctx);
     assert.match(
       reply.segments.map((s) => (s.kind === "text" ? s.value : "")).join(""),
-      /You're on \d of \d/,
+      /You’re on \d of \d/,
     );
   });
 
@@ -460,7 +478,7 @@ describe("respond — every answer comes from the engine", () => {
     );
   });
 
-  it("answers goals with each goal's pacing", () => {
+  it("answers goals with each goal’s pacing", () => {
     const reply = respond({ kind: "goals" }, ctx);
     assert.ok(reply.segments.length > 0);
     // A figure with a REAL value. `length > 0` alone passed for a fixture
@@ -496,7 +514,7 @@ describe("respond — every answer comes from the engine", () => {
     assert.ok(reply.segments.every((s) => s.kind === "text"));
     assert.match(
       reply.segments.map((s) => (s.kind === "text" ? s.value : "")).join(""),
-      /can't answer honestly/,
+      /can’t answer honestly/,
     );
   });
 

@@ -35,7 +35,7 @@ describe("the ledger as a run of months", () => {
     assert.equal(run[4].decisions.length, 1, "March has one");
   });
 
-  test("newest first, and a month's own entries are newest first too", () => {
+  test("newest first, and a month’s own entries are newest first too", () => {
     const run = ledgerMonths(
       [on("2026-06-11"), on("2026-07-08"), on("2026-06-24")],
       NOW,

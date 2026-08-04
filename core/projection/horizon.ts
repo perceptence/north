@@ -184,7 +184,7 @@ export function project(
       confidence: profile.horizonMonths.confidence,
     },
     {
-      label: "Excludes anything you haven't told us about",
+      label: "Excludes anything you haven’t told us about",
       confidence: "assumed",
     },
     {

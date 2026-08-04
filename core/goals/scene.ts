@@ -134,7 +134,7 @@ export function composeScene(
           facts.monthlySurplus.confidence,
           { label: "a month short" },
         ),
-        text(" of that isn't there yet."),
+        text(" of that isn’t there yet."),
       ],
     };
   });

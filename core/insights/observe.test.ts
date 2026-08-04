@@ -149,7 +149,7 @@ describe("the next move", () => {
   });
 });
 
-describe("what North can't see", () => {
+describe("what North can’t see", () => {
   /**
    * The honest answer to "show me spending trends". North has no transactions
    * and says so rather than inventing a percentage.
@@ -210,7 +210,7 @@ describe("the three-state ladder", () => {
     const rung = report.progress.rungs.find((r) => r.id === "tax-advantaged")!;
 
     assert.equal(rung.settled, true, "the user acted on it");
-    assert.equal(rung.satisfied, false, "but the profile hasn't caught up");
+    assert.equal(rung.satisfied, false, "but the profile hasn’t caught up");
     assert.equal(report.progress.settled, 1);
   });
 
@@ -240,7 +240,7 @@ describe("the three-state ladder", () => {
       ),
     );
     assert.match(said, /Nothing is waiting on you/);
-    assert.match(said, /isn't reflected|aren't reflected/);
+    assert.match(said, /isn’t reflected|aren’t reflected/);
     assert.doesNotMatch(said, /genuinely unusual/);
   });
 });

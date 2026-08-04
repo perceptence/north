@@ -50,10 +50,10 @@ export interface CoachContext {
  */
 const CAPABILITIES: ReadSegment[] = [
   text(
-    "I work from your situation — everything I say comes from what you've " +
-      "told me and what the engine works out from it. Ask me how you're " +
-      "doing, or what you should focus on. What you're working toward, and " +
-      "whether it's on track. What you've decided with me before. What's " +
+    "I work from your situation — everything I say comes from what you’ve " +
+      "told me and what the engine works out from it. Ask me how you’re " +
+      "doing, or what you should focus on. What you’re working toward, and " +
+      "whether it’s on track. What you’ve decided with me before. What’s " +
       "changed lately. Or think a decision through out loud — buying a " +
       "home, a career break, putting more away, taking a pay cut, clearing " +
       "debt first.",
@@ -70,9 +70,9 @@ const CAPABILITIES: ReadSegment[] = [
  */
 const REFUSAL: ReadSegment[] = [
   text(
-    "That one I can't answer honestly — I work from your situation, not " +
+    "That one I can’t answer honestly — I work from your situation, not " +
       "from markets or particular investments. Ask me what you can ask, and " +
-      "I'll tell you.",
+      "I’ll tell you.",
   ),
 ];
 
@@ -103,7 +103,7 @@ export function respond(intent: Intent, context: CoachContext): CoachReply {
       if (!current) {
         return {
           segments: [
-            text("Every rung is behind you. I'll speak up if that changes."),
+            text("Every rung is behind you. I’ll speak up if that changes."),
           ],
         };
       }
@@ -114,10 +114,10 @@ export function respond(intent: Intent, context: CoachContext): CoachReply {
           // are written to sit inside sentences, and capitalising them is a
           // presentation decision that lives outside `core/` (lib/text.ts).
           text(
-            `You're on ${current.rung.index} of ${total} — ` +
+            `You’re on ${current.rung.index} of ${total} — ` +
               `${current.rung.label}. ` +
               "I work down these in order, so the only one I ask about is the " +
-              "first that isn't settled. That's why the ones above it have " +
+              "first that isn’t settled. That’s why the ones above it have " +
               "gone quiet.",
           ),
         ],
@@ -145,8 +145,8 @@ export function respond(intent: Intent, context: CoachContext): CoachReply {
         return {
           segments: [
             text(
-              "You haven't named a destination yet. Tell me what you're saving " +
-                "for and I'll fold it into the ladder.",
+              "You haven’t named a destination yet. Tell me what you’re saving " +
+                "for and I’ll fold it into the ladder.",
             ),
           ],
         };
@@ -167,8 +167,8 @@ export function respond(intent: Intent, context: CoachContext): CoachReply {
         return {
           segments: [
             text(
-              "I can't project a horizon yet — I need a little more about what " +
-                "you're putting away.",
+              "I can’t project a horizon yet — I need a little more about what " +
+                "you’re putting away.",
             ),
           ],
         };

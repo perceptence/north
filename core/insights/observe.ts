@@ -40,8 +40,8 @@ function nextMove(
         fig(settledOutstanding, "count", "inferred", { label: "decisions" }),
         text(
           settledOutstanding === 1
-            ? " thing you handled isn't reflected in what North knows yet — tell it what changed and the picture sharpens."
-            : " things you handled aren't reflected in what North knows yet — tell it what changed and the picture sharpens.",
+            ? " thing you handled isn’t reflected in what North knows yet — tell it what changed and the picture sharpens."
+            : " things you handled aren’t reflected in what North knows yet — tell it what changed and the picture sharpens.",
         ),
       ];
     }
@@ -204,13 +204,13 @@ function recordSegments(
   if (total === 0) {
     return [
       text(
-        "Nothing yet — you haven't made a decision with North. The first one starts the record.",
+        "Nothing yet — you haven’t made a decision with North. The first one starts the record.",
       ),
     ];
   }
 
   const opener: ReadSegment[] = [
-    text("You've made "),
+    text("You’ve made "),
     fig(total, "count", "stated", { label: "decisions with North" }),
     text(total === 1 ? " decision" : " decisions"),
   ];
@@ -296,7 +296,7 @@ export function observe(
     },
     {
       kind: "record",
-      label: "What you've done",
+      label: "What you’ve done",
       segments: recordSegments(decisions.length, resolved, held),
     },
     {
@@ -311,7 +311,7 @@ export function observe(
     },
     {
       kind: "blind-spot",
-      label: "What North can't see",
+      label: "What North can’t see",
       segments: blindSpots(profile),
     },
   ];

@@ -126,7 +126,7 @@ const home: Scenario = {
   },
 
   understanding: ({ profile, facts }) => [
-    text("You're holding "),
+    text("You’re holding "),
     from(profile.liquidCents, "currency", { label: "in cash" }),
     text(" and putting aside roughly "),
     from(facts.monthlySurplus, "currency", { label: "spare each month" }),
@@ -164,7 +164,7 @@ const home: Scenario = {
         ],
       },
       {
-        label: "Buffer we'd want you to keep",
+        label: "Buffer we’d want you to keep",
         segments: [
           fig(facts.liquidityFloorMonths, "duration", "assumed", {
             label: "the buffer floor",
@@ -187,7 +187,7 @@ const home: Scenario = {
     if (deposit > byThen) {
       return {
         verdict: "not-yet",
-        headline: `Not ${when} — the deposit is more than you'd have.`,
+        headline: `Not ${when} — the deposit is more than you’d have.`,
         tradeoff:
           "Waiting longer or putting less down closes it. Nothing here says never; it says not on this timeline.",
       };
@@ -197,14 +197,14 @@ const home: Scenario = {
       return {
         verdict: "yes",
         headline: `Yes ${when}, and your buffer survives it.`,
-        tradeoff: `You'd still have ${formatMonths(cover)} of outgoings in reach. What you give up is the head start that cash was building.`,
+        tradeoff: `You’d still have ${formatMonths(cover)} of outgoings in reach. What you give up is the head start that cash was building.`,
       };
     }
 
     return {
       verdict: "yes-with-changes",
       headline: `Affordable ${when}, but it would clear out your buffer.`,
-      tradeoff: `You'd drop to ${formatMonths(cover)} of cover against a ${floor}-month floor. A smaller deposit or a later date puts that back.`,
+      tradeoff: `You’d drop to ${formatMonths(cover)} of cover against a ${floor}-month floor. A smaller deposit or a later date puts that back.`,
     };
   },
 };
@@ -246,7 +246,7 @@ const careerBreak: Scenario = {
   understanding: ({ profile, facts }) => [
     text("Living costs you "),
     from(profile.monthlyOutCents, "currency", { label: "a month" }),
-    text(" a month, and you're holding "),
+    text(" a month, and you’re holding "),
     from(profile.liquidCents, "currency", { label: "in cash" }),
     text(" — "),
     from(facts.liquidityMonths, "duration", { label: "of outgoings" }),
@@ -279,7 +279,7 @@ const careerBreak: Scenario = {
         label: "Not counted here",
         segments: [
           text(
-            "Any income during the break, and the contributions that stop while you're off.",
+            "Any income during the break, and the contributions that stop while you’re off.",
           ),
         ],
       },
@@ -298,7 +298,7 @@ const careerBreak: Scenario = {
         verdict: "not-yet",
         headline: `${formatMonths(months)} is longer than your cash lasts.`,
         tradeoff:
-          "A shorter break, or some income during it, is what makes this work. The shape is right; the length isn't.",
+          "A shorter break, or some income during it, is what makes this work. The shape is right; the length isn’t.",
       };
     }
 
@@ -306,13 +306,13 @@ const careerBreak: Scenario = {
       return {
         verdict: "yes",
         headline: "Yes — you can cover it and still land with a buffer.",
-        tradeoff: `You'd come back with ${formatMonths(cover)} of cover. The cost is the compounding those months would have done.`,
+        tradeoff: `You’d come back with ${formatMonths(cover)} of cover. The cost is the compounding those months would have done.`,
       };
     }
 
     return {
       verdict: "yes-with-changes",
-      headline: "Possible, but you'd come back with nothing behind you.",
+      headline: "Possible, but you’d come back with nothing behind you.",
       tradeoff: `${formatMonths(cover)} of cover against a ${floor}-month floor means any surprise on the way back becomes debt.`,
     };
   },
@@ -347,7 +347,7 @@ const contributeMore: Scenario = {
   }),
 
   understanding: ({ profile, facts }) => [
-    text("You're putting "),
+    text("You’re putting "),
     from(profile.retirementBps, "percent", { label: "of your income" }),
     text(" away, on an assumed "),
     from(facts.monthlyIncome, "currency", { label: "a month" }),
@@ -367,7 +367,7 @@ const contributeMore: Scenario = {
         segments: [fig(monthly, "currency", "assumed", { label: "a month" })],
       },
       {
-        label: "Against this year's tax-advantaged room",
+        label: "Against this year’s tax-advantaged room",
         segments: [
           fig(Math.min(annual, room), "currency", "assumed", { label: "used" }),
           text(" of "),
@@ -397,25 +397,25 @@ const contributeMore: Scenario = {
     if (surplusAfter < 0) {
       return {
         verdict: "not-yet",
-        headline: "That's more than your month can carry.",
+        headline: "That’s more than your month can carry.",
         tradeoff:
-          "At this rate you'd be drawing on savings to fund savings, which is just a slower way to stand still.",
+          "At this rate you’d be drawing on savings to fund savings, which is just a slower way to stand still.",
       };
     }
 
     if (match > 0 && rate < match) {
       return {
         verdict: "yes-with-changes",
-        headline: "Worth doing, but you're still under the match.",
+        headline: "Worth doing, but you’re still under the match.",
         tradeoff:
-          "Everything below your employer's match is money being declined. Clear that line first, then keep going.",
+          "Everything below your employer’s match is money being declined. Clear that line first, then keep going.",
       };
     }
 
     if (annual >= totalTaxAdvantagedCents(limits)) {
       return {
         verdict: "yes",
-        headline: "That fills this year's tax-advantaged room.",
+        headline: "That fills this year’s tax-advantaged room.",
         // Formatting goes through the money layer — never hand-rolled.
         tradeoff: `About ${formatCurrency(monthly)} a month stops being spendable. Anything beyond this has to go somewhere with less shelter.`,
       };
@@ -425,7 +425,7 @@ const contributeMore: Scenario = {
       verdict: "yes",
       headline: "Affordable, and it uses room that expires.",
       tradeoff:
-        "It comes straight out of what you'd otherwise have to spend. The room doesn't roll over, which is what makes the trade worth it.",
+        "It comes straight out of what you’d otherwise have to spend. The room doesn’t roll over, which is what makes the trade worth it.",
     };
   },
 };
@@ -469,7 +469,7 @@ const payCut: Scenario = {
   understanding: ({ profile, facts }) => [
     text("On "),
     fig(facts.monthlyIncome.value, "currency", "assumed", { label: "a month" }),
-    text(" a month you're spending "),
+    text(" a month you’re spending "),
     from(profile.monthlyOutCents, "currency", { label: "a month" }),
     text(" and keeping the rest."),
   ],
@@ -497,7 +497,7 @@ const payCut: Scenario = {
         ],
       },
       {
-        label: "What's left",
+        label: "What’s left",
         segments: [
           fig(monthlyAfter - out, "currency", "assumed", {
             label: "a month left over",
@@ -517,7 +517,7 @@ const payCut: Scenario = {
     if (monthlyAfter >= facts.monthlyIncome.value) {
       return {
         verdict: "yes",
-        headline: "That isn't a cut — it's the same or more.",
+        headline: "That isn’t a cut — it’s the same or more.",
         tradeoff: "Nothing to weigh up. Pick a lower band to see the tradeoff.",
       };
     }
@@ -534,9 +534,9 @@ const payCut: Scenario = {
     if (left < THRESHOLDS.meaningfulSurplusCents) {
       return {
         verdict: "yes-with-changes",
-        headline: "Survivable, but there'd be nothing spare.",
+        headline: "Survivable, but there’d be nothing spare.",
         tradeoff:
-          "You'd cover your month and no more, so anything unexpected lands on your buffer instead of your income.",
+          "You’d cover your month and no more, so anything unexpected lands on your buffer instead of your income.",
       };
     }
 
@@ -587,7 +587,7 @@ const debtFirst: Scenario = {
     if (!worst) return [text("Nothing is costing you more than it earns.")];
 
     return [
-      text("You're carrying "),
+      text("You’re carrying "),
       fig(worst.balanceCents, "currency", profile.obligations.confidence, {
         label: `of ${worst.kind} debt`,
       }),
@@ -628,7 +628,7 @@ const debtFirst: Scenario = {
         label: "Clearing it costs you",
         segments: [
           fig(worst.balanceCents, "currency", c, { label: "from your cash" }),
-          text(" of the cash you're holding."),
+          text(" of the cash you’re holding."),
         ],
       },
     ];
@@ -639,7 +639,7 @@ const debtFirst: Scenario = {
     if (!worst) {
       return {
         verdict: "yes",
-        headline: "There's nothing expensive left to clear.",
+        headline: "There’s nothing expensive left to clear.",
         tradeoff: "Nothing to trade off.",
       };
     }
@@ -648,7 +648,7 @@ const debtFirst: Scenario = {
       verdict: "yes",
       headline: "Clear it first. It costs more than saving is expected to make.",
       tradeoff:
-        "Paying it down uses cash you'd rather keep, so do it after your buffer is intact — not before.",
+        "Paying it down uses cash you’d rather keep, so do it after your buffer is intact — not before.",
     };
   },
 };

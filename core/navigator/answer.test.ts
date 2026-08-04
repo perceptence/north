@@ -36,7 +36,7 @@ const spoken = (answer: ReturnType<typeof ask>): string =>
 describe("the scenario set", () => {
   test("every scenario has a question and defaults for its params", () => {
     for (const scenario of SCENARIOS) {
-      assert.ok(scenario.question.endsWith("?"), `${scenario.id} isn't a question`);
+      assert.ok(scenario.question.endsWith("?"), `${scenario.id} isn’t a question`);
       for (const param of scenario.params) {
         const fallback = scenario.defaults[param.id];
         assert.ok(
@@ -47,7 +47,7 @@ describe("the scenario set", () => {
         if (param.kind === "choice") {
           assert.ok(
             param.options.some((o) => o.value === fallback),
-            `${scenario.id}'s default for ${param.id} isn't one of its options`,
+            `${scenario.id}'s default for ${param.id} isn’t one of its options`,
           );
         } else {
           const value = Number(fallback);
@@ -58,7 +58,7 @@ describe("the scenario set", () => {
           assert.equal(
             (value - param.min) % param.step,
             0,
-            `${scenario.id}'s default for ${param.id} isn't on a step`,
+            `${scenario.id}'s default for ${param.id} isn’t on a step`,
           );
         }
       }
@@ -179,7 +179,7 @@ describe("the coaching line holds", () => {
       );
       assert.ok(
         recommendation.tradeoff.length > 0,
-        `${scenario.id} recommends something with no cost — that isn't a recommendation`,
+        `${scenario.id} recommends something with no cost — that isn’t a recommendation`,
       );
     }
   });
@@ -206,7 +206,7 @@ describe("purity", () => {
   });
 });
 
-describe("the simulator's inputs", () => {
+describe("the simulator’s inputs", () => {
   /** The brief's four input types, each reachable from some scenario. */
   test("timeline, major expense, monthly savings and income are all adjustable", () => {
     const paramIds = SCENARIOS.flatMap((s) => s.params.map((p) => `${s.id}.${p.id}`));
@@ -299,7 +299,7 @@ describe("before and after stand at the same moment", () => {
     }
   });
 
-  test("scenarios that don't move through time leave the baseline alone", () => {
+  test("scenarios that don’t move through time leave the baseline alone", () => {
     const answer = ask("career-break", UNADVISED_EARNER, { months: 6 });
     const plain = ask("debt-first", SQUEEZED);
     assert.ok(answer.impact.before.projection);

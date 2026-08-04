@@ -232,7 +232,7 @@ describe("disclosure", () => {
       .assumptions.map((a) => a.label)
       .join(" | ");
 
-    assert.match(labels, /Excludes anything you haven't told us about/);
+    assert.match(labels, /Excludes anything you haven’t told us about/);
     assert.match(labels, /Assumes your income holds/);
   });
 

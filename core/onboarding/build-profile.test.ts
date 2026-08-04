@@ -22,7 +22,7 @@ const said = (value: string | number): { value: string | number; confidence: "st
 
 const CLEAN: Answers = {
   openingConcern: toTextAnswer(
-    "Cash keeps piling up and I don't know what to do with it.",
+    "Cash keeps piling up and I don’t know what to do with it.",
   ),
   confidence: said("mostly-ok"),
   incomeBand: said("200k-400k"),
@@ -189,7 +189,7 @@ describe("confidence at collection time", () => {
     if (turn.kind !== "choice") return;
 
     const nothingYet = turn.options.find((o) => o.label === "Nothing yet")!;
-    const dontKnow = turn.options.find((o) => o.label === "I don't know")!;
+    const dontKnow = turn.options.find((o) => o.label === "I don’t know")!;
 
     assert.equal(nothingYet.value, dontKnow.value, "same value, by design");
     assert.equal(toAnswer(nothingYet).confidence, "stated");
