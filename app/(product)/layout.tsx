@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { ChromeApron } from "@/components/north/ChromeApron";
 import { Masthead } from "@/components/north/Masthead";
 import { ProductNav } from "@/components/north/ProductNav";
 import { VoiceLauncher } from "@/components/north/VoiceLauncher";
@@ -110,7 +109,14 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
             Its height still matches the content's own top padding, so at rest
             the cut sits in the gap above the first line and touches nothing
             you are meant to read. */}
-        <ChromeApron />
+        {/* No edge. An earlier pass gave this a `line-hairline` on scroll, to
+            explain the cut the way a platform nav bar does. It was the right
+            instinct and the wrong product: on a screen whose whole argument
+            is that the sky dissolves into paper, a rule appearing under the
+            masthead reads as a seam — reported twice as "a weird grey line"
+            before it was taken back out. The cut stays; content passing under
+            chrome is what it looks like, and it needs no rule to announce it. */}
+        <div aria-hidden="true" className="h-7 bg-surface-page md:h-9" />
       </div>
 
       {/* Padding on the OUTER element, the measure inside it — the same
