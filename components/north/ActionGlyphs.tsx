@@ -407,6 +407,54 @@ export function BehindMark() {
 }
 
 /**
+ * North is holding this, and will come back on a named day.
+ *
+ * The Steady line's mark — "Recorded. I'll ask you how it went on Friday."
+ * Chosen in review (Aug 2026) over a ringed calendar day, a pause, a knot in a
+ * thread, and a bookmark. It replaces `LedgerMark`, which was borrowed here
+ * and sits four inches below on the same screen carrying "1 decision with
+ * North": one drawing doing a STATE in one place and a DOOR in the other.
+ *
+ * ── WHAT IT MUST NOT SAY ──────────────────────────────────────────────────
+ * Not "done". Nothing has happened — the money has not moved, the read above
+ * is unchanged, and the whole point of this state is that North is WAITING
+ * rather than idle. Not "recorded" either, or it says what the ledger says.
+ *
+ * ── AND WHY IT IS DETAILED RATHER THAN OUTLINED ───────────────────────────
+ * An empty hourglass is a shape; a running one is a statement. The sand does
+ * the work: a filled wedge still in the upper bulb, a grain at the waist, and
+ * a small mound already gathered below — the glass was turned, some time has
+ * passed, and more is owed. That is precisely the three days
+ * `CALLBACK_AFTER_DAYS` describes, drawn.
+ *
+ * The fill is allowed because the identity already spends it exactly this
+ * way: the needle's north point, `SpeakMark`'s dot, the Plus rose's tip. It is
+ * never decoration — it marks the one part of a drawing that is doing the
+ * work.
+ */
+export function WaitingMark() {
+  return (
+    <Mark>
+      {/* The frame: two caps and a waist. */}
+      <path d="M4.2 2.6 H11.8" />
+      <path d="M4.2 13.4 H11.8" />
+      <path d="M5 2.6 C5 5.4 8 6.7 8 8 C8 9.3 5 10.6 5 13.4" />
+      <path d="M11 2.6 C11 5.4 8 6.7 8 8 C8 9.3 11 10.6 11 13.4" />
+      {/* Sand still to fall, sitting in the upper bulb. */}
+      <path d="M6.1 4.1 H9.9 L8 6.9 Z" fill="currentColor" stroke="none" />
+      {/* The grain in the waist — the only reason this reads as running. */}
+      <circle cx="8" cy="9.5" r="0.5" fill="currentColor" stroke="none" />
+      {/* And what has already gathered. */}
+      <path
+        d="M6.3 12.6 C6.3 11.3 9.7 11.3 9.7 12.6 Z"
+        fill="currentColor"
+        stroke="none"
+      />
+    </Mark>
+  );
+}
+
+/**
  * North's spoken voice — the coach, speaking.
  *
  * Chosen in review (July 2026) over a hanging quote, a transcript's speaker

@@ -47,6 +47,7 @@ import {
   SalutationMark,
   SignpostMark,
   UnchangedMark,
+  WaitingMark,
   StoryMark,
 } from "@/components/north/ActionGlyphs";
 import { AssumptionsPanel } from "@/components/north/AssumptionsPanel";
@@ -1056,6 +1057,12 @@ export default function DesignGallery() {
               </ActionLink>
               <ActionLink icon={<BehindMark />} onClick={() => undefined}>
                 I&rsquo;ve already done this
+              </ActionLink>
+              {/* Not an ActionLink in the product — the Steady line is a
+                  STATE, not something you can press. Shown in the row so the
+                  set can be read together. */}
+              <ActionLink icon={<WaitingMark />} onClick={() => undefined}>
+                Recorded. I&rsquo;ll ask you Friday. (a state, not an action)
               </ActionLink>
               {/* Adjacent on purpose: these two are the closest pair in the
                   set, and the gallery is where that has to be checkable. The
