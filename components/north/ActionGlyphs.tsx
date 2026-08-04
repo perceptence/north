@@ -312,7 +312,15 @@ export function ActionLink({
       aria-pressed={pressed}
       className={cn(
         "type-meta hit-target inline-flex cursor-pointer items-center gap-2",
-        "self-start rounded-full",
+        // `w-fit`, NOT `self-start`. Both stop a flex COLUMN stretching this
+        // to full width, which is all `self-start` was ever for — but
+        // `self-start` does it by seizing cross-axis alignment, so in a flex
+        // ROW it also overrode the parent's `items-center` and pinned the
+        // label to the top of the line. Beside a taller pill (Account's
+        // "Save" / "Never mind" pair) that read as plainly misaligned.
+        // `w-fit` beats `align-self: stretch` on width alone and leaves
+        // alignment to the parent, which is whose business it is.
+        "w-fit rounded-full",
         "transition-colors duration-[--motion-micro]",
         pressed
           ? "text-text-primary"

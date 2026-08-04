@@ -293,36 +293,28 @@ export function SpokenField({
 
           Listening keeps the pill's old job of being unmissable, and that is
           now ActionLink's `pressed` state: the presence dot replaces the
-          mark, the label rises to ink and drops its rule.
-
-          The wrapper span exists because `cn` is a plain joiner, not
-          tailwind-merge — passing `self-auto` to override ActionLink's
-          `self-start` would leave BOTH in the class list and let stylesheet
-          order decide. The span is the flex child instead, so this row's
-          `items-center` governs it. */}
+          mark, the label rises to ink and drops its rule. */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         {action}
         {canListen && (
-          <span className="inline-flex">
-            <ActionLink
-              pressed={listening}
-              className="select-none"
-              icon={listening ? <CoachPresence size="sm" /> : <SpeakMark />}
-              onClick={() => {
-                if (listening) {
-                  stopListening();
-                  return;
-                }
-                // The transcript is a full re-delivery each update, not a
-                // delta — so THIS field is responsible for remembering what
-                // was already typed and prepending it back on.
-                baseRef.current = value;
-                startListening();
-              }}
-            >
-              {listening ? "Listening" : "Or say it"}
-            </ActionLink>
-          </span>
+          <ActionLink
+            pressed={listening}
+            className="select-none"
+            icon={listening ? <CoachPresence size="sm" /> : <SpeakMark />}
+            onClick={() => {
+              if (listening) {
+                stopListening();
+                return;
+              }
+              // The transcript is a full re-delivery each update, not a
+              // delta — so THIS field is responsible for remembering what
+              // was already typed and prepending it back on.
+              baseRef.current = value;
+              startListening();
+            }}
+          >
+            {listening ? "Listening" : "Or say it"}
+          </ActionLink>
         )}
       </div>
     </div>
