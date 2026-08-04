@@ -50,6 +50,22 @@ export interface SpokenFieldProps {
   onSpeechEnd?: (transcript: string) => void;
   /** The turn's action (the Continue button), so it shares a row with the mic. */
   action?: ReactNode;
+  /**
+   * Questions worth asking, shown where the writing goes.
+   *
+   * ── WHY THEY LIVE IN THE FIELD ──────────────────────────────────────────
+   * They used to hang below the composer as loose links, which read as page
+   * chrome — a menu that happened to sit near an input. They are not chrome:
+   * they are sentences you could say, so they belong where your sentences go.
+   *
+   * They occupy the placeholder's position and clear the moment you type, but
+   * they are BUTTONS, not a placeholder. That distinction is the whole point.
+   * `core/coach/offers.ts` exists because seven of the eleven things this
+   * coach can answer had no tap path anywhere in the product; real placeholder
+   * text would put six of them back out of reach and show the seventh.
+   */
+  suggestions?: string[];
+  onSuggest?: (question: string) => void;
   autoFocus?: boolean;
   className?: string;
 }
@@ -61,6 +77,8 @@ export function SpokenField({
   onSubmit,
   onSpeechEnd,
   action,
+  suggestions,
+  onSuggest,
   autoFocus = false,
   className,
 }: SpokenFieldProps) {
@@ -96,6 +114,13 @@ export function SpokenField({
     },
   });
   const canListen = hydrated && available;
+  /**
+   * Offers show only on an empty field — they occupy the writing area, and
+   * the writing wins it back the instant there is any. Clearing the field
+   * brings them back, which is the behaviour a placeholder has and the reason
+   * this reads as one.
+   */
+  const showOffers = !value && (suggestions?.length ?? 0) > 0;
 
   // Auto-grow. A scrollbar inside a one-question field reads as a form.
   useLayoutEffect(() => {
@@ -136,7 +161,12 @@ export function SpokenField({
       className={cn(
         "flex flex-col",
         RHYTHM.heading,
-        "rounded-card border border-line-hairline bg-surface-raised",
+        // `rounded-sheet` (28), not `rounded-card` (20). The card radius
+        // belongs to the decision Card, which is the one elevated object in
+        // the product; wearing it here made the composer read as a second
+        // card competing with it. The sheet radius is the softer, larger
+        // corner the composer's own doc-comment has always called it.
+        "rounded-sheet border border-line-hairline bg-surface-raised",
         "px-4 py-4 md:px-5 md:py-5",
         "transition-colors duration-[--motion-micro]",
         "focus-within:border-action-border-hover",
@@ -162,32 +192,84 @@ export function SpokenField({
         >
           &ldquo;
         </span>
-        <textarea
-          ref={areaRef}
-          rows={1}
-          value={value}
-          aria-label={label}
-          autoFocus={autoFocus}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={(event) => {
-            // Enter submits; Shift+Enter breaks the line. In a conversation,
-            // Enter means "I'm done talking."
-            if (event.key === "Enter" && !event.shiftKey && onSubmit) {
-              event.preventDefault();
-              onSubmit();
-            }
-          }}
-          className={cn(
-            // The user's words, in the voice face. Speech, not data entry.
-            "type-voice-md w-full resize-none overflow-hidden bg-transparent italic",
-            // Room for two lines before it grows — a one-line slot reads as
-            // a search bar, and this is a place to say something.
-            "min-h-16 text-text-primary md:min-h-17",
-            // The sheet's border carries focus; a second ring inside it would
-            // draw a box in a box.
-            "focus:outline-none",
+        {/* ── ONE CELL, TWO OCCUPANTS ─────────────────────────────────────
+            The field and the offered questions are stacked in the SAME grid
+            cell, so the writing area is as tall as whichever needs more and
+            nothing has to know how many offers there are. Absolute
+            positioning would have wanted a magic height per count; this
+            sizes itself for one, two or three.
+
+            The offers sit above in paint order and are `pointer-events-none`
+            as a group — so a click on a question picks it, and a click in the
+            space around them falls through and hands you the pen. */}
+        <div className="grid w-full">
+          <textarea
+            ref={areaRef}
+            rows={1}
+            value={value}
+            aria-label={label}
+            autoFocus={autoFocus}
+            onChange={(event) => onChange(event.target.value)}
+            onKeyDown={(event) => {
+              // Enter submits; Shift+Enter breaks the line. In a conversation,
+              // Enter means "I'm done talking."
+              if (event.key === "Enter" && !event.shiftKey && onSubmit) {
+                event.preventDefault();
+                onSubmit();
+              }
+            }}
+            className={cn(
+              "col-start-1 row-start-1",
+              // The user's words, in the voice face. Speech, not data entry.
+              "type-voice-md w-full resize-none overflow-hidden bg-transparent italic",
+              // Room for two lines before it grows — a one-line slot reads as
+              // a search bar, and this is a place to say something.
+              "min-h-16 text-text-primary md:min-h-17",
+              // The sheet's border carries focus; a second ring inside it would
+              // draw a box in a box.
+              "focus:outline-none",
+            )}
+          />
+
+          {showOffers && (
+            <ul
+              aria-label="Questions you could ask"
+              className={cn(
+                "col-start-1 row-start-1 pointer-events-none",
+                "flex flex-col items-start gap-1 self-start",
+              )}
+            >
+              {suggestions!.map((question) => (
+                <li key={question}>
+                  <button
+                    type="button"
+                    onClick={() => onSuggest?.(question)}
+                    className={cn(
+                      // The voice face, italic, like the words you would have
+                      // typed — because tapping one IS saying it — but one
+                      // notch under them. At the full speaking size a
+                      // suggestion looked like a commitment already made.
+                      // Tertiary until you reach for it, then ink: the
+                      // question becoming yours.
+                      "type-voice-sm pointer-events-auto cursor-pointer text-left italic",
+                      "text-text-tertiary transition-colors duration-[--motion-micro]",
+                      "hover:text-text-primary focus-visible:text-text-primary",
+                      "focus:outline-none",
+                    )}
+                  >
+                    {/* The product's one mark for "there is more behind
+                        this" — the same dotted rule an ActionLink and an
+                        inferred Figure wear. Without it these are placeholder
+                        text, and nobody taps placeholder text. */}
+                    <span className="underline decoration-signal-coach decoration-dotted decoration-1 underline-offset-4">
+                      {question}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
-        />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

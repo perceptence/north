@@ -215,6 +215,7 @@ Type is the one thing that scales across breakpoints. Values: `base → md → l
 |---|---|---|---|---|---|
 | `type-voice-lg` | 30/40 → 32/44 → 34/46 | voice | 400 | −0.01em | The read on Today |
 | `type-voice-md` | 22/32 → 24/34 → 24/34 | voice | 400 | −0.005em | Onboarding questions |
+| `type-voice-sm` | 18/28 → 19/30 → 19/30 | voice | 400 | 0 | The coach's face said quietly — composer offers |
 | `type-body` | 17/26 | ui | 400 | 0 | Supporting prose |
 | `type-label` | 14/20 | ui | 500 | 0 | Actions, field labels |
 | `type-meta` | 13/18 | ui | 400 | 0.01em | Timestamps, rung indicator |

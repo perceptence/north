@@ -259,7 +259,8 @@
 @layer components {
   .type-voice-xl,
   .type-voice-lg,
-  .type-voice-md {
+  .type-voice-md,
+  .type-voice-sm {
     font-family: var(--font-newsreader), Georgia, serif;
     font-weight: 400; /* the serif ships at 400 only — bold reads as advertising */
   }
@@ -303,6 +304,29 @@
     .type-voice-md {
       font-size: 1.5rem;
       line-height: 2.125rem;
+    }
+  }
+
+  /**
+   * The coach's face, one notch under the speaking size.
+   *
+   * The voice face existed only at md/lg/xl — every size at which it is the
+   * loudest thing on the screen — so anything that needed to be in the coach's
+   * hand but NOT shouting had nowhere to go. The composer's offered questions
+   * are the case that found it: set at `voice-md` they matched the user's own
+   * typed words exactly, which made a suggestion look like a commitment.
+   *
+   * Still the serif, still spoken; just said more quietly.
+   */
+  .type-voice-sm {
+    font-size: 1.125rem; /* 18 */
+    line-height: 1.75rem;
+    letter-spacing: 0;
+  }
+  @media (width >= 40rem) {
+    .type-voice-sm {
+      font-size: 1.1875rem; /* 19 */
+      line-height: 1.875rem;
     }
   }
 

@@ -110,42 +110,6 @@ function markFor(to: Destination) {
   return undefined;
 }
 
-/**
- * What to ask next, as questions you can tap.
- *
- * `ActionLink` rather than buttons: these are tertiary in weight — the
- * composer is still the primary way in — and the product's one tertiary
- * action is an ActionLink everywhere else.
- *
- * Tapping calls `ask()` with the sentence, so the question lands in the
- * thread as the user having said it and travels the same router a spoken one
- * would. There is deliberately no shortcut from an offer to an intent.
- */
-function Offers({
-  asks,
-  onAsk,
-}: {
-  asks?: string[];
-  onAsk: (question: string) => void;
-}) {
-  if (!asks || asks.length === 0) return null;
-  return (
-    // NO icon, deliberately. `SpeakMark` was stamped on each of these at
-    // first, which put the same glyph on screen five times with three
-    // different meanings — the Talk launcher, "Say the numbers too", and
-    // every offer. A list of questions does not need a mark repeated down
-    // its side; the dotted rule already says these are tappable, and leaving
-    // `•=` alone keeps it meaning one thing.
-    <ul className="flex flex-col items-start gap-1">
-      {asks.map((question) => (
-        <li key={question}>
-          <ActionLink onClick={() => onAsk(question)}>{question}</ActionLink>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export interface CoachConversationProps {
   profile: SituationProfile;
   decisions: Decision[];
@@ -182,6 +146,22 @@ export function CoachConversation({
     previousProfile,
     previousAt,
   });
+  /**
+   * The offers that are live RIGHT NOW, wherever they came from.
+   *
+   * There was only ever one live set — the cold-start questions before
+   * anything is asked, the last answer's follow-ups after — but they rendered
+   * in two different places, below the composer and above it, so the same
+   * three sentences moved across the screen depending on how far into the
+   * conversation you were. One set, one home.
+   *
+   * `undefined` while a question is in flight: the last turn is then the
+   * user's own, which has no `asks`, and North has not answered yet so it has
+   * nothing to offer. The composer simply shows an empty field for that beat.
+   */
+  const lastTurn = turns[turns.length - 1];
+  const live = lastTurn ? lastTurn.asks : opening;
+
   const [register, setRegister] = useState<SpeechRegister>("discreet");
   const { available: canSpeak, speaking, speak, stop } = useSpeechSynthesis();
 
@@ -340,13 +320,6 @@ export function CoachConversation({
                     </ActionLink>
                   )}
 
-                  {/* What to ask next, on the LAST answer only — older turns
-                      keep their offers as history would, and stacking a live
-                      choice under every past answer turns a thread into a
-                      form. */}
-                  {turn.id === turns[turns.length - 1]?.id && (
-                    <Offers asks={turn.asks} onAsk={(q) => ask(q, false)} />
-                  )}
                 </>
               )}
             </m.li>
@@ -362,14 +335,24 @@ export function CoachConversation({
         label="Ask North a question in your own words"
         onSubmit={() => ask(draft, false)}
         onSpeechEnd={(transcript) => ask(transcript, true)}
+        suggestions={live}
+        onSuggest={(question) => ask(question, false)}
+        /* ── ONLY ONCE THERE IS SOMETHING TO SEND ────────────────────────
+           It used to render disabled on an empty field, which was honest but
+           loud: a dead grey pill, and — now that the offers sit inside the
+           box — the single heaviest thing in a composer whose whole job at
+           rest is to show you three questions. Nothing is lost by leaving it
+           out, because on an empty field there is nothing it could do.
+
+           Onboarding keeps its disabled Continue, and should: there the
+           button is the only way forward, so it has to be visible to be
+           waited for. Here the offers and the mic are both live. */
         action={
-          <Button
-            variant="primary"
-            disabled={!draft.trim()}
-            onClick={() => ask(draft, false)}
-          >
-            Think it through
-          </Button>
+          draft.trim() ? (
+            <Button variant="primary" onClick={() => ask(draft, false)}>
+              Think it through
+            </Button>
+          ) : undefined
         }
       />
 
@@ -398,15 +381,19 @@ export function CoachConversation({
           behind them was unreachable by clicking.
 
           The sentence stays, shortened to the part that is not obvious (the
-          modality rule), and the questions become the questions. */}
+          modality rule). The questions themselves have moved INTO the
+          composer, where the writing goes — see `SpokenField`'s
+          `suggestions`.
+
+          And no `measure` on it. This line sits directly under the composer
+          and reads as its caption, so it takes the COMPOSER's width rather
+          than the prose measure — wrapping early under a full-width box left
+          a ragged column beside it. */}
       {turns.length === 0 && (
-        <div className={cn("flex flex-col", RHYTHM.pair)}>
-          <Offers asks={opening} onAsk={(q) => ask(q, false)} />
-          <Text variant="meta" tone="tertiary" measure>
-            Or ask in your own words. Speak and North answers out loud; type
-            and it stays quiet.
-          </Text>
-        </div>
+        <Text variant="meta" tone="tertiary">
+          Or ask in your own words. Speak and North answers out loud; type and
+          it stays quiet.
+        </Text>
       )}
     </div>
   );
