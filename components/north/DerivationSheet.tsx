@@ -8,7 +8,13 @@ import type { FigureFormat } from "@/core/money";
 import { CORRECTABLE } from "@/core/onboarding/correction";
 import { SCRIPT, type TurnId } from "@/core/onboarding/script";
 import type { SituationProfile } from "@/core/profile/types";
-import { costliest, type DerivedFacts } from "@/core/waterfall";
+import { costliest, type DerivedFacts, type EvaluateOptions } from "@/core/waterfall";
+import {
+  explain,
+  type DerivationKey,
+  type DerivationStep,
+} from "@/core/derivation";
+import { ReadProse } from "./ReadProse";
 import { CorrectionTurn } from "./CorrectionTurn";
 import { RHYTHM } from "@/components/nds";
 
@@ -28,9 +34,25 @@ import { RHYTHM } from "@/components/nds";
  * not, because correcting a derived figure would mean overriding the maths
  * rather than fixing its inputs.
  *
- * KNOWN LIMITATION: this shows the whole working, not the provenance of the one
- * figure that was tapped. Per-figure provenance needs the engine to declare
- * inputs per segment.
+ * ── PER-FIGURE, AND AS SENTENCES ──────────────────────────────────────────
+ * This used to open on twelve rows of label, value and confidence — every
+ * field North holds, in two tables, whatever you tapped. Numbers after
+ * numbers, answering "what do you know" rather than "where did THAT come
+ * from". The limitation was recorded here and is now closed: the engine
+ * declares `explains` on each interrogable figure, and `core/derivation`
+ * composes that figure's working as a chain of sentences ending on the number
+ * you tapped.
+ *
+ * The chain is prose because a table makes the reader do the arithmetic and
+ * infer the relationships. Each line states one input and what it means; the
+ * conclusion is the answer to the question the tap asked. That is the
+ * product's own inversion (docs/UX-ARCHITECTURE.md §4.3) applied to the one
+ * screen that had reverted to a spreadsheet — and this is the overlay the
+ * same document calls "the interaction most likely to convince a skeptical
+ * reviewer the reasoning is real".
+ *
+ * The full table survives as the fallback, for figures the engine has not
+ * declared a derivation for and for callers that do not pass one.
  */
 
 export interface DerivationSheetProps {
@@ -38,6 +60,61 @@ export interface DerivationSheetProps {
   onClose: () => void;
   profile: SituationProfile;
   facts: DerivedFacts;
+  /**
+   * Which figure was tapped, if the engine declared one.
+   *
+   * When present the sheet shows THAT number's working and nothing else.
+   * Absent — a figure with no declared derivation, or a caller that has not
+   * been taught to pass it — it falls back to the full table below, which is
+   * what every tap used to get.
+   */
+  explains?: string | null;
+  options: EvaluateOptions;
+}
+
+/**
+ * One line of the working.
+ *
+ * Correctable steps are buttons, because the step that is WRONG is the step
+ * you want to tap — the overlay is a way in, not a read-only receipt. Steps
+ * with no `from` are the engine's own constants and rules, which are not
+ * yours to change and would be dishonest to offer.
+ */
+function Step({
+  step,
+  onCorrect,
+}: {
+  step: DerivationStep;
+  onCorrect?: () => void;
+}) {
+  const body = (
+    <span className="type-body block text-left text-text-secondary">
+      <ReadProse read={{ segments: step.segments }} unruled />
+    </span>
+  );
+
+  if (!onCorrect) {
+    return <li className="py-2">{body}</li>;
+  }
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onCorrect}
+        className={cn(
+          "-mx-2 flex w-full cursor-pointer items-baseline gap-3 rounded-chip px-2 py-2",
+          "text-left transition-colors duration-[--motion-micro]",
+          "hover:bg-surface-raised",
+        )}
+      >
+        {body}
+        <span className="type-meta shrink-0 text-text-tertiary underline decoration-dotted underline-offset-4">
+          change
+        </span>
+      </button>
+    </li>
+  );
 }
 
 /** The answer the user actually gave, where the script has a label for it. */
@@ -172,6 +249,8 @@ export function DerivationSheet({
   onClose,
   profile,
   facts,
+  explains: key,
+  options,
 }: DerivationSheetProps) {
   const [correcting, setCorrecting] = useState<{
     turnId: TurnId;
@@ -183,13 +262,19 @@ export function DerivationSheet({
     onClose();
   };
 
+  const working = key ? explain(key as DerivationKey, profile, facts, options) : null;
+  const labelFor = (turnId: TurnId) =>
+    CORRECTABLE.find((c) => c.turnId === turnId)?.label ?? "";
+
   return (
     <Sheet
       open={open}
       onClose={close}
       title={
         <h2 className="type-label text-text-tertiary">
-          {correcting ? "One question" : "Where this comes from"}
+          {correcting
+            ? "One question"
+            : (working?.title ?? "Where this comes from")}
         </h2>
       }
     >
@@ -200,6 +285,43 @@ export function DerivationSheet({
           onDone={() => setCorrecting(null)}
           onCancel={() => setCorrecting(null)}
         />
+      ) : working ? (
+        /* ── THE WORKING FOR ONE FIGURE ──────────────────────────────────
+           Sentences, not a table. A table asks the reader to do the
+           arithmetic and infer the relationships; a chain states one input
+           per line and lands on the number they tapped. Composed in
+           `core/derivation` from the same facts `derive()` produced, so it
+           cannot drift from the maths it describes. */
+        <div className={cn("flex flex-col", RHYTHM.heading)}>
+          <ol className="flex flex-col">
+            {working.steps.map((step, i) => (
+              <Step
+                key={i}
+                step={step}
+                onCorrect={
+                  step.from
+                    ? () =>
+                        setCorrecting({
+                          turnId: step.from!,
+                          label: labelFor(step.from!),
+                        })
+                    : undefined
+                }
+              />
+            ))}
+          </ol>
+
+          {/* The conclusion, at the coach's size — it is the answer to the
+              question the tap asked, and everything above it is evidence. */}
+          <div className="type-voice measure border-t border-line-hairline pt-4 text-text-primary">
+            <ReadProse read={{ segments: working.result }} />
+          </div>
+
+          <Text variant="meta" tone="tertiary">
+            Nothing here comes from your accounts — it is what you told us, and
+            what North worked out from it.
+          </Text>
+        </div>
       ) : (
         <div className={cn("flex flex-col", RHYTHM.block)}>
           <section className="flex flex-col">

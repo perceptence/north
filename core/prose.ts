@@ -19,6 +19,8 @@ export const fig = (
   options: {
     label?: string;
     interrogable?: boolean;
+    /** Which working to show. See `ReadSegment`'s note. */
+    explains?: string;
     abbreviate?: boolean;
     emphasis?: boolean;
   } = {},
@@ -31,6 +33,8 @@ export const from = (
   options: {
     label?: string;
     interrogable?: boolean;
+    /** Which working to show. See `ReadSegment`'s note. */
+    explains?: string;
     abbreviate?: boolean;
     emphasis?: boolean;
   } = {},

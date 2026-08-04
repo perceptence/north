@@ -46,6 +46,18 @@ export type ReadSegment =
       label?: string;
       /** Opens the derivation sheet. */
       interrogable?: boolean;
+      /**
+       * WHICH working to show when this figure is tapped.
+       *
+       * `interrogable` says a figure has something behind it; this says what.
+       * Without it the overlay could only show everything North holds, which
+       * is how it became twelve rows of numbers answering a question nobody
+       * asked. A string rather than the imported union, because
+       * `core/derivation` reads this type and importing back would be a
+       * cycle — `explain()` is exhaustive over the real union, so a typo
+       * here surfaces there as a missing case.
+       */
+      explains?: string;
     };
 
 export interface Read {

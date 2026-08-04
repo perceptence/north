@@ -92,6 +92,15 @@ export function TodayScreen() {
   const hydrated = useHydrated();
   const [sheet, setSheet] = useState<null | "derivation" | "ladder">(null);
   /**
+   * WHICH figure was tapped.
+   *
+   * `ReadProse` has always handed the tapped segment to `onInterrogate`, and
+   * this screen threw it away — so the overlay could only show everything
+   * North holds, which is how it became twelve rows of numbers answering a
+   * question nobody asked.
+   */
+  const [explains, setExplains] = useState<string | null>(null);
+  /**
    * Whether the catch-up conversation is actually open.
    *
    * The QUESTION is derived (see `catchUpDue` below); this is only whether the
@@ -354,7 +363,10 @@ export function TodayScreen() {
               <div className="text-text-primary">
                 <ReadProse
                   read={evaluation.current.read}
-                  onInterrogate={() => setSheet("derivation")}
+                  onInterrogate={(segment) => {
+                    setExplains(segment.explains ?? null);
+                    setSheet("derivation");
+                  }}
                   staged={firstRun}
                   lead
                 />
@@ -571,6 +583,8 @@ export function TodayScreen() {
         onClose={() => setSheet(null)}
         profile={profile}
         facts={evaluation.facts}
+        explains={explains}
+        options={options}
       />
     </div>
   );

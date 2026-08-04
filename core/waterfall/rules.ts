@@ -53,6 +53,7 @@ const liquidity: Rung = {
       from(facts.liquidityMonths, "duration", {
         label: "of outgoings",
         interrogable: true,
+        explains: "liquidityMonths",
       }),
       text(" of outgoings. "),
       fig(facts.liquidityFloorMonths, "duration", "assumed", {
@@ -99,7 +100,12 @@ const match: Rung = {
             profile.retirementBps.confidence,
             profile.employerMatchBps.confidence,
           ),
-          { label: "a year in unclaimed match", interrogable: true, emphasis: true },
+          {
+            label: "a year in unclaimed match",
+            interrogable: true,
+            explains: "annualRetirement",
+            emphasis: true,
+          },
         ),
         text(" a year you’re leaving behind."),
       ],
@@ -164,6 +170,7 @@ const taxAdvantaged: Rung = {
     const space = from(facts.unusedTaxAdvantaged, "currency", {
       label: `of unused tax-advantaged room for ${limits.year}`,
       interrogable: true,
+      explains: "unusedTaxAdvantaged",
     });
 
     // Two phrasings of the SAME rung, chosen by situation rather than by user
@@ -183,6 +190,7 @@ const taxAdvantaged: Rung = {
           from(facts.excessCash, "currency", {
             label: "of cash above the floor",
             interrogable: true,
+            explains: "excessCash",
             emphasis: true,
           }),
           text(" is sitting still while you have "),
@@ -293,6 +301,7 @@ const taxable: Rung = {
       from(facts.monthlySurplus, "currency", {
         label: "spare each month",
         interrogable: true,
+        explains: "monthlySurplus",
       }),
       text(
         " a month with nowhere to go — every tax-advantaged route is already full.",
@@ -320,6 +329,7 @@ const optimization: Rung = {
       from(facts.excessCash, "currency", {
         label: "above the buffer floor",
         interrogable: true,
+        explains: "excessCash",
       }),
       text(" of it is doing nothing."),
     ],
