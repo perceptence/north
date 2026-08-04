@@ -355,34 +355,44 @@ export function TodayScreen() {
                 wall of serif with verdict, reasoning and aside all shouting
                 equally.
 
-                No `measure` cap — 34ch stops the sentence well short of a
-                column already capped at 600px, which broke it into short
-                ragged lines with empty paper beside them. */}
-            <div className={cn("flex flex-col", RHYTHM.pair)}>
-              <Dateline now={now} />
-              <div className="text-text-primary">
-                <ReadProse
-                  read={evaluation.current.read}
-                  onInterrogate={(segment) => {
-                    setExplains(segment.explains ?? null);
-                    setSheet("derivation");
-                  }}
-                  staged={firstRun}
-                  lead
-                />
+                No `measure` cap — and it is now a no-op inside the column
+                anyway. It used to be 34ch, which on this serif stopped the
+                sentence well short of a column already capped at 600px and
+                broke it into short ragged lines with empty paper beside
+                them. That is why the class is off here, and why it is now
+                the column width everywhere. */}
+            {/* The read and its position are ONE block. The rung line is a
+                caption on the sentence above it — "and here is where that
+                sits on the ladder" — so it sits a heading-gap away, not the
+                full screen-gap that separates unrelated blocks. At 40px it
+                floated between the read and the actions, belonging to
+                neither. */}
+            <div className={cn("flex flex-col", RHYTHM.heading)}>
+              <div className={cn("flex flex-col", RHYTHM.pair)}>
+                <Dateline now={now} />
+                <div className="text-text-primary">
+                  <ReadProse
+                    read={evaluation.current.read}
+                    onInterrogate={(segment) => {
+                      setExplains(segment.explains ?? null);
+                      setSheet("derivation");
+                    }}
+                    staged={firstRun}
+                    lead
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Position on the ladder, in the compact form — the typographic
-                line plus the tick strip, directly under the read. This is
-                where it has always sat, and it survived losing the card.
-                A seven-row list said the same thing in twenty times the space
-                and read as a table of contents, not as a mark. */}
-            <RungIndicator
-              rung={evaluation.current.rung.index}
-              label={evaluation.current.rung.label}
-              onInterrogate={() => setSheet("ladder")}
-            />
+              {/* Position on the ladder, in the compact form — the
+                  typographic line plus the tick strip, directly under the
+                  read. A seven-row list said the same thing in twenty times
+                  the space and read as a table of contents, not as a mark. */}
+              <RungIndicator
+                rung={evaluation.current.rung.index}
+                label={evaluation.current.rung.label}
+                onInterrogate={() => setSheet("ladder")}
+              />
+            </div>
 
             {/* TWO CHOICES, not a button and a footnote. `quiet` gave the
                 defer no fill and no border, so beside a full ink pill it read

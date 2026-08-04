@@ -101,14 +101,17 @@ export function HorizonBand({
   });
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div className={cn("flex flex-col gap-4", className)}>
       {horizon && (
         // `type-section`, not `type-overline`. This caption HEADS a block —
         // the same job "What you're working toward" does on Goals — and the
         // two were set at different weights for no reason anyone could state.
-        // The extra bottom margin is the gap the band needs: at gap-3 the
-        // caption sat on top of its own graphic.
-        <div className="type-section mb-2 text-text-secondary">
+        // The extra bottom margin is the gap the band needs. It was `mb-2`
+        // on a `gap-3` stack — 20px total, which still sat the caption on
+        // its own graphic. A heading and the block it opens are a
+        // heading-gap apart everywhere else in the product; this is now the
+        // same 16 on top of the stack's own 16.
+        <div className="type-section mb-4 text-text-secondary">
           On this path {horizon}
         </div>
       )}
