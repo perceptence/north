@@ -56,26 +56,47 @@ function dayWord(iso: string | undefined): string {
 }
 
 /**
- * Arriving from another device.
+ * Arriving from another device — the inbound half of the move.
  *
- * ── IT LIVES IN BOTH STATES, AND THAT IS THE WHOLE POINT ──────────────────
- * This was only rendered for someone who ALREADY had an account, which is
+ * ── IT REACHES BOTH DEVICES, BUT NOT IN THE SAME VOICE ────────────────────
+ * It first shipped only for someone who ALREADY had an account, which is
  * precisely backwards: the person who needs it is holding a phone with
  * nothing on it. A blank device offered "no account yet — set one up" and
- * no way at all to bring an existing record across, so the recovery code
- * was a door that could only be opened from the inside.
+ * no way to bring an existing record across, so the recovery code was a
+ * door that could only be opened from the inside. (Found by walking the
+ * move for real: export, wipe, arrive.)
  *
- * Found by actually walking the move: export, wipe, arrive. That is the
- * only way this class of gap ever shows up.
+ * The over-correction was to render it identically in both states. On a
+ * device that is already set up, a standing form headed "Arriving from
+ * another device" — open, empty, with a note that everything here will be
+ * REPLACED — is an invitation to destroy your own record, offered to
+ * someone who did not ask. It reads as a step still to do.
+ *
+ * So the shape follows the situation. A blank device gets it open, because
+ * there it is one of only two ways forward. A device with an account gets a
+ * quiet way in at the foot of the outbound section, where the subject
+ * already is — one deliberate tap, and only then a field. Same capability,
+ * and nobody is handed a loaded control they were not looking for.
  */
-function Arrival() {
+function Arrival({ open: openByDefault = false }: { open?: boolean }) {
   const router = useRouter();
+  const [open, setOpen] = useState(openByDefault);
   const [incoming, setIncoming] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
 
+  if (!open) {
+    return (
+      <ActionLink icon={<AjarMark />} onClick={() => setOpen(true)}>
+        Coming from another device instead
+      </ActionLink>
+    );
+  }
+
   return (
     <div className={cn("flex w-full flex-col items-start", RHYTHM.heading)}>
-      <SectionHeading>Arriving from another device</SectionHeading>
+      {openByDefault && (
+        <SectionHeading>Arriving from another device</SectionHeading>
+      )}
       <FormField
         label="Recovery code"
         value={incoming}
@@ -84,24 +105,44 @@ function Arrival() {
           setProblem(null);
         }}
         placeholder="NORTH-1-…"
+        autoFocus={!openByDefault}
         error={problem ?? undefined}
-        hint="Everything on this device is replaced by what the code carries."
+        hint={
+          openByDefault
+            ? "Everything on this device is replaced by what the code carries."
+            : "This replaces everything on this device — the account, your situation, every decision — with what the code carries."
+        }
       />
-      <Button
-        variant="secondary"
-        onClick={() => {
-          const result = importBundle(incoming);
-          if (!result.ok) {
-            setProblem(
-              "That code didn’t read cleanly — it may have been cut short in transit. Copy the whole thing and try again.",
-            );
-            return;
-          }
-          router.push("/today");
-        }}
-      >
-        Bring it over
-      </Button>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Button
+          variant="secondary"
+          onClick={() => {
+            const result = importBundle(incoming);
+            if (!result.ok) {
+              setProblem(
+                "That code didn’t read cleanly — it may have been cut short in transit. Copy the whole thing and try again.",
+              );
+              return;
+            }
+            router.push("/today");
+          }}
+        >
+          Bring it over
+        </Button>
+        {/* A way back out, for the device that already holds a record and
+            opened this by choice. The blank device has nothing to cancel. */}
+        {!openByDefault && (
+          <ActionLink
+            onClick={() => {
+              setIncoming("");
+              setProblem(null);
+              setOpen(false);
+            }}
+          >
+            Never mind
+          </ActionLink>
+        )}
+      </div>
     </div>
   );
 }
@@ -130,8 +171,10 @@ export function AccountScreen() {
             Set one up
           </Button>
         </div>
-        {/* The other way in — and the one someone switching phones needs. */}
-        <Arrival />
+        {/* The other way in — and the one someone switching phones needs.
+            Open on sight here: on a blank device this is one of only two
+            ways forward, and there is nothing on it to overwrite. */}
+        <Arrival open />
       </div>
     );
   }
@@ -140,7 +183,21 @@ export function AccountScreen() {
 
   return (
     <div className={cn("flex flex-col pb-16", RHYTHM.screen)}>
-      <div className={cn("flex flex-col", RHYTHM.pair)}>
+      {/* ── WHO THIS IS ──────────────────────────────────────────────────
+          One block, because it is one subject.
+
+          It used to be two. The identity sat up here, and underneath it a
+          section headed "What I call you" that showed NO NAME — just a
+          button — because the name was already above and the heading was
+          quietly borrowing it. A heading that asks a question and then
+          answers it somewhere else is not a section; and "Member since Jun
+          28" was pinned to the foot of that same block, where it read as an
+          answer to "what I call you" rather than a fact about the account.
+
+          Now: the name IS the answer, the action to change it sits directly
+          under the thing it changes, and the date joins the identity it
+          belongs to. */}
+      <div className={cn("flex flex-col", RHYTHM.heading)}>
         <h1 className="type-overline text-text-tertiary">Your account</h1>
         <div className={cn("flex items-center", RHYTHM.block)}>
           <AvatarMark account={account} size={56} />
@@ -153,25 +210,32 @@ export function AccountScreen() {
             </span>
           </div>
         </div>
-      </div>
 
-      {/* The one editable thing, and it is editable because it is the one
-          North says out loud — the letter's salutation. */}
-      <div className={cn("flex flex-col items-start", RHYTHM.heading)}>
-        <SectionHeading>What I call you</SectionHeading>
+        <Text variant="meta" tone="tertiary" measure>
+          With North since {dayWord(account.createdAt)}.
+        </Text>
+
+        {/* The one editable thing, and it is editable because it is the one
+            North says out loud — the letter's salutation. */}
         {editing ? (
-          <div className={cn("flex w-full flex-col items-start", RHYTHM.pair)}>
+          <div className={cn("flex w-full flex-col items-start", RHYTHM.heading)}>
             <FormField
               label="Your name"
               value={name}
               onChange={setName}
               autoFocus
+              hint="It’s what North calls you when it writes."
               onSubmit={() => {
                 if (name.trim()) updateAccount({ name: name.trim() });
                 setName(null);
               }}
             />
-            <div className="flex items-center gap-4">
+            {/* `items-center`, and it now WORKS: ActionLink used to carry
+                `self-start`, which overrode this and pinned "Never mind" to
+                the top of the taller Save pill. `gap-x-5` because a bare
+                text action beside a bordered pill needs more air than the
+                4 they had, or the two read as one control. */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -189,9 +253,6 @@ export function AccountScreen() {
             Call me something else
           </ActionLink>
         )}
-        <Text variant="meta" tone="tertiary" measure>
-          Member since {dayWord(account.createdAt)}.
-        </Text>
       </div>
 
       {/* Membership standing — the same room, reached from the same place a
@@ -271,9 +332,12 @@ export function AccountScreen() {
             Show my recovery code
           </Button>
         )}
-      </div>
 
-      <Arrival />
+        {/* The other direction, in the section that is already about moving —
+            closed, so a device holding a record is never shown an open field
+            offering to overwrite it. */}
+        <Arrival />
+      </div>
 
       <MembershipSheet open={managing} onClose={() => setManaging(false)} />
     </div>
