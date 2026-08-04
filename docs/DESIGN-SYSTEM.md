@@ -399,6 +399,44 @@ its openable mark on the one that named its destination worst.
 `interrogable` still wins the paint: an openable figure keeps its dotted rule
 regardless, because that rule marks a door rather than a degree of certainty.
 
+#### `MarkedLine` — a mark set level with the first line *(added, August 2026)*
+
+The only way a glyph is placed beside text that wraps.
+
+- **Props:** `mark` (the glyph, `aria-hidden` — the text carries the meaning), `children`, `className`, `gap`
+- **Rule:** the `className` **must** carry the type class of the first line.
+
+`items-start` aligns two *boxes*, which is not the same as aligning a glyph
+with text: a 16px mark inside a 26px line box sits five pixels high of where
+the eye expects it. So every one of these rows grew a hand-tuned nudge —
+`mt-2`, `mt-1`, `mt-0.5`, `mt-[0.45em]` — each measured once, against one type
+size, and then silently outliving it. **All three in the product were wrong by
+the time this was written**: `ErrorState` used `mt-2` (8px) to centre an 8px
+dot in a 34px line, which needs 13; `Tick` used `mt-1` against a 26px line,
+which needs 5; and Today's Steady line used `mt-[0.45em]`, which — because
+`em` scales with font-size — shrank a 10px correction to 6 when that line's
+type changed. A nudge that tracks the type and still misses is worse than one
+that never moves, because it looks maintained.
+
+The fix is to take the measurement the browser already has. `1lh` is one
+line-height of the element it is written on, so a wrapper that is `h-[1lh]` is
+exactly one line tall and a glyph centred inside it is centred on the line —
+at any type size, with no number in the source. Verified resolving to 18 / 26 /
+34px against `type-meta`, `type-body` and `type-voice-md`.
+
+> **Why the type goes on the row.** `1lh` reads the wrapper's *inherited*
+> line-height, so the row must carry its own first line's type — a type class
+> buried on a child measures nothing. That single rule is also why this cannot
+> drift: the declaration that sets the line and the declaration that measures
+> it are the same declaration.
+
+**Not for every mark.** `Row` places its outcome mark with the same `1lh`
+wrapper inlined rather than wrapping in `MarkedLine`, because that row also
+carries a figure and a timestamp — it is not a two-slot layout, and forcing it
+through a two-slot helper would contort the component to fit the helper. The
+dock is out of scope entirely: its icons sit *above* their labels, not beside
+them. Browser floor: Chrome 109, Safari 16.4, Firefox 120.
+
 ### 8.2 Action
 
 #### `Button`

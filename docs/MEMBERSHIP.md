@@ -22,14 +22,29 @@ every goal instead of the first, the story replayed.
 | Typed coach — every question, every elaboration | ● | ● |
 | Insights letter, and the rooms behind every dispatch | ● | ● |
 | Derivations, assumptions, corrections, the record | ● | ● |
+| North re-asking when a figure goes stale | ● | ● |
 | Scenarios | `debt-first`, `contribute-more` | all five |
 | Goals | the first, with pacing | every goal |
 | Voice mode | — | ● |
 | The story replay | — | ● |
+| What waiting costs | — | the arithmetic on another month |
 
 **The ethics pin.** `debt-first` — the scenario that tells you to stop losing
 money — is free forever. A test fails loudly if Plus ever widens to take it:
 the product would have started charging for the warning.
+
+**The line that had to argue for itself.** *What waiting costs* is the one Plus
+gate that touches urgency, so it gets held against the principle above rather
+than filed quietly under "room to think." What stays free is the judgment, in
+full: the read still names the gap, still says which rung is costing you and
+still says what to do about it. What Plus adds is the **arithmetic** — putting
+a dollar figure on another month of not acting. That is a sharper prompt, not a
+truer one, and a free user is never left wondering whether something is wrong.
+The distinction is narrow enough that `TIER_LINES` carries it as a comment
+beside the line: if it ever stops being real, the line moves to free rather
+than the principle bending around it. Most rungs return `null` here anyway —
+only `match` and `high-interest-debt` have a defensible number, and
+`monthlyCostOfDelay` returns nothing rather than guess for the rest.
 
 **The structural guarantee.** Nothing in `core/waterfall`, `core/insights`,
 `core/decisions`, `core/coach` or `core/goals` imports membership — guarded

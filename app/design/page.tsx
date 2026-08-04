@@ -17,6 +17,7 @@ import {
   Figure,
   HorizonBand,
   HorizonField,
+  MarkedLine,
   Row,
   RouteMarks,
   RungIndicator,
@@ -1111,6 +1112,30 @@ export default function DesignGallery() {
               <Button variant="quiet" className="self-start">
                 A quiet Button does not
               </Button>
+            </div>
+          </Specimen>
+          <Specimen
+            name="MarkedLine — the mark sits on the line, not near it"
+            note="ActionLink is a mark against one line; this is a mark against a sentence that wraps. `items-start` aligns two BOXES, which is not the same as aligning a glyph with text — a 16px mark inside a 26px line box sits five pixels high of where the eye expects it. Every such row had grown its own hand-tuned nudge (mt-2, mt-1, mt-[0.45em]), and by August 2026 all three were wrong: each was measured once against one type size and then outlived it. The em-based one was the worst kind of wrong, because it moved when the type changed but in the wrong direction — a correction that tracks the type and still misses is harder to spot than one that never moves. This takes the measurement the browser already has: the mark's wrapper is h-[1lh], exactly one line-height of the row it sits on, so a glyph centred inside it is centred on the line at any size, with no number in the source. The one rule it asks for — the type class goes on the ROW — is also why it cannot drift: the declaration that sets the line and the declaration that measures it are the same one."
+          >
+            <div className="flex flex-col gap-5">
+              {(
+                [
+                  ["type-meta", "Meta, on an 18px line"],
+                  ["type-body", "Body, on a 26px line"],
+                  ["type-voice-md", "Voice, on a 34px line"],
+                ] as const
+              ).map(([typeClass, label]) => (
+                <MarkedLine
+                  key={typeClass}
+                  mark={<WaitingMark />}
+                  className={`${typeClass} measure text-text-secondary`}
+                >
+                  {label}. The glyph is the same 16px drawing in all three, and
+                  it stays level with the first line however far the sentence
+                  runs on past it.
+                </MarkedLine>
+              ))}
             </div>
           </Specimen>
         </Section>
