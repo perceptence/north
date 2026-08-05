@@ -296,7 +296,13 @@ export function OnboardingConversation() {
         {/* Same padding-then-column nesting as the sections below, so the
             masthead, the glyph stage, and every question share one left edge
             at every breakpoint. */}
-        <div className="relative flex h-full items-center px-4 md:px-6 lg:px-7">
+        {/* padding-top eats the inset out of h-full, so items-center centers
+            within the BAR, not within inset-plus-bar — the row never rides
+            under the clock. Same fix as the product masthead's inline top. */}
+        <div
+          className="relative flex h-full items-center px-4 md:px-6 lg:px-7"
+          style={{ paddingTop: "var(--safe-top)" }}
+        >
           <div className="mx-auto flex w-full max-w-column items-center justify-between gap-6">
             <div className="flex min-w-0 flex-col gap-2.5">
               <h1 className="flex items-center gap-2.5 whitespace-nowrap text-text-on-deep">
@@ -414,7 +420,11 @@ export function OnboardingConversation() {
             // justify-start with a fixed offset, not center: the question lands
             // at the same height every time, directly under the glyph's stage.
             className={cn(
-              "flex snap-start flex-col justify-start px-4 pt-60 pb-16 md:px-6 md:pt-72 lg:px-7",
+              // pt tracks the chrome: when `--chrome-onboarding` came down
+              // 2rem to match the product bar, this came down with it, so the
+              // question keeps its distance from the glyph rather than from a
+              // number the masthead no longer occupies.
+              "flex snap-start flex-col justify-start px-4 pt-52 pb-16 md:px-6 md:pt-64 lg:px-7",
               // A page, exactly one viewport wide and one tall. `shrink-0` or
               // the flex row would compress ten questions into one screen.
               // Its own `overflow-y-auto` because the sideways scroller cannot

@@ -82,24 +82,37 @@ export function OpeningFlow() {
         style={{ height: "calc(var(--safe-top) + var(--chrome-onboarding))" }}
       >
         <Sky className="h-full" />
-        <div className="absolute inset-0 flex items-center px-4 md:px-6 lg:px-7">
+        {/* Below the inset, never under the clock — the same inline `top`
+            the product masthead uses. Centering across the FULL box only
+            looked right while the chrome stood 6rem tall; at the product's
+            4rem the wordmark rode into the status bar on a phone. */}
+        <div
+          className="absolute inset-0 flex items-center px-4 md:px-6 lg:px-7"
+          style={{ top: "var(--safe-top)" }}
+        >
           <div className="mx-auto w-full max-w-column text-text-on-deep">
             <Wordmark height={12} strokeWidth={2.1} />
           </div>
         </div>
       </div>
 
-      {/* `min-h-dvh` with the sky's height subtracted, so a step can push
-          its action to the FOOT of the screen rather than to the bottom of
-          its own text. The terms are a thing to read and then agree to, and
-          an agree button floating directly under the last line reads as the
-          end of a paragraph rather than the end of a page. */}
+      {/* A flex column the full height of the glass, so a step can push its
+          action to the FOOT of the screen rather than to the bottom of its
+          own text. The terms are a thing to read and then agree to, and an
+          agree button floating directly under the last line reads as the end
+          of a paragraph rather than the end of a page.
+
+          The column is `flex-1` inside this min-h-dvh box, NOT a hand-derived
+          `min-h-[calc(100dvh-…)]`. It was the calc, pinned to one breakpoint's
+          chrome and no inset — inside a device frame the safe-top pushed the
+          whole column down and the button clean off the glass. Border-box
+          does this arithmetic natively; there is no number to go stale. */}
       <div
-        className="min-h-dvh px-4 pb-10 md:px-6 lg:px-7"
-        // Chrome + inset, plus the 1rem of air the old `pt-28` held over
-        // `h-24` (and `md:pt-32` over `md:h-28`) — one relationship now,
-        // instead of four numbers kept in agreement by hand.
-        style={{ paddingTop: "calc(var(--safe-top) + var(--chrome-onboarding) + 1rem)" }}
+        className="flex min-h-dvh flex-col px-4 pb-10 md:px-6 lg:px-7"
+        // Chrome + inset + the apron — the same paper foot the product's
+        // masthead wears, so content starts at the same height here as it
+        // does on every screen after onboarding.
+        style={{ paddingTop: "calc(var(--safe-top) + var(--chrome-onboarding) + var(--apron))" }}
       >
         <m.div
           key={step}
@@ -107,7 +120,7 @@ export function OpeningFlow() {
           animate={{ y: 0 }}
           transition={TRANSITION.standard}
           className={cn(
-            "mx-auto flex min-h-[calc(100dvh-9.5rem)] w-full max-w-column flex-col",
+            "mx-auto flex w-full max-w-column flex-1 flex-col",
             RHYTHM.block,
           )}
         >

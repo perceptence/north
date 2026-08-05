@@ -110,7 +110,7 @@
    * touching every one of them and keeping four `calc()`s in agreement, which
    * is precisely how `SKY_HEIGHT` earned its existence on the product side.
    */
-  --chrome-onboarding: 6rem;
+  --chrome-onboarding: 4rem;
 
   /**
    * The apron — the chrome's paper foot, below the masthead, and the exact
@@ -238,13 +238,16 @@
   --animate-coach-pulse: coach-pulse 1.6s ease-in-out infinite;
 }
 
-/* The onboarding chrome grows at md, the way its old `md:h-28` did. Declared
-   outside `@theme` because a custom property that changes at a breakpoint is
-   a plain cascade concern, not a design token Tailwind should generate
-   utilities from. */
+/* The onboarding chrome grows at md, in lockstep with the product bar
+   (`SKY_HEIGHT`, h-16 → md:h-20). The two used to differ — 6/7rem here
+   against 4/5rem there — and the flow read as two products: onboarding's
+   mast stood taller and its content sat lower than the app it opened into.
+   One measurement now. Declared outside `@theme` because a custom property
+   that changes at a breakpoint is a plain cascade concern, not a design
+   token Tailwind should generate utilities from. */
 @media (width >= 40rem) {
   :root {
-    --chrome-onboarding: 7rem;
+    --chrome-onboarding: 5rem;
     --apron: 1.25rem;
   }
 }
