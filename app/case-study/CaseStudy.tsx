@@ -6,9 +6,12 @@ import {
   ChoiceChip,
   ChoiceChipGroup,
   Figure,
+  HorizonBand,
+  HorizonField,
+  RungIndicator,
   Wordmark,
 } from "@/components/nds";
-import { DemoPanel, JOURNEYS, type Journey } from "@/components/north/DemoPanel";
+import { DemoPanel, type Journey } from "@/components/north/DemoPanel";
 import {
   DeviceFrame,
   SAFE_TOP,
@@ -19,6 +22,7 @@ import {
 import { Sky } from "@/components/north/Sky";
 import { TURN_GLYPH, TurnGlyph } from "@/components/north/TurnGlyph";
 import type { TurnId } from "@/core/onboarding/script";
+import { cn } from "@/lib/cn";
 
 /**
  * /case-study — the work, argued in the product's own voice.
@@ -28,29 +32,46 @@ import type { TurnId } from "@/core/onboarding/script";
  * product itself standing in the hardware frames. Like /design and /preview
  * it sits outside the product's IA. Nothing in the app routes here.
  *
- * The page is an editorial FEATURE, not a spec sheet — that distinction is
- * the reason it stopped borrowing /design's Section/Specimen grammar. The
- * gallery documents parts in labelled boxes; a case study composes spreads
- * and tells the story of decisions. /design remains the appendix.
+ * The page is an editorial FEATURE, not a spec sheet — the reason it stopped
+ * borrowing /design's Section/Specimen grammar. The gallery documents parts
+ * in labelled boxes; a case study composes spreads and argues decisions.
  *
- * The product appears in hardware twice, with two different jobs: the HERO
- * pair is `inert`, a picture that happens to be rendered, so it can never
- * steal a scroll from someone reading the opening. The STAGE pair is the
- * one interactive instance, and its heading says so. Both reuse the
- * /preview contract exactly (`/demo?at=` seeds a moment, `inset` hands the
- * status-bar height to SafeArea, frames re-key on journey and visit).
+ * ── ONE COLUMN, ONE EXCEPTION ─────────────────────────────────────────────
+ * Every band on this page — credit, chapters, the device stage — is `COLUMN`.
+ * It used to be a mix of max-w-5xl and max-w-4xl, so section left edges
+ * stepped in and out down the scroll and the page read as assembled rather
+ * than composed. The hero is the single exception and goes wider, which is
+ * the one place a wider measure means something.
  *
- * Every iframe is `loading="lazy"` on purpose, including above-the-fold
- * ones: a lazy frame in the viewport loads immediately, and a lazy frame
- * inside a `display:none` breakpoint twin never loads at all — which lets
- * the hero and stage each carry a phone-only and a pair layout without
- * booting hidden copies of the app.
+ * ── THE HARDWARE APPEARS TWICE, WITH TWO JOBS ─────────────────────────────
+ * The HERO pair is `inert`: a picture that happens to be rendered, so it can
+ * never steal a scroll from someone reading the opening. The STAGE pair is
+ * the interactive one, and it starts with NOTHING selected — see `journey`.
  */
+
+/** The page's measure. Everything but the hero lives inside this. */
+const COLUMN = "mx-auto w-full max-w-4xl px-6";
 
 const VIEWPORT: Record<Device, { width: number; height: number }> = {
   phone: SCREEN.phone,
   tablet: { width: 642, height: 919 },
 };
+
+/** The splash, as a still — what a device shows before a journey is chosen. */
+function IdleScreen({ device }: { device: Device }) {
+  return (
+    <div
+      className="flex h-full w-full items-center justify-center text-text-on-deep"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 50% 50% in oklab, var(--sky-300) 0%, var(--sky-600) 42%, var(--sky-900) 82%)",
+        backgroundColor: "var(--sky-900)",
+      }}
+    >
+      <Wordmark height={device === "phone" ? 26 : 34} strokeWidth={1.5} />
+    </div>
+  );
+}
 
 function Frame({
   device = "phone",
@@ -59,7 +80,8 @@ function Frame({
   scale,
 }: {
   device?: Device;
-  href: string;
+  /** `null` renders the splash still — no iframe, nothing loaded. */
+  href: string | null;
   visit?: number;
   scale: number;
 }) {
@@ -68,7 +90,7 @@ function Frame({
   const viewport = VIEWPORT[device];
   const factor = screen.width / viewport.width;
   const inset = Math.round((SAFE_TOP[device] / factor) * 100) / 100;
-  const src = `${href}${href.includes("?") ? "&" : "?"}inset=${inset}`;
+
   return (
     <div style={{ width: shell.width * scale, height: shell.height * scale }}>
       <div
@@ -80,22 +102,26 @@ function Frame({
         }}
       >
         <DeviceFrame device={device}>
-          <iframe
-            key={`${device}:${href}:${visit}`}
-            src={src}
-            title={
-              device === "phone" ? "North on a phone" : "North on a tablet"
-            }
-            loading="lazy"
-            className="block border-0"
-            style={{
-              width: viewport.width,
-              height: screen.height / factor,
-              transform: `scale(${factor})`,
-              transformOrigin: "top left",
-              background: "var(--surface-deep)",
-            }}
-          />
+          {href === null ? (
+            <IdleScreen device={device} />
+          ) : (
+            <iframe
+              key={`${device}:${href}:${visit}`}
+              src={`${href}${href.includes("?") ? "&" : "?"}inset=${inset}`}
+              title={
+                device === "phone" ? "North on a phone" : "North on a tablet"
+              }
+              loading="lazy"
+              className="block border-0"
+              style={{
+                width: viewport.width,
+                height: screen.height / factor,
+                transform: `scale(${factor})`,
+                transformOrigin: "top left",
+                background: "var(--surface-deep)",
+              }}
+            />
+          )}
         </DeviceFrame>
       </div>
     </div>
@@ -108,7 +134,7 @@ function Pair({
   visit = 0,
   scale,
 }: {
-  href: string;
+  href: string | null;
   visit?: number;
   scale: number;
 }) {
@@ -132,7 +158,7 @@ function Chapter({
   kicker: string;
   title: string;
   lede?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <section
@@ -143,10 +169,18 @@ function Chapter({
       <h2 className="type-voice-lg mt-4 max-w-2xl text-text-primary">
         {title}
       </h2>
+      {/* A column, so a lede can run to several paragraphs and space them
+          properly. It could not before — consecutive <p>s inside it sat flush,
+          so prose that belonged together had to move into `children`, where
+          the 3rem section gap then tore it apart mid-argument. */}
       {lede && (
-        <div className="type-body measure mt-5 text-text-secondary">{lede}</div>
+        <div className="type-body measure mt-5 flex flex-col gap-4 text-text-secondary">
+          {lede}
+        </div>
       )}
-      <div className="mt-12 flex flex-col gap-12">{children}</div>
+      {children && (
+        <div className="mt-12 flex flex-col gap-12">{children}</div>
+      )}
     </section>
   );
 }
@@ -158,7 +192,7 @@ function Spread({
   children,
 }: {
   label: string;
-  caption?: string;
+  caption?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -172,16 +206,67 @@ function Spread({
   );
 }
 
-/* The seven rungs — the engine's own order, restated for a reader. */
+/**
+ * The ladder, drawn the way the product draws it (see LadderPanel).
+ *
+ * Position, never progress: the rung you are on gets the voice, the ones
+ * behind go quiet in tertiary, the ones ahead sit disabled. Nothing
+ * animates and nothing completes — a settled rung gets LESS ink, which is
+ * the opposite of how a game would draw it.
+ */
+const CURRENT_RUNG = 3;
+
 const RUNGS = [
-  { name: "Liquidity floor", active: false },
-  { name: "Employer match", active: false },
-  { name: "High-interest debt", active: true },
-  { name: "Tax-advantaged space", active: false },
-  { name: "Goal funding", active: false },
-  { name: "Surplus with nowhere to go", active: false },
-  { name: "Optimization", active: false },
+  "Liquidity floor",
+  "Employer match",
+  "High-interest debt",
+  "Tax-advantaged space",
+  "Goal funding",
+  "Surplus with nowhere to go",
+  "Optimization",
 ];
+
+function Ladder() {
+  return (
+    <ol className="measure flex flex-col">
+      {RUNGS.map((label, index) => {
+        const position = index + 1;
+        const current = position === CURRENT_RUNG;
+        const behind = position < CURRENT_RUNG;
+        return (
+          <li
+            key={label}
+            className="flex items-baseline gap-4 border-t border-line-hairline py-4 first:border-t-0"
+          >
+            <span
+              className={cn(
+                "type-figure w-6 shrink-0 tabular-nums",
+                current ? "text-text-primary" : "text-text-tertiary",
+              )}
+            >
+              {String(position).padStart(2, "0")}
+            </span>
+            <span
+              className={cn(
+                "flex-1",
+                current
+                  ? "type-voice-md text-text-primary"
+                  : behind
+                    ? "type-body text-text-tertiary"
+                    : "type-body text-text-disabled",
+              )}
+            >
+              {label}
+            </span>
+            <span className="type-meta shrink-0 text-text-tertiary">
+              {current ? "you’re here" : behind ? "behind you" : ""}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 /* What the role actually covered — the credit's substance. */
 const SCOPE = [
@@ -238,7 +323,6 @@ const STATS = [
   { value: "v1.0", label: "locked and tagged" },
 ];
 
-/* Color, shown as material rather than as chips. */
 const COLOR_PANELS: Array<{
   family: string;
   role: string;
@@ -276,7 +360,20 @@ const COLOR_PANELS: Array<{
 
 export function CaseStudy() {
   const [glyphTurn, setGlyphTurn] = useState<TurnId>("openingConcern");
-  const [journey, setJourney] = useState<Journey>(JOURNEYS[0]);
+  /** Horizon year, in months — the field below is a real slider. */
+  const [months, setMonths] = useState(300);
+  /**
+   * NOTHING is selected at rest, and that is the fix for a real bug.
+   *
+   * This used to default to the first journey, so the stage booted an iframe
+   * while it was still far below the fold. A lazily-loaded frame that loads
+   * offscreen has its animation frames throttled, so the app's splash never
+   * finished — the reveal sat on the wordmark forever, and the only way to
+   * reach it was to pick another journey and come back. Loading nothing until
+   * a reader asks removes the failure entirely and turns a broken default
+   * into an invitation.
+   */
+  const [journey, setJourney] = useState<Journey | null>(null);
   const [visit, setVisit] = useState(0);
 
   const go = (next: Journey) => {
@@ -286,10 +383,10 @@ export function CaseStudy() {
 
   return (
     <div className="min-h-dvh bg-surface-page">
-      {/* ── THE HERO — the sky, the claim, and a picture of the hardware ── */}
-      <header className="relative overflow-hidden">
+      {/* ── THE HERO — the full glass, and a picture of the hardware ────── */}
+      <header className="relative flex overflow-hidden lg:min-h-dvh">
         <Sky className="h-full" />
-        <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 pt-16 pb-16 lg:flex-row lg:items-center lg:justify-between lg:pt-20 lg:pb-20">
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col justify-center gap-12 px-6 pt-16 pb-16 lg:flex-row lg:items-center lg:justify-between lg:py-20">
           <div className="flex max-w-xl flex-col items-start">
             <p className="type-overline text-text-on-deep-dim">
               A design case study
@@ -330,7 +427,7 @@ export function CaseStudy() {
 
       {/* ── THE CREDIT — who did this, and what the role covered ─────────── */}
       <div className="bg-surface-sunken">
-        <div className="mx-auto flex w-full max-w-5xl flex-col items-start px-6 py-14">
+        <div className={cn(COLUMN, "flex flex-col items-start py-14")}>
           <p className="type-overline text-text-tertiary">The work of</p>
           <h2 className="type-voice-lg mt-3 text-text-primary">
             Tanmay Jain — Design Director
@@ -350,7 +447,7 @@ export function CaseStudy() {
               </div>
             ))}
           </div>
-          <dl className="mt-11 flex flex-wrap gap-x-12 gap-y-6 border-t border-line-hairline pt-8 w-full">
+          <dl className="mt-11 flex w-full flex-wrap gap-x-12 gap-y-6 border-t border-line-hairline pt-8">
             {STATS.map((stat) => (
               <div key={stat.label} className="flex flex-col gap-1">
                 <dd className="type-voice-md text-text-primary">
@@ -365,25 +462,30 @@ export function CaseStudy() {
         </div>
       </div>
 
-      {/* ── THE DOCUMENT ─────────────────────────────────────────────────── */}
       <main>
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-20 px-6 pt-20 pb-20">
+        <div className={cn(COLUMN, "flex flex-col gap-20 pt-20 pb-20")}>
           <Chapter
             id="problem"
             kicker="01 · The problem"
             title="Judgment is the scarce thing."
             lede={
-              <p>
-                Financial information is free now. Judgment is not. The part
-                of an advisor&rsquo;s job that says{" "}
-                <em className="text-text-primary">
-                  this, not that, and here&rsquo;s why, for you, this month
-                </em>{" "}
-                still costs $3,000 to $8,000 a year, and most firms will not
-                take a client below $250k in assets. Everyone under that line
-                gets generic advice or none. North&rsquo;s bet is that the
-                judgment layer becomes software.
-              </p>
+              <>
+                <p>
+                  Financial information is free now. Judgment is not. The part
+                  of an advisor&rsquo;s job that says{" "}
+                  <em className="text-text-primary">
+                    this, not that, and here&rsquo;s why, for you, this month
+                  </em>{" "}
+                  still costs $3,000 to $8,000 a year, and most firms will not
+                  take a client below $250k in assets. Everyone under that
+                  line gets generic advice or none.
+                </p>
+                <p>
+                  North&rsquo;s bet is that the judgment layer becomes
+                  software — and that the difference between this and every
+                  competitor is <em>where</em> the intelligence sits.
+                </p>
+              </>
             }
           >
             <blockquote className="border-l-2 border-signal-coach pl-6">
@@ -391,9 +493,6 @@ export function CaseStudy() {
                 Every competitor puts the AI in the conversation layer. North
                 puts it in the judgment layer.
               </p>
-              <cite className="type-overline mt-3 block text-text-tertiary not-italic">
-                docs/STRATEGY.md
-              </cite>
             </blockquote>
             <div className="measure grid grid-cols-1 gap-8 md:grid-cols-2">
               <div>
@@ -441,59 +540,65 @@ export function CaseStudy() {
             kicker="02 · The engine"
             title="Seven rules, in order, for everyone."
             lede={
-              <p>
-                How do you serve everyone without asking who they are?
-                North&rsquo;s answer is a waterfall: seven rules in a fixed
-                order, evaluated against what a person actually said. The
-                first rule they do not yet satisfy is the one thing the coach
-                surfaces today. A surgeon and a teacher in the same situation
-                get the same read.
-              </p>
+              <>
+                <p>
+                  How do you serve everyone without asking who they are? A
+                  waterfall: seven rules in a fixed order, checked against
+                  what a person actually told the coach. The first rule they
+                  do not yet satisfy is the one thing North raises today.
+                </p>
+                <p>
+                  So a surgeon and a teacher in the same situation get the
+                  same read, and nobody is ever asked to pick a category for
+                  themselves. Here is that ladder as the product draws it —
+                  what is behind you goes quiet, what is ahead stays dim.
+                </p>
+              </>
             }
           >
-            <div className="measure overflow-hidden rounded-card border border-line-hairline bg-surface-raised">
-              {RUNGS.map((rung, index) => (
-                <div
-                  key={rung.name}
-                  className={
-                    "flex items-center gap-4 border-t border-line-hairline px-5 py-3.5 first:border-t-0" +
-                    (rung.active ? " bg-surface-sunken" : "")
-                  }
-                >
-                  <span className="type-figure w-5 shrink-0 text-text-tertiary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="type-body text-text-primary">
-                    {rung.name}
-                  </span>
-                  {rung.active && (
-                    <span className="type-overline ml-auto text-signal-coach">
-                      First unsatisfied
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="measure flex flex-col gap-4">
-              <pre className="type-figure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
-                {"// NO — persona branching. Needs a picker, 4x the content.\n"}
-                {"if (persona === \"young_professional\") { ... }\n\n"}
-                {"// YES — ordered rules over a derived profile.\n"}
+            <Spread
+              label="The ladder, and where this person stands"
+              caption="Position, never progress. A settled rung gets less ink rather than more — the opposite of how a game would draw it. Nothing animates, nothing celebrates, and the order never re-sorts."
+            >
+              <div className="flex flex-col gap-6">
+                <RungIndicator rung={CURRENT_RUNG} label="high-interest debt" />
+                <Ladder />
+              </div>
+            </Spread>
+
+            <Spread
+              label="Why there is no persona picker"
+              caption={
+                <>
+                  The rejected version asks the reader to classify themselves,
+                  then hand-writes advice per category — four times the copy,
+                  and wrong the moment someone is between labels. The shipped
+                  version derives a profile from real answers and walks one
+                  ordered list, so a situation nobody anticipated still lands
+                  somewhere sensible.
+                </>
+              }
+            >
+              <pre className="type-figure measure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
+                {"// NO — a picker, then four copies of the advice\n"}
+                {"if (persona === \"young_professional\") { … }\n\n"}
+                {"// YES — one ordered list, run against a derived profile\n"}
                 <span className="text-text-primary">
                   {"const rung = waterfall.firstUnsatisfied(profile)"}
                 </span>
               </pre>
-              <p className="type-body text-text-secondary">
-                The engine is pure TypeScript. No model call sits anywhere in
-                the path to an answer, so it cannot fail during a demo and it
-                cannot quietly change its mind. The architecture is held by a
-                test titled{" "}
-                <code className="type-figure text-text-primary">
-                  &ldquo;income does not determine the rung&rdquo;
-                </code>
-                .
-              </p>
-            </div>
+            </Spread>
+
+            <p className="type-body measure text-text-secondary">
+              The engine is pure TypeScript with no model call anywhere in the
+              path to an answer, so it cannot fail during a demo and cannot
+              quietly change its mind. The rule is held by a test titled{" "}
+              <code className="type-figure text-text-primary">
+                &ldquo;income does not determine the rung&rdquo;
+              </code>{" "}
+              — a $400k earner and a $60k earner land on the same rung when
+              their situations match.
+            </p>
           </Chapter>
 
           <Chapter
@@ -501,15 +606,20 @@ export function CaseStudy() {
             kicker="03 · The system"
             title="Restraint is the premium signal."
             lede={
-              <p>
-                The register is an editorial magazine, not a trading
-                terminal. Light pages, warm neutrals, a serif doing the
-                talking. The sharpest decision is that the primary action is
-                ink rather than a colored button, which sidesteps
-                fintech&rsquo;s entire vocabulary of trust-blue and
-                growth-green. It reads as print, and print is the most
-                expensive thing a screen can do.
-              </p>
+              <>
+                <p>
+                  The register is an editorial magazine, not a trading
+                  terminal. Light pages, warm neutrals, a serif doing the
+                  talking. The sharpest decision is that the primary action is
+                  ink rather than a colored button, which sidesteps
+                  fintech&rsquo;s entire vocabulary of trust-blue and
+                  growth-green.
+                </p>
+                <p>
+                  It reads as print, and print is the most expensive thing a
+                  screen can do.
+                </p>
+              </>
             }
           >
             <Spread
@@ -576,12 +686,12 @@ export function CaseStudy() {
                           style={{ background: `var(${band.token})` }}
                         >
                           <span
-                            className={
-                              "type-figure " +
-                              (band.dark
+                            className={cn(
+                              "type-figure",
+                              band.dark
                                 ? "text-text-inverse"
-                                : "text-text-secondary")
-                            }
+                                : "text-text-secondary",
+                            )}
                           >
                             {band.label}
                           </span>
@@ -623,9 +733,53 @@ export function CaseStudy() {
               </p>
             </Spread>
 
+            {/* ── THE ONE VISUALIZATION ───────────────────────────────────
+                MVP holds exactly one chart, and calling it a chart overstates
+                it: no axes, no gridlines, no legend, no tooltip. Both pieces
+                below are the product's real components, not drawings of them,
+                and the field is a genuine slider. */}
+            <Spread
+              label="The width is the uncertainty"
+              caption="Two projections sharing one domain. The top is a confident profile; the bottom is the same projection with less known about the person. You can see that North knows less without reading a word — which is the whole argument for a range over a single number."
+            >
+              <div className="measure flex flex-col gap-8">
+                <HorizonBand
+                  low={140_000_000}
+                  high={165_000_000}
+                  confidence="inferred"
+                  horizon="by 65"
+                  domainMax={220_000_000}
+                />
+                <HorizonBand
+                  low={95_000_000}
+                  high={205_000_000}
+                  confidence="assumed"
+                  horizon="by 65"
+                  domainMax={220_000_000}
+                />
+              </div>
+            </Spread>
+
+            <Spread
+              label="The horizon field — drag it"
+              caption="The large-format sibling, for when the projection is the subject. The in-band bars breathe on a slow stagger, because uncertainty is alive. Drag the field, or focus it and use the arrow keys, to move the horizon year under the cursor."
+            >
+              <HorizonField
+                low={57_800_000}
+                high={150_000_000}
+                central={93_800_000}
+                confidence="assumed"
+                months={months}
+                onScrub={setMonths}
+                scrubMin={60}
+                scrubMax={480}
+                height={132}
+              />
+            </Spread>
+
             <Spread
               label="One drawing, six strokes"
-              caption="Every figure of the onboarding glyph interpolates into every other. Nothing is ever swapped. Pick one and watch."
+              caption="Every figure of the onboarding glyph interpolates into every other — the component is mounted once and fed new ids, because keying it on the turn would remount, and a remount is a swap rather than a morph. Pick one and watch."
             >
               <div className="flex flex-col gap-6">
                 <TurnGlyph
@@ -652,82 +806,104 @@ export function CaseStudy() {
 
         {/* ── 04 · THE SCREENS — the one place the hardware is live ──────── */}
         <section id="screens" className="bg-surface-deep">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-16">
+          <div className={cn(COLUMN, "flex flex-col gap-10 py-16")}>
             <div className="flex flex-col items-start">
               <p className="type-overline text-text-on-deep-dim">
                 04 · The screens — live, not screenshots
               </p>
               <h2 className="type-voice-lg mt-4 text-text-on-deep">
-                These two devices are the real product. Click in and use it.
+                Pick a moment. The product runs, right here.
               </h2>
               <p className="type-body measure mt-4 text-text-on-deep-dim">
-                Scroll the read, open a derivation, hold a decision. Both
-                viewports are the running app, seeded with nine months of
-                story. The chips seed a different moment of that story, and
-                pressing the one you are on resets it.
+                Both devices are the real app, seeded with nine months of
+                story — scroll the read, open a derivation, hold a decision.
+                Choose a journey to begin; pressing the one you are on resets
+                it.
               </p>
             </div>
             <div className="flex flex-col items-center gap-8">
-              <DemoPanel active={journey.id} onGo={go} />
+              <DemoPanel active={journey?.id ?? ""} onGo={go} />
+              {journey === null && (
+                <p className="type-meta text-text-on-deep-dim">
+                  Nothing is running yet — choose a journey above.
+                </p>
+              )}
               <div className="hidden lg:block">
-                <Pair href={journey.href} visit={visit} scale={0.56} />
+                <Pair
+                  href={journey?.href ?? null}
+                  visit={visit}
+                  scale={0.56}
+                />
               </div>
               <div className="lg:hidden">
-                <Frame href={journey.href} visit={visit} scale={0.78} />
+                <Frame
+                  href={journey?.href ?? null}
+                  visit={visit}
+                  scale={0.78}
+                />
               </div>
             </div>
           </div>
         </section>
 
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-20 px-6 pt-20 pb-24">
+        <div className={cn(COLUMN, "flex flex-col gap-20 pt-20 pb-24")}>
           <Chapter
             id="calls"
             kicker="05 · The calls"
             title="What was cut, and what is never for sale."
             lede={
-              <p>
-                The MVP is not the list of good ideas. It is the shortest
-                path to the thesis being undeniable, and anything that does
-                not shorten that path waits, however good it is.
-              </p>
+              <>
+                <p>
+                  The MVP is not the list of good ideas. It is the shortest
+                  path to the thesis being undeniable, and anything that does
+                  not shorten that path waits, however good it is.
+                </p>
+                <p>
+                  Trajectory, the standalone charting surface every competitor
+                  ships, was the most expensive item in the original scope and
+                  the least load-bearing. It was cut. What survives is the
+                  horizon fan under the day&rsquo;s decision, where a range
+                  makes the choice in front of you feel consequential.
+                  Free-form chat was cut for a different reason:{" "}
+                  <em className="text-text-primary">
+                    omitting it is a positioning statement.
+                  </em>
+                </p>
+                <p>
+                  Membership follows one principle —{" "}
+                  <span className="text-text-primary">
+                    the coach&rsquo;s judgment is never paywalled; its time
+                    is.
+                  </span>{" "}
+                  Free carries the entire decide, track, check-back loop. Plus
+                  buys room to think: more scenarios, the spoken conversation,
+                  every goal instead of the first.
+                </p>
+              </>
             }
           >
-            <div className="measure flex flex-col gap-5">
-              <p className="type-body text-text-secondary">
-                Trajectory, the standalone charting surface every competitor
-                ships, was the most expensive item in the original scope and
-                the least load-bearing. It was cut. What survives is a
-                horizon fan under the day&rsquo;s decision, where a range
-                makes the choice in front of you feel consequential.
-                Free-form chat was cut for a different reason:{" "}
-                <em className="text-text-primary">
-                  omitting it is a positioning statement.
-                </em>
-              </p>
-              <p className="type-body text-text-secondary">
-                Membership follows one principle:{" "}
-                <span className="text-text-primary">
-                  the coach&rsquo;s judgment is never paywalled; its time is.
-                </span>{" "}
-                Free carries the entire decide, track, check-back loop. Plus
-                buys room to think — more scenarios, the spoken
-                conversation, every goal instead of the first. The one Plus
-                line that touches urgency had to argue for itself, and the
-                argument is pinned in code.
-              </p>
-              <pre className="type-figure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
-                {"assert.ok(FREE_SCENARIOS.has(\"debt-first\"), "}
+            <Spread
+              label="The ethics pin is a test, not a policy"
+              caption={
+                <>
+                  In plain terms: if anyone ever moves{" "}
+                  <code className="type-figure">debt-first</code> — the
+                  scenario that tells you to stop losing money — out of the
+                  free tier, this line fails and the build stops. The message
+                  is what the failure prints, so whoever broke it reads the
+                  reason rather than a line number. A principle in a document
+                  is a hope; a principle in the test suite is a constraint.
+                </>
+              }
+            >
+              <pre className="type-figure measure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
+                {"assert.ok(FREE_SCENARIOS.has(\"debt-first\"),\n  "}
                 <span className="text-signal-attention">
                   {"\"the copy just became a lie\""}
                 </span>
                 {")"}
               </pre>
-              <p className="type-meta text-text-tertiary">
-                The ethics pin. debt-first, the scenario that tells you to
-                stop losing money, is free forever — or the suite fails
-                before the change ships.
-              </p>
-            </div>
+            </Spread>
           </Chapter>
 
           <Chapter
@@ -738,9 +914,9 @@ export function CaseStudy() {
               <p>
                 North was built in fourteen days of close direction of an AI
                 engineering partner. The taste, the standard, and the no were
-                never delegated; the exhausting parts were. The commit
-                history reads as a design review because that is what the
-                process was. Five entries, verbatim:
+                never delegated; the exhausting parts were. The commit history
+                reads as a design review because that is what the process was.
+                Five entries, verbatim:
               </p>
             }
           >
@@ -766,16 +942,20 @@ export function CaseStudy() {
             kicker="07 · The state"
             title="Locked at v1.0, edges written down."
             lede={
-              <p>
-                Version 1.0 is tagged: 602 tests across 124 suites, clean
-                typecheck and lint, and a purity guard proving the engine
-                imports no framework, no clock, and no membership. The known
-                edges are recorded on purpose — the optional intent endpoint
-                has no rate limit yet, the dock sits under a real
-                iPhone&rsquo;s home indicator, and two constant tables are
-                duplicated in onboarding. A case study that hides its edges
-                is an advertisement.
-              </p>
+              <>
+                <p>
+                  Version 1.0 is tagged: 602 tests across 124 suites, clean
+                  typecheck and lint, and a purity guard proving the engine
+                  imports no framework, no clock, and no membership.
+                </p>
+                <p>
+                  The known edges are recorded on purpose — the optional
+                  intent endpoint has no rate limit yet, the dock sits under a
+                  real iPhone&rsquo;s home indicator, and two constant tables
+                  are duplicated in onboarding. A case study that hides its
+                  edges is an advertisement.
+                </p>
+              </>
             }
           >
             <footer className="border-t border-line-hairline pt-10">
