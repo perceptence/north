@@ -389,12 +389,23 @@ export function VoiceMode({
         />
       )}
 
+      {/* `top` reads `--safe-top`, not a flat offset. This is the one control
+          in the mode that sits where a status bar can — a phone with a
+          Dynamic Island hands a real, nonzero inset here, same as every
+          other full-bleed surface in the app (see SafeArea) — and a flat
+          `top-6` put Done squarely inside that band. Found by opening the
+          mode inside /preview's phone frame: the button sat directly under
+          the battery glyph, "Done" rendering as "▤one". Every other element
+          in this mode clears the inset by construction — the glyph starts at
+          16dvh, the transcript is well below it — this was the one exception,
+          and only because it is absolutely positioned outside that flow. */}
       <button
         type="button"
         onClick={leave}
         aria-label="Leave voice mode"
+        style={{ top: "calc(var(--safe-top) + 1rem)" }}
         className={cn(
-          "type-meta hit-target absolute top-6 right-5 z-10 cursor-pointer rounded-full",
+          "type-meta hit-target absolute right-5 z-10 cursor-pointer rounded-full",
           "text-text-on-deep opacity-70 underline decoration-dotted",
           "decoration-text-on-deep decoration-1 underline-offset-4",
           "transition-opacity duration-[--motion-micro] hover:opacity-100",
