@@ -8,18 +8,13 @@ import {
   Figure,
   Wordmark,
 } from "@/components/nds";
-import {
-  ActionLink,
-  AssumedMark,
-  CorrectionMark,
-  WaitingMark,
-} from "@/components/north/ActionGlyphs";
 import { DemoPanel, JOURNEYS, type Journey } from "@/components/north/DemoPanel";
 import {
   DeviceFrame,
   SAFE_TOP,
   SCREEN,
   SHELL,
+  type Device,
 } from "@/components/north/DeviceFrame";
 import { Sky } from "@/components/north/Sky";
 import { TURN_GLYPH, TurnGlyph } from "@/components/north/TurnGlyph";
@@ -31,32 +26,49 @@ import { Section, Specimen, SwatchRow } from "../design/_parts";
  *
  * A portfolio page, and deliberately a page OF the product rather than a
  * page ABOUT it: same tokens, same three faces, same components, and the
- * product itself standing live in the hardware frames. Everything /design
- * does for the system, this does for the thinking — and like /design and
+ * product itself standing in the hardware frames. Everything /design does
+ * for the system, this does for the thinking — and like /design and
  * /preview it sits outside the product's IA. Nothing in the app routes here.
  *
- * The live frames reuse the /preview contract exactly: `/demo?at=` seeds a
- * moment, `inset` hands the frame's status-bar height to `SafeArea`, and the
- * iframe is keyed on journey AND visit so pressing the chip you are already
- * on re-seeds — the same reset gesture the preview taught.
+ * The product appears in hardware twice, with two different jobs:
+ * the HERO pair is `inert` — a picture that happens to be rendered, so it
+ * can never steal a scroll or a click from someone reading the opening —
+ * and the STAGE pair is the one interactive instance, labelled as such,
+ * because two places inviting touch is how a reader ends up sure of
+ * neither. Both reuse the /preview contract exactly: `/demo?at=` seeds a
+ * moment, `inset` hands the status-bar height to `SafeArea`, and frames
+ * are keyed on journey AND visit so re-pressing a chip re-seeds.
  */
 
-/* One phone, at a fixed scale — the hero and the stage both use it. */
+/**
+ * The logical viewport each framed device renders at — the tablet renders
+ * smaller than hardware and scales up, so both devices read at one apparent
+ * size. The numbers are /preview's own (see PreviewShell).
+ */
+const VIEWPORT: Record<Device, { width: number; height: number }> = {
+  phone: SCREEN.phone,
+  tablet: { width: 642, height: 919 },
+};
+
 function Frame({
+  device = "phone",
   href,
   visit = 0,
   scale,
   lazy = false,
 }: {
+  device?: Device;
   href: string;
   visit?: number;
   scale: number;
   lazy?: boolean;
 }) {
-  const shell = SHELL.phone;
-  const screen = SCREEN.phone;
-  // The phone renders at its logical size, so the inset goes over undivided.
-  const src = `${href}${href.includes("?") ? "&" : "?"}inset=${SAFE_TOP.phone}`;
+  const shell = SHELL[device];
+  const screen = SCREEN[device];
+  const viewport = VIEWPORT[device];
+  const factor = screen.width / viewport.width;
+  const inset = Math.round((SAFE_TOP[device] / factor) * 100) / 100;
+  const src = `${href}${href.includes("?") ? "&" : "?"}inset=${inset}`;
   return (
     <div style={{ width: shell.width * scale, height: shell.height * scale }}>
       <div
@@ -67,21 +79,45 @@ function Frame({
           transformOrigin: "top left",
         }}
       >
-        <DeviceFrame device="phone">
+        <DeviceFrame device={device}>
           <iframe
-            key={`${href}:${visit}`}
+            key={`${device}:${href}:${visit}`}
             src={src}
-            title="North, running live"
+            title={
+              device === "phone" ? "North on a phone" : "North on a tablet"
+            }
             loading={lazy ? "lazy" : "eager"}
             className="block border-0"
             style={{
-              width: screen.width,
-              height: screen.height,
+              width: viewport.width,
+              height: screen.height / factor,
+              transform: `scale(${factor})`,
+              transformOrigin: "top left",
               background: "var(--surface-deep)",
             }}
           />
         </DeviceFrame>
       </div>
+    </div>
+  );
+}
+
+/** Both devices, bottom-aligned like /preview's pair — one scale for both. */
+function Pair({
+  href,
+  visit = 0,
+  scale,
+  lazy = false,
+}: {
+  href: string;
+  visit?: number;
+  scale: number;
+  lazy?: boolean;
+}) {
+  return (
+    <div className="flex items-end" style={{ gap: 40 * scale }}>
+      <Frame device="tablet" href={href} visit={visit} scale={scale} lazy={lazy} />
+      <Frame device="phone" href={href} visit={visit} scale={scale} lazy={lazy} />
     </div>
   );
 }
@@ -125,6 +161,14 @@ const RECEIPTS = [
   },
 ];
 
+/* The stat row under the credit — figures a reader should not scroll past. */
+const STATS = [
+  { value: "70+", label: "commits" },
+  { value: "9", label: "days" },
+  { value: "602", label: "tests, none failing" },
+  { value: "v0.1.0", label: "locked and tagged" },
+];
+
 export function CaseStudy() {
   const [glyphTurn, setGlyphTurn] = useState<TurnId>("openingConcern");
   const [journey, setJourney] = useState<Journey>(JOURNEYS[0]);
@@ -137,10 +181,10 @@ export function CaseStudy() {
 
   return (
     <div className="min-h-dvh bg-surface-page">
-      {/* ── THE HERO — the sky, the claim, and the product standing in it ── */}
+      {/* ── THE HERO — the sky, the claim, and a picture of the hardware ── */}
       <header className="relative overflow-hidden">
         <Sky className="h-full" />
-        <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 pt-16 pb-20 lg:flex-row lg:items-center lg:justify-between lg:pt-20 lg:pb-24">
+        <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 pt-16 pb-16 lg:flex-row lg:items-center lg:justify-between lg:pt-20 lg:pb-20">
           <div className="flex max-w-xl flex-col items-start">
             <p className="type-overline text-text-on-deep-dim">
               A design case study
@@ -158,39 +202,47 @@ export function CaseStudy() {
               else out. This page is built from the product&rsquo;s own tokens
               and components, and the product itself is standing inside it.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-5">
+            <div className="mt-8">
               <Link
-                href="/"
+                href="/preview"
                 className="type-label rounded-full bg-text-on-deep px-6 py-3 text-surface-deep transition-opacity duration-[--motion-micro] hover:opacity-90"
               >
                 Try it yourself
               </Link>
-              <Link
-                href="/preview"
-                className="type-label text-text-on-deep-dim underline decoration-dotted underline-offset-4 transition-colors duration-[--motion-micro] hover:text-text-on-deep"
-              >
-                Or borrow the story
-              </Link>
             </div>
           </div>
-          <div className="hidden shrink-0 lg:block" aria-hidden="false">
-            <Frame href="/demo?at=reveal" scale={0.64} />
+          {/* `inert`: a rendered picture, not a second demo. The one you can
+              actually drive is on the stage below, and says so. */}
+          <div inert aria-hidden="true" className="hidden shrink-0 lg:block">
+            <Pair href="/demo?at=reveal" scale={0.3} />
           </div>
         </div>
       </header>
 
-      {/* ── THE CREDIT BAR — who did this, on paper where ink can say it ── */}
-      <div className="border-b border-line-hairline">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-8 md:flex-row md:items-baseline md:justify-between">
-          <p className="type-meta max-w-md text-text-secondary">
-            <span className="text-text-primary">Tanmay Jain</span> — Design
-            Director. Set the thesis, wrote the rules, and directed every
-            screen, rejection and rebuild until the system stopped breaking
-            its own promises.
+      {/* ── THE CREDIT — who did this. Not a footnote. ───────────────────── */}
+      <div className="bg-surface-sunken">
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-start px-6 py-12">
+          <p className="type-overline text-text-tertiary">The work of</p>
+          <h2 className="type-voice-md mt-3 text-text-primary">
+            Tanmay Jain — Design Director
+          </h2>
+          <p className="type-body measure mt-3 text-text-secondary">
+            Set the thesis, wrote the rules, and directed every screen,
+            rejection and rebuild until the system stopped breaking its own
+            promises.
           </p>
-          <p className="type-figure shrink-0 text-text-tertiary">
-            70+ commits · 9 days · 602 tests · v0.1.0
-          </p>
+          <dl className="mt-8 flex flex-wrap gap-x-12 gap-y-6">
+            {STATS.map((stat) => (
+              <div key={stat.label} className="flex flex-col gap-1">
+                <dd className="type-voice-md text-text-primary">
+                  {stat.value}
+                </dd>
+                <dt className="type-overline text-text-tertiary">
+                  {stat.label}
+                </dt>
+              </div>
+            ))}
+          </dl>
         </div>
       </div>
 
@@ -398,56 +450,38 @@ export function CaseStudy() {
               </ChoiceChipGroup>
             </div>
           </Specimen>
-
-          <Specimen
-            name="No icon library, ever"
-            note="Every mark comes from the same hairline pen as the glyphs and the horizon fan, and every candidate was judged in the row it joins — a mark's job is to be told apart from its neighbours."
-          >
-            <div className="flex flex-col items-start gap-1">
-              <ActionLink icon={<AssumedMark />} onClick={() => undefined}>
-                What&rsquo;s assumed
-              </ActionLink>
-              <ActionLink icon={<CorrectionMark />} onClick={() => undefined}>
-                That&rsquo;s not quite right
-              </ActionLink>
-              <ActionLink icon={<WaitingMark />} onClick={() => undefined}>
-                I&rsquo;ve already done this
-              </ActionLink>
-            </div>
-          </Specimen>
         </Section>
         </div>
 
-        {/* ── THE SCREENS — the product itself, on its own stage ────────── */}
+        {/* ── THE SCREENS — the one place the hardware is live ───────────── */}
         <section id="screens" className="bg-surface-deep">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-16">
-          <div className="flex flex-col items-start">
-            <p className="type-overline text-text-on-deep-dim">
-              The screens — live
-            </p>
-            <h2 className="type-voice-md mt-3 text-text-on-deep">
-              Not screenshots. The product, running.
-            </h2>
-            <p className="type-body measure mt-3 text-text-on-deep-dim">
-              Five moments, each seeded on demand: the reveal, the return
-              North makes three days later, the story of how this person got
-              here, the front door, and the onboarding conversation itself.
-              Press the chip you are on to reset it. The full stage — phone
-              and tablet side by side — is at{" "}
-              <Link
-                href="/preview"
-                className="text-text-on-deep underline decoration-dotted underline-offset-4"
-              >
-                /preview
-              </Link>
-              .
-            </p>
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-16">
+            <div className="flex flex-col items-start">
+              <p className="type-overline text-text-on-deep-dim">
+                The screens — live, not screenshots
+              </p>
+              <h2 className="type-voice-md mt-3 text-text-on-deep">
+                These two devices are the real product. Click in and use it.
+              </h2>
+              <p className="type-body measure mt-3 text-text-on-deep-dim">
+                Scroll the read, open a derivation, hold a decision — both
+                viewports are the running app, seeded with nine months of
+                story. The chips choose the moment: the reveal, the return
+                North makes three days later, how this person got here, the
+                front door, and onboarding itself. Press the chip you are on
+                to reset it.
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-8">
+              <DemoPanel active={journey.id} onGo={go} />
+              <div className="hidden lg:block">
+                <Pair href={journey.href} visit={visit} scale={0.56} lazy />
+              </div>
+              <div className="lg:hidden">
+                <Frame href={journey.href} visit={visit} scale={0.78} lazy />
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col items-center gap-8">
-            <DemoPanel active={journey.id} onGo={go} />
-            <Frame href={journey.href} visit={visit} scale={0.82} lazy />
-          </div>
-        </div>
         </section>
 
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-16 px-6 pt-16 pb-24">
@@ -567,7 +601,7 @@ export function CaseStudy() {
               .
             </p>
             <Link
-              href="/"
+              href="/preview"
               className="type-label text-text-secondary underline decoration-dotted underline-offset-4 transition-colors duration-[--motion-micro] hover:text-text-primary"
             >
               Try North yourself
