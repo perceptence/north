@@ -6,6 +6,7 @@ import {
   ChoiceChip,
   ChoiceChipGroup,
   Figure,
+  HorizonField,
   Wordmark,
 } from "@/components/nds";
 import { DemoPanel, JOURNEYS, type Journey } from "@/components/north/DemoPanel";
@@ -26,25 +27,23 @@ import { Section, Specimen, SwatchRow } from "../design/_parts";
  *
  * A portfolio page, and deliberately a page OF the product rather than a
  * page ABOUT it: same tokens, same three faces, same components, and the
- * product itself standing in the hardware frames. Everything /design does
- * for the system, this does for the thinking — and like /design and
- * /preview it sits outside the product's IA. Nothing in the app routes here.
+ * product itself standing in the hardware frames. Like /design and /preview
+ * it sits outside the product's IA — nothing in the app routes here.
  *
- * The product appears in hardware twice, with two different jobs:
- * the HERO pair is `inert` — a picture that happens to be rendered, so it
- * can never steal a scroll or a click from someone reading the opening —
- * and the STAGE pair is the one interactive instance, labelled as such,
- * because two places inviting touch is how a reader ends up sure of
- * neither. Both reuse the /preview contract exactly: `/demo?at=` seeds a
- * moment, `inset` hands the status-bar height to `SafeArea`, and frames
- * are keyed on journey AND visit so re-pressing a chip re-seeds.
+ * The product appears in hardware twice, with two different jobs: the HERO
+ * pair is `inert` — a picture that happens to be rendered, so it can never
+ * steal a scroll from someone reading the opening — and the STAGE pair is
+ * the one interactive instance, labelled as such. Both reuse the /preview
+ * contract exactly (`/demo?at=` seeds a moment, `inset` hands the
+ * status-bar height to SafeArea, frames re-key on journey and visit).
+ *
+ * Every iframe is `loading="lazy"` ON PURPOSE, including above-the-fold
+ * ones: a lazy frame in the viewport loads immediately, and a lazy frame
+ * inside a `display:none` breakpoint twin never loads at all — which is
+ * what lets the hero and stage each carry a phone-only and a pair layout
+ * without booting hidden copies of the app.
  */
 
-/**
- * The logical viewport each framed device renders at — the tablet renders
- * smaller than hardware and scales up, so both devices read at one apparent
- * size. The numbers are /preview's own (see PreviewShell).
- */
 const VIEWPORT: Record<Device, { width: number; height: number }> = {
   phone: SCREEN.phone,
   tablet: { width: 642, height: 919 },
@@ -55,13 +54,11 @@ function Frame({
   href,
   visit = 0,
   scale,
-  lazy = false,
 }: {
   device?: Device;
   href: string;
   visit?: number;
   scale: number;
-  lazy?: boolean;
 }) {
   const shell = SHELL[device];
   const screen = SCREEN[device];
@@ -86,7 +83,7 @@ function Frame({
             title={
               device === "phone" ? "North on a phone" : "North on a tablet"
             }
-            loading={lazy ? "lazy" : "eager"}
+            loading="lazy"
             className="block border-0"
             style={{
               width: viewport.width,
@@ -107,22 +104,20 @@ function Pair({
   href,
   visit = 0,
   scale,
-  lazy = false,
 }: {
   href: string;
   visit?: number;
   scale: number;
-  lazy?: boolean;
 }) {
   return (
     <div className="flex items-end" style={{ gap: 40 * scale }}>
-      <Frame device="tablet" href={href} visit={visit} scale={scale} lazy={lazy} />
-      <Frame device="phone" href={href} visit={visit} scale={scale} lazy={lazy} />
+      <Frame device="tablet" href={href} visit={visit} scale={scale} />
+      <Frame device="phone" href={href} visit={visit} scale={scale} />
     </div>
   );
 }
 
-/* The seven rungs, as prose — the engine's own order, restated for a reader. */
+/* The seven rungs — the engine's own order, restated for a reader. */
 const RUNGS = [
   { name: "Liquidity floor", active: false },
   { name: "Employer match", active: false },
@@ -133,7 +128,7 @@ const RUNGS = [
   { name: "Optimization", active: false },
 ];
 
-/* Real commit messages, verbatim from `git log`, each with what it records. */
+/* Real commit messages, verbatim from `git log`. */
 const RECEIPTS = [
   {
     line: "Stop refusing questions the engine can answer",
@@ -149,24 +144,20 @@ const RECEIPTS = [
   },
   {
     line: "Both lines identified by toggle, and both were mine",
-    note: "Two rendering artifacts isolated by switching each cause off in the browser — and owned.",
+    note: "Two rendering artifacts isolated in the browser — and owned.",
   },
   {
     line: "Every mark sits on its line by construction, not by a number",
     note: "Three hand-tuned pixel nudges retired by one primitive measured in line-heights.",
-  },
-  {
-    line: "Give “tell me more” somewhere to go",
-    note: "A dead end found by walking the conversation as a user would.",
   },
 ];
 
 /* The stat row under the credit — figures a reader should not scroll past. */
 const STATS = [
   { value: "70+", label: "commits" },
-  { value: "9", label: "days" },
+  { value: "14", label: "days" },
   { value: "602", label: "tests, none failing" },
-  { value: "v0.1.0", label: "locked and tagged" },
+  { value: "v1.0", label: "locked and tagged" },
 ];
 
 export function CaseStudy() {
@@ -199,8 +190,7 @@ export function CaseStudy() {
             <p className="type-body mt-5 text-text-on-deep-dim">
               A premium AI financial coach — the thesis, the judgment engine,
               the visual system, and the discipline to leave almost everything
-              else out. This page is built from the product&rsquo;s own tokens
-              and components, and the product itself is standing inside it.
+              else out. The product itself is standing inside this page.
             </p>
             <div className="mt-8">
               <Link
@@ -211,10 +201,18 @@ export function CaseStudy() {
               </Link>
             </div>
           </div>
-          {/* `inert`: a rendered picture, not a second demo. The one you can
-              actually drive is on the stage below, and says so. */}
+          {/* `inert`: a rendered picture, not a second demo. The interactive
+              pair is on the stage below, and says so. Lazy keeps the hidden
+              breakpoint twin from ever booting. */}
           <div inert aria-hidden="true" className="hidden shrink-0 lg:block">
             <Pair href="/demo?at=reveal" scale={0.3} />
+          </div>
+          <div
+            inert
+            aria-hidden="true"
+            className="flex justify-center lg:hidden"
+          >
+            <Pair href="/demo?at=reveal" scale={0.22} />
           </div>
         </div>
       </header>
@@ -251,45 +249,61 @@ export function CaseStudy() {
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-16 px-6 pt-16 pb-20">
         <Section
           id="problem"
-          title="The problem — judgment is the scarce thing"
-          note="Financial information is free. Judgment still costs $3,000–8,000 a year, and usually takes a $250k minimum to access at all."
+          title="Judgment is the scarce thing"
+          note="Financial information is free. Judgment — this, not that, and here's why, for you, this month — costs $3,000–8,000 a year behind a $250k minimum. North makes the judgment layer software."
         >
-          <div className="measure flex flex-col gap-5">
-            <p className="type-body text-text-secondary">
-              Below that line people are handed generic advice or none.
-              North&rsquo;s bet is that the judgment layer — the part of an
-              advisor&rsquo;s job that says{" "}
-              <em className="text-text-primary">
-                this, not that, and here&rsquo;s why, for you, this month
-              </em>{" "}
-              — becomes software.
+          <blockquote className="measure border-l-2 border-signal-coach pl-6">
+            <p className="type-voice-md text-text-primary">
+              Every competitor puts the AI in the conversation layer. North
+              puts it in the judgment layer.
             </p>
-            <blockquote className="border-l-2 border-signal-coach pl-5">
-              <p className="type-voice-sm text-text-primary">
-                Every competitor puts the AI in the conversation layer. North
-                puts it in the judgment layer.
+            <cite className="type-overline mt-3 block text-text-tertiary not-italic">
+              docs/STRATEGY.md
+            </cite>
+          </blockquote>
+          <div className="measure grid grid-cols-1 gap-8 sm:grid-cols-2">
+            <div>
+              <p className="type-overline text-text-tertiary">Built for</p>
+              <ul className="mt-3 flex flex-col gap-3">
+                <li className="type-body text-text-secondary">
+                  <span className="text-text-primary">
+                    The unadvised earner.
+                  </span>{" "}
+                  Strong income, no advisor, idle cash in checking.
+                </li>
+                <li className="type-body text-text-secondary">
+                  <span className="text-text-primary">Everyone, unasked.</span>{" "}
+                  No persona picker — deriving the situation is the
+                  coach&rsquo;s job.
+                </li>
+              </ul>
+            </div>
+            <div>
+              <p className="type-overline text-text-tertiary">
+                Deliberately not for
               </p>
-              <cite className="type-overline mt-2 block text-text-tertiary not-italic">
-                docs/STRATEGY.md
-              </cite>
-            </blockquote>
-            <p className="type-body text-text-secondary">
-              Built for the unadvised earner — strong income, no advisor, idle
-              cash in checking — and deliberately{" "}
-              <span className="text-text-primary">not</span> for two groups it
-              names: people in acute financial distress, whose honest answer is
-              a nonprofit credit counselor rather than a calm optimizing
-              register, and people who want to optimize $40 of groceries, who
-              already have YNAB and would find North condescending. A product
-              that cannot name its anti-user does not know its user.
-            </p>
+              <ul className="mt-3 flex flex-col gap-3">
+                <li className="type-body text-text-secondary">
+                  <span className="text-text-primary">
+                    Acute financial distress.
+                  </span>{" "}
+                  The honest answer is a nonprofit credit counselor.
+                </li>
+                <li className="type-body text-text-secondary">
+                  <span className="text-text-primary">
+                    The $40 grocery optimizer.
+                  </span>{" "}
+                  That is YNAB, and North would feel condescending.
+                </li>
+              </ul>
+            </div>
           </div>
         </Section>
 
         <Section
           id="engine"
-          title="The engine — seven ordered rules, no persona picker"
-          note="The waterfall is the product's intelligence: pure, synchronous, tested. One question — what is the first rule this person does not yet satisfy?"
+          title="Seven rules, no persona picker"
+          note="The engine is pure, synchronous and tested — it never calls a model. One question: what is the first rule this person does not yet satisfy?"
         >
           <div className="measure">
             <div className="overflow-hidden rounded-card border border-line-hairline bg-surface-raised">
@@ -326,27 +340,24 @@ export function CaseStudy() {
               </span>
             </pre>
             <p className="type-body mt-4 text-text-secondary">
-              The engine never calls a model — every read on every screen is
-              computed by the same deterministic core, so it cannot fail live
-              and cannot quietly change its mind. The no-branching rule is
-              proven, not asserted: the suite includes a test literally titled{" "}
+              Proven, not asserted — the suite includes a test literally
+              titled{" "}
               <code className="type-figure text-text-primary">
                 &ldquo;income does not determine the rung&rdquo;
-              </code>{" "}
-              — a $400k earner and a $60k earner land on the same rung when
-              their situations match.
+              </code>
+              .
             </p>
           </div>
         </Section>
 
         <Section
           id="system"
-          title="The system — restraint as the premium signal"
+          title="Restraint is the premium signal"
           note="Editorial magazine, not trading terminal. The primary action is ink, not a colored button — one decision that sidesteps the entire fintech color problem."
         >
           <Specimen
             name="The mark"
-            note="NORTH in the product's hairline hand, the O a working compass. The needle's north point is the one filled shape in the whole identity."
+            note="NORTH in the product's hairline hand, the O a working compass — its needle the one filled shape in the identity."
           >
             <div className="flex flex-col items-start gap-5">
               <Wordmark height={13} strokeWidth={2} />
@@ -357,7 +368,7 @@ export function CaseStudy() {
 
           <Specimen
             name="Three families, only three"
-            note="Ground (warm paper), Ink (warm near-black), Signal (indigo + clay, at most one element per viewport). Amounts are never colored; direction is a glyph, so the palette is colorblind-safe by construction."
+            note="Ground, Ink, Signal — amounts are never colored, so the palette is colorblind-safe by construction."
           >
             <div className="flex flex-col gap-6">
               <SwatchRow
@@ -400,7 +411,7 @@ export function CaseStudy() {
 
           <Specimen
             name="Every number carries its confidence"
-            note="stated is sharp and unmarked · inferred carries the dotted coach mark · assumed drops to secondary ink. A screen reader hears the provenance too — nobody else in personal finance does this."
+            note="stated · inferred · assumed — rendered differently, and a screen reader hears the provenance too. Nobody else in personal finance does this."
           >
             <p className="type-voice-md measure text-text-primary">
               You hold{" "}
@@ -430,7 +441,7 @@ export function CaseStudy() {
 
           <Specimen
             name="The glyph is one drawing"
-            note="Six hairline strokes on a uniform skeleton — every figure interpolates into every other, nothing is ever swapped. Pick one and watch."
+            note="Six hairline strokes on one skeleton — every figure interpolates into every other. Pick one and watch."
           >
             <div className="flex flex-col gap-6">
               <TurnGlyph
@@ -466,58 +477,65 @@ export function CaseStudy() {
               <p className="type-body measure mt-3 text-text-on-deep-dim">
                 Scroll the read, open a derivation, hold a decision — both
                 viewports are the running app, seeded with nine months of
-                story. The chips choose the moment: the reveal, the return
-                North makes three days later, how this person got here, the
-                front door, and onboarding itself. Press the chip you are on
+                story. The chips choose the moment; press the one you are on
                 to reset it.
               </p>
             </div>
             <div className="flex flex-col items-center gap-8">
               <DemoPanel active={journey.id} onGo={go} />
               <div className="hidden lg:block">
-                <Pair href={journey.href} visit={visit} scale={0.56} lazy />
+                <Pair href={journey.href} visit={visit} scale={0.56} />
               </div>
               <div className="lg:hidden">
-                <Frame href={journey.href} visit={visit} scale={0.78} lazy />
+                <Frame href={journey.href} visit={visit} scale={0.78} />
               </div>
             </div>
           </div>
         </section>
 
+        {/* ── SCENERY — the product's one visualization, wordless ────────── */}
+        <div aria-hidden="true" className="border-b border-line-hairline">
+          <div className="mx-auto w-full max-w-5xl px-6 py-14">
+            <HorizonField
+              low={57_800_000}
+              high={150_000_000}
+              central={93_800_000}
+              confidence="assumed"
+              months={300}
+              height={132}
+            />
+          </div>
+        </div>
+
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-16 px-6 pt-16 pb-24">
         <Section
           id="calls"
-          title="Hard calls — what was cut, and what is never for sale"
+          title="What was cut, and what is never for sale"
           note="The MVP is not the list of good ideas. It is the shortest path to the thesis being undeniable."
         >
           <div className="measure flex flex-col gap-5">
             <p className="type-body text-text-secondary">
               <span className="text-text-primary">
-                Trajectory was cut as a standalone surface.
+                Trajectory was cut as a standalone surface
               </span>{" "}
-              The most expensive item in the original scope, and the most
-              generic — every competitor has charts. It survives as the
-              horizon fan under a decision, where a range makes the decision
-              feel consequential instead of decorating a screen of its own.
-              Free-form chat went the same way:{" "}
-              <em>omitting it is a positioning statement.</em>
+              — the most expensive item in the plan, and the most generic. It
+              survives as the horizon fan under a decision, where a range
+              makes the decision feel consequential. Free-form chat went the
+              same way: <em>omitting it is a positioning statement.</em>
             </p>
             <p className="type-body text-text-secondary">
               <span className="text-text-primary">
                 The coach&rsquo;s judgment is never paywalled; its time is.
               </span>{" "}
               Free carries the whole decide → track → check-back loop. Plus
-              buys room to think — more scenarios, the spoken conversation,
-              every goal instead of the first. The one Plus line that touches
-              urgency, <em>what waiting costs</em>, had to argue for itself:
-              the read still names the gap and the action in full, free — Plus
-              adds the arithmetic on another month, a sharper prompt but never
-              a truer one.
+              buys room to think — and its one line touching urgency had to
+              argue for itself: the read stays free in full, Plus adds only
+              the arithmetic.
             </p>
           </div>
           <Specimen
             name="The ethics pin is a failing test, not a policy"
-            note="debt-first — the scenario that tells you to stop losing money — is free forever. If Plus ever widens to take it, the suite fails before it ships."
+            note="debt-first — the scenario that tells you to stop losing money — is free forever, or the suite fails before it ships."
           >
             <pre className="type-figure overflow-x-auto text-text-secondary">
               {"assert.ok(FREE_SCENARIOS.has(\"debt-first\"), "}
@@ -531,16 +549,10 @@ export function CaseStudy() {
 
         <Section
           id="making"
-          title="How it was made — directed, not delegated"
-          note="Built in nine days of close direction of an AI engineering partner. The taste, the standard, and the no were never delegated — the exhausting parts were."
+          title="Directed, not delegated"
+          note="Fourteen days of close direction of an AI engineering partner. The taste, the standard, and the no were never delegated — the exhausting parts were."
         >
           <div className="measure flex flex-col gap-5">
-            <p className="type-body text-text-secondary">
-              The commit history reads as a design review because that is what
-              the process was: every screen walked in the browser, every claim
-              measured against the live DOM, every regression owned in the
-              message that fixed it. A few entries, verbatim:
-            </p>
             <ul className="flex flex-col">
               {RECEIPTS.map((receipt) => (
                 <li
@@ -556,11 +568,10 @@ export function CaseStudy() {
                 </li>
               ))}
             </ul>
-            <p className="type-body text-text-secondary">
-              The review standard behind all of it: options first, never a
-              silent guess; candidates judged in the row they join, never
-              alone; and no fix accepted on faith — the browser gets the last
-              word, measured, before anything is called done.
+            <p className="type-meta text-text-tertiary">
+              Commit messages, verbatim. The standard behind them: options
+              before decisions, and the browser gets the last word — measured,
+              never eyeballed.
             </p>
           </div>
         </Section>
@@ -568,19 +579,15 @@ export function CaseStudy() {
         <Section
           id="state"
           title="Where it stands"
-          note="Locked at v0.1.0 — 602 tests across 124 suites, typecheck and lint clean, and a purity guard proving the engine imports no framework, no clock, and no membership."
+          note="Locked at v1.0 — 602 tests across 124 suites, typecheck and lint clean, and a purity guard proving the engine imports no framework, no clock, no membership."
         >
-          <div className="measure flex flex-col gap-3">
-            <p className="type-body text-text-secondary">
-              Known and deliberate at the tag: the intent endpoint has no rate
-              limit yet — it is optional by design, and the product is fully
-              functional without it; the dock still sits under a real
-              iPhone&rsquo;s home indicator; two constant tables are
-              duplicated across onboarding files. Written down where the
-              limitations can be seen, because a case study that hides its
-              edges is an advertisement.
-            </p>
-          </div>
+          <p className="type-body measure text-text-secondary">
+            Known and deliberate at the tag: the optional intent endpoint has
+            no rate limit yet, the dock sits under a real iPhone&rsquo;s home
+            indicator, and two constant tables are duplicated across
+            onboarding files. Written down, because a case study that hides
+            its edges is an advertisement.
+          </p>
         </Section>
 
         <footer className="border-t border-line-hairline pt-10">
