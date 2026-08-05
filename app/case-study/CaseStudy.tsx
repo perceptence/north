@@ -161,9 +161,13 @@ function Chapter({
   children?: ReactNode;
 }) {
   return (
+    // `pt-20` matches the parent's `gap-20`, so the rule sits centred between
+    // the chapter it ends and the one it opens. At `pt-14` it was 80px above
+    // and 56 below — the divider crowded the kicker it introduced, and after
+    // a chapter ending in a list (the receipts) the imbalance was plain.
     <section
       id={id}
-      className="scroll-mt-10 border-t border-line-hairline pt-14"
+      className="scroll-mt-10 border-t border-line-hairline pt-20"
     >
       <p className="type-overline text-text-tertiary">{kicker}</p>
       <h2 className="type-voice-lg mt-4 max-w-2xl text-text-primary">
@@ -386,7 +390,10 @@ export function CaseStudy() {
       {/* ── THE HERO — the full glass, and a picture of the hardware ────── */}
       <header className="relative flex overflow-hidden lg:min-h-dvh">
         <Sky className="h-full" />
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col justify-center gap-12 px-6 pt-16 pb-16 lg:flex-row lg:items-center lg:justify-between lg:py-20">
+        {/* max-w-7xl, not 6xl: the hero is the page's one wide exception, and
+            the devices are the argument — at 6xl the text column left them
+            barely 480px to stand in. */}
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col justify-center gap-12 px-6 pt-16 pb-16 lg:flex-row lg:items-center lg:justify-between lg:py-20">
           <div className="flex max-w-xl flex-col items-start">
             <p className="type-overline text-text-on-deep-dim">
               A design case study
@@ -412,15 +419,21 @@ export function CaseStudy() {
               </Link>
             </div>
           </div>
+          {/* The hardware carries the hero, so it is sized to the room the
+              layout actually leaves rather than to a timid constant. At lg
+              the pair takes the 7xl container's remainder beside a 576px
+              text column; below lg it bleeds through the page gutter with
+              `-mx-6` to use the full glass, since 48px of padding on a phone
+              is the difference between a device you can read and a thumbnail. */}
           <div inert aria-hidden="true" className="hidden shrink-0 lg:block">
-            <Pair href="/demo?at=reveal" scale={0.3} />
+            <Pair href="/demo?at=reveal" scale={0.44} />
           </div>
           <div
             inert
             aria-hidden="true"
-            className="flex justify-center lg:hidden"
+            className="-mx-6 flex justify-center lg:hidden"
           >
-            <Pair href="/demo?at=reveal" scale={0.22} />
+            <Pair href="/demo?at=reveal" scale={0.28} />
           </div>
         </div>
       </header>
@@ -568,25 +581,58 @@ export function CaseStudy() {
 
             <Spread
               label="Why there is no persona picker"
-              caption={
-                <>
-                  The rejected version asks the reader to classify themselves,
-                  then hand-writes advice per category — four times the copy,
-                  and wrong the moment someone is between labels. The shipped
-                  version derives a profile from real answers and walks one
-                  ordered list, so a situation nobody anticipated still lands
-                  somewhere sensible.
-                </>
-              }
+              caption="Both are one line of code. The difference is who does the thinking — the reader, or the coach."
             >
-              <pre className="type-figure measure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
-                {"// NO — a picker, then four copies of the advice\n"}
-                {"if (persona === \"young_professional\") { … }\n\n"}
-                {"// YES — one ordered list, run against a derived profile\n"}
-                <span className="text-text-primary">
-                  {"const rung = waterfall.firstUnsatisfied(profile)"}
-                </span>
-              </pre>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="flex flex-col gap-4 rounded-card border border-line-hairline p-6">
+                  <p className="type-overline text-text-tertiary">
+                    The usual way — rejected
+                  </p>
+                  <pre className="type-figure overflow-x-auto text-text-secondary">
+                    {"if (persona === \"young_professional\")"}
+                  </pre>
+                  <p className="type-body text-text-primary">
+                    Sort each person into a bucket, then write separate advice
+                    for every bucket.
+                  </p>
+                  <ul className="flex flex-col gap-2">
+                    {[
+                      "The reader has to classify themselves — which is the coach's job, handed back to them.",
+                      "Four buckets means four sets of advice to write, and to keep true forever.",
+                      "Anyone between labels gets advice written for somebody else.",
+                    ].map((line) => (
+                      <li key={line} className="type-meta text-text-secondary">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex flex-col gap-4 rounded-card border border-line-hairline bg-surface-raised p-6">
+                  <p className="type-overline text-signal-coach">
+                    What North does
+                  </p>
+                  <pre className="type-figure overflow-x-auto text-text-primary">
+                    {"waterfall.firstUnsatisfied(profile)"}
+                  </pre>
+                  <p className="type-body text-text-primary">
+                    Walk one ordered list of seven rules against what this
+                    person actually told the coach, and stop at the first rule
+                    they do not yet meet.
+                  </p>
+                  <ul className="flex flex-col gap-2">
+                    {[
+                      "Nobody is asked to name their category — the profile is built from real answers.",
+                      "One list, written once. There is no second copy to keep in agreement.",
+                      "A situation nobody anticipated still lands on a sensible rung, because the rules are about the situation rather than the label.",
+                    ].map((line) => (
+                      <li key={line} className="type-meta text-text-secondary">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </Spread>
 
             <p className="type-body measure text-text-secondary">
@@ -884,25 +930,47 @@ export function CaseStudy() {
           >
             <Spread
               label="The ethics pin is a test, not a policy"
-              caption={
-                <>
-                  In plain terms: if anyone ever moves{" "}
-                  <code className="type-figure">debt-first</code> — the
-                  scenario that tells you to stop losing money — out of the
-                  free tier, this line fails and the build stops. The message
-                  is what the failure prints, so whoever broke it reads the
-                  reason rather than a line number. A principle in a document
-                  is a hope; a principle in the test suite is a constraint.
-                </>
-              }
+              caption="A principle in a document is a hope. A principle in the test suite is a constraint — it cannot be quietly walked back, because walking it back stops the build."
             >
-              <pre className="type-figure measure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
-                {"assert.ok(FREE_SCENARIOS.has(\"debt-first\"),\n  "}
-                <span className="text-signal-attention">
-                  {"\"the copy just became a lie\""}
-                </span>
-                {")"}
-              </pre>
+              <div className="measure flex flex-col gap-5">
+                <pre className="type-figure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
+                  {"assert.ok(FREE_SCENARIOS.has(\"debt-first\"),\n  "}
+                  <span className="text-signal-attention">
+                    {"\"the copy just became a lie\""}
+                  </span>
+                  {")"}
+                </pre>
+                <p className="type-body text-text-primary">
+                  It reads: <em>the free tier must always contain this one
+                  scenario.</em> Should anyone ever move it behind the paywall,
+                  the test fails and the change cannot ship.
+                </p>
+                <dl className="flex flex-col gap-3">
+                  {[
+                    {
+                      term: "FREE_SCENARIOS",
+                      def: "The set of what-ifs a free member can open.",
+                    },
+                    {
+                      term: "\"debt-first\"",
+                      def: "The scenario that tells you to stop losing money to high-interest debt — the single most valuable thing North can say to the person who needs it most.",
+                    },
+                    {
+                      term: "\"the copy just became a lie\"",
+                      def: "What prints when the check fails. The product's own promise says the judgment is never paywalled; moving this scenario would make that sentence false, so whoever broke it reads the reason rather than a line number.",
+                    },
+                  ].map((row) => (
+                    <div key={row.term} className="flex flex-col gap-1">
+                      <dt className="type-figure text-text-primary">
+                        {row.term}
+                      </dt>
+                      <dd className="type-meta text-text-secondary">
+                        {row.def}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </Spread>
           </Chapter>
 
