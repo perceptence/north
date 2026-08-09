@@ -296,6 +296,40 @@ const SCOPE = [
   },
 ];
 
+/**
+ * Three reversals, each verified against the commit or document that records
+ * it before it was written here. Every figure below is quoted from that
+ * source rather than recalled: the refusal rates and the review tallies are
+ * in the commit messages, and the voice rule is quoted from docs/VOICE.md,
+ * which still carries the sentence it reversed.
+ */
+const REVERSALS = [
+  {
+    area: "The coach's router",
+    believed:
+      "Recognise the questions I planned for and refuse the rest. For a product that must never answer a markets question, refusing by default felt like the safe posture.",
+    changed:
+      "Measured against 31 ordinary phrasings, it refused 12 of the 29 it could actually answer — 41% — and every form of “what can you do” was among them, so most people would have met a refusal as North’s first answer. Widening the term lists took that to 2 of 31, which looked like a fix. Then a second survey, written blind against the new lists, refused 25 of 29. The lists were never the problem; the polarity was. Refusing on the absence of recognition had made those lists responsible for enumerating every way a human might phrase a question, and no list can do that.",
+    cost: "Inverting it — refuse only on positive evidence of a subject North does not cover — makes the refusal list the one list that must be complete. An adversarial review then found it wrong in both directions at once: 36 findings raised, 24 confirmed.",
+  },
+  {
+    area: "A fifth destination",
+    believed:
+      "The spoken coach would be its own surface — “Read this to me”, a narrator for the page you were on.",
+    changed:
+      "A one-sentence review: a page narrator is not a coach. The product’s own voice document had already said so on its first page — North is a conversation, it just happens to be typed — and I had written that sentence myself without applying it.",
+    cost: "The planned fifth tab was cancelled and folded into Navigator, which had always been the “what would you like to think through?” surface. The dock stayed capped at four.",
+  },
+  {
+    area: "A rule I had written down",
+    believed:
+      "Voice is never a mode — no state you enter and have to leave. The rule existed to stop North disclosing your balance to a room you had not chosen.",
+    changed:
+      "A full-screen mode you deliberately enter, obviously occupy and leave with one tap serves that reason better than ambient speech does. Nothing can begin by surprise, and the exposure is bounded by a surface you can see you are in.",
+    cost: "The letter of the rule is reversed and its purpose is intact — which is the only kind of reversal worth making. The two rules underneath it were left untouched, so the typed conversation remains the visible twin and nothing is ever voice-only.",
+  },
+];
+
 /* Real commit messages, verbatim from `git log`. */
 const RECEIPTS = [
   {
@@ -458,12 +492,25 @@ export function CaseStudy() {
           <h2 className="type-voice-lg mt-3 text-text-primary">
             Tanmay Jain — Design Director
           </h2>
+          {/* ── THE AI, STATED ONCE, WITH ITS CONSEQUENCE ─────────────────
+              This used to say "directed an AI engineering partner" in three
+              places, which made the tool the page's collaboration THEME and
+              invited the two worst readings: that the author has not worked
+              with people, or that the machine did the work. Hiding it would
+              be a lie about who wrote the code, and the repository is public
+              anyway. So it is stated once, plainly, with the reason it is an
+              advantage attached — a method that explains the scope, rather
+              than a colleague competing with team experience. The receipts
+              and the reversals do the rest of the arguing. */}
           <p className="type-body measure mt-4 text-text-secondary">
             North is a solo-directed product. One person set the strategy,
-            drew the identity, designed every screen, and directed an AI
-            engineering partner through the build. Every judgment on this
-            page — what shipped, what was cut, what is never for sale — was
-            made here, and the record of it is public in the repository.
+            drew the identity, designed every screen, and held the standard
+            through implementation. Every judgment on this page — what
+            shipped, what was cut, what is never for sale — was made here,
+            and the record of it is public in the repository. The build was
+            executed with an AI engineering partner working under that
+            direction, which is the reason nine finished surfaces exist here
+            rather than three sketches.
           </p>
           {/* The scope, stated as the bar it was built to rather than as a
               caveat about what it lacks. The project's own strategy defines
@@ -571,6 +618,47 @@ export function CaseStudy() {
                 </ul>
               </div>
             </div>
+
+            {/* The load-bearing assumption, named. Stating it is not a
+                concession — an unnamed assumption is the one that takes a
+                product down, and the first question any reviewer asks of the
+                audience claims above is "how do you know?". The honest answer
+                is written here rather than left for them to ask. */}
+            <Spread
+              label="The assumption everything rests on"
+              caption="Naming the study that would falsify the thesis is cheaper than discovering it late. This one has not been run — the behaviour above was measured against phrasings, not against people."
+            >
+              <div className="measure flex flex-col gap-4">
+                <p className="type-voice-md text-text-primary">
+                  That judgment, not information, is the thing this person
+                  actually feels the absence of.
+                </p>
+                <p className="type-body text-text-secondary">
+                  Every audience claim on this page depends on it, and it is
+                  unvalidated. North has been tested against its own engine
+                  and against 31 real phrasings of the questions people ask a
+                  coach; it has not been put in front of the person it was
+                  built for.
+                </p>
+                <p className="type-body text-text-secondary">
+                  The study that would settle it is small and I would run it
+                  first: six to eight people in the segment, shown their own
+                  idle cash, asked what they would want next. The distinction
+                  that matters is whether they say{" "}
+                  <em className="text-text-primary">
+                    I don&rsquo;t know what to do with it
+                  </em>{" "}
+                  or{" "}
+                  <em className="text-text-primary">
+                    I know, and I haven&rsquo;t
+                  </em>
+                  . If it is the second, the thesis is wrong in a specific and
+                  useful way — the scarce thing would be follow-through rather
+                  than judgment, and North would need to become a different
+                  product rather than a better one.
+                </p>
+              </div>
+            </Spread>
           </Chapter>
 
           <Chapter
@@ -884,6 +972,31 @@ export function CaseStudy() {
               known. A system is what still holds when the person who set it
               is not in the room.
             </p>
+
+            {/* The handover argument, said out loud. Every artifact named
+                here already existed; none of them was ever claimed as what
+                it actually is — the apparatus of designing for a team that
+                did not exist yet. This is the closest honest proxy for
+                management thinking a solo project can offer. */}
+            <p className="type-body measure text-text-secondary">
+              Which is why the system is enforced rather than documented. The
+              token layer is built so a component{" "}
+              <em className="text-text-primary">cannot</em> reach past it to a
+              raw colour. The principles are pinned by tests that fail the
+              build, not by a page asking people to remember. The gallery at{" "}
+              <Link
+                href="/design"
+                className="underline decoration-dotted underline-offset-4 hover:text-text-primary"
+              >
+                /design
+              </Link>{" "}
+              measures its own contrast in the browser, so it cannot quietly
+              go stale, and ten decision documents record why each rule exists
+              — because a rule whose reason is lost is the first one someone
+              breaks. None of that was necessary for one person. It is what I
+              build so that a team can move without me, and it is the part of
+              this work that would transfer on day one.
+            </p>
           </Chapter>
         </div>
 
@@ -946,8 +1059,13 @@ export function CaseStudy() {
                   ships, was the most expensive item in the original scope and
                   the least load-bearing. It was cut. What survives is the
                   horizon fan under the day&rsquo;s decision, where a range
-                  makes the choice in front of you feel consequential.
-                  Free-form chat was cut for a different reason:{" "}
+                  makes the choice in front of you feel consequential —{" "}
+                  <span className="text-text-primary">
+                    which makes it the rare cut that also improved the product
+                  </span>
+                  , since a projection isolated in its own tab is divorced
+                  from the thing that moves it. Free-form chat was cut for a
+                  different reason:{" "}
                   <em className="text-text-primary">
                     omitting it is a positioning statement.
                   </em>
@@ -1012,8 +1130,71 @@ export function CaseStudy() {
           </Chapter>
 
           <Chapter
+            id="changed"
+            kicker="06 · The reversals"
+            title="Three things I was wrong about."
+            lede={
+              <>
+                <p>
+                  A case study that runs in a straight line from thesis to
+                  execution is describing a project that never met anything
+                  it did not expect. These three are the places North changed
+                  direction, with what triggered each and what the change
+                  cost — the third of which reversed a rule I had written
+                  down myself.
+                </p>
+              </>
+            }
+          >
+            <ol className="measure flex flex-col">
+              {REVERSALS.map((item) => (
+                <li
+                  key={item.area}
+                  className="flex flex-col gap-4 border-t border-line-hairline py-8 first:border-t-0 first:pt-0"
+                >
+                  <p className="type-overline text-text-tertiary">
+                    {item.area}
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="type-overline text-text-tertiary">
+                      What I believed
+                    </p>
+                    <p className="type-voice-sm text-text-primary">
+                      {item.believed}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="type-overline text-text-tertiary">
+                      What changed it
+                    </p>
+                    <p className="type-body text-text-secondary">
+                      {item.changed}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="type-overline text-text-tertiary">
+                      What it cost
+                    </p>
+                    <p className="type-meta text-text-tertiary">{item.cost}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            <p className="type-body measure text-text-secondary">
+              What the three have in common is that the reason outlived the
+              rule. A rule is a hypothesis with a reason attached; when the
+              two come apart, the reason is the part worth keeping. Two of
+              these were caught by testing the thing rather than trusting the
+              design, and the second was caught by a single sentence in
+              review — which is the cheapest way any of them could have been
+              found, and the argument for having someone say it out loud.
+            </p>
+          </Chapter>
+
+          <Chapter
             id="making"
-            kicker="06 · The making"
+            kicker="07 · The making"
             title="Directed, not delegated."
             lede={
               /* No elapsed-day figure. The repository is public and its commit
