@@ -6,7 +6,6 @@ import {
   ChoiceChip,
   ChoiceChipGroup,
   Figure,
-  HorizonBand,
   HorizonField,
   RungIndicator,
   Wordmark,
@@ -277,22 +276,22 @@ const SCOPE = [
   {
     area: "Strategy",
     detail:
-      "The thesis, the audience and the anti-users, the pricing principle, and the scope discipline that cut the chart every competitor ships.",
+      "Thesis, audience and anti-users, the pricing principle, and the scope discipline that cut the chart every competitor ships.",
   },
   {
     area: "Identity & visual system",
     detail:
-      "The compass wordmark, three typefaces with three jobs, three color families, and a two-tier token architecture that components cannot bypass.",
+      "The compass wordmark, three typefaces, three color families, and a token architecture components cannot bypass.",
   },
   {
     area: "Product & interaction design",
     detail:
-      "Four destinations, one decision card, onboarding as a spoken conversation, the derivation overlay, and a full-screen voice mode.",
+      "Four destinations, one decision card, onboarding as a conversation, the derivation overlay, and voice mode.",
   },
   {
     area: "Engineering direction",
     detail:
-      "Held the standard through implementation: every screen reviewed in the browser and settled by measurement rather than opinion, so the design did not quietly degrade on its way to the shipped product.",
+      "Every screen reviewed in the browser and settled by measurement rather than opinion, so the design did not degrade on its way to shipping.",
   },
 ];
 
@@ -309,44 +308,41 @@ const REVERSALS = [
     believed:
       "Recognise the questions I planned for and refuse the rest. For a product that must never answer a markets question, refusing by default felt like the safe posture.",
     changed:
-      "Measured against 31 ordinary phrasings, it refused 12 of the 29 it could actually answer (41%), and every form of “what can you do” was among them, so most people would have met a refusal as North’s first answer. Widening the term lists took that to 2 of 31, which looked like a fix. Then a second survey, written blind against the new lists, refused 25 of 29. The lists were never the problem; the polarity was. Refusing on the absence of recognition had made those lists responsible for enumerating every way a human might phrase a question, and no list can do that.",
-    cost: "Inverting it, so that it refuses only on positive evidence of a subject North does not cover, makes the refusal list the one list that must be complete. An adversarial review then found it wrong in both directions at once: 36 findings raised, 24 confirmed.",
+      "Measured against 31 ordinary phrasings, it refused 12 of the 29 it could answer (41%), including every form of “what can you do”. Widening the term lists took that to 2 of 31, which looked like a fix. A second survey, written blind against the new lists, refused 25 of 29. The lists were never the problem; the polarity was. Refusing on the absence of recognition made them responsible for every way a human might phrase a question, and no list can do that.",
+    cost: "Inverting it makes the refusal list the one that must be complete. An adversarial review found it wrong in both directions: 36 findings, 24 confirmed.",
   },
   {
     area: "A fifth destination",
     believed:
       "The spoken coach would be its own surface: “Read this to me”, a narrator for the page you were on.",
     changed:
-      "A one-sentence review: a page narrator is not a coach. The product’s own voice document had already said so on its first page (North is a conversation, it just happens to be typed), and I had written that sentence myself without applying it.",
-    cost: "The planned fifth tab was cancelled and folded into Navigator, which had always been the “what would you like to think through?” surface. The dock stayed capped at four.",
+      "A one-sentence review: a page narrator is not a coach. My own voice document had said so on its first page, that North is already a conversation and it just happens to be typed, and I had not applied it.",
+    cost: "The planned fifth tab was cancelled and folded into Navigator, which had always been the surface for thinking something through.",
   },
   {
     area: "A rule I had written down",
     believed:
       "Voice is never a mode, with no state you enter and have to leave. The rule existed to stop North disclosing your balance to a room you had not chosen.",
     changed:
-      "A full-screen mode you deliberately enter, obviously occupy and leave with one tap serves that reason better than ambient speech does. Nothing can begin by surprise, and the exposure is bounded by a surface you can see you are in.",
-    cost: "The letter of the rule is reversed and its purpose is intact, which is the only kind of reversal worth making. The two rules underneath it were left untouched, so the typed conversation remains the visible twin and nothing is ever voice-only.",
+      "A mode you deliberately enter and leave with one tap serves that reason better than ambient speech does. Nothing begins by surprise, and the exposure is bounded by a surface you can see you are in.",
+    cost: "The letter of the rule reversed; its purpose intact. The typed conversation stays the visible twin, so nothing is ever voice-only.",
   },
 ];
 
-/* Real commit messages, verbatim from `git log`. */
+/**
+ * Real commit messages, verbatim from `git log`.
+ *
+ * Two, not five. Three were cut in the merge that folded the making chapter
+ * into the reversals: one of them ("Stop refusing questions the engine can
+ * answer") was the first reversal told twice, and the other two made the
+ * same point these two make. Both of these show the same move — a local
+ * patch replaced by a rule the system can hold — which is the only thing
+ * this list is here to demonstrate.
+ */
 const RECEIPTS = [
-  {
-    line: "Stop refusing questions the engine can answer",
-    note: "The coach's router had its default inverted. A gatekeeper became a partner.",
-  },
   {
     line: "Spacing: a gap belongs to the weaker relationship it separates",
     note: "One rule replaced eight ad-hoc gap values across the app.",
-  },
-  {
-    line: "The rose was orbiting a pivot 70 units to its left",
-    note: "A splash bug diagnosed by reading the live DOM, not by guessing.",
-  },
-  {
-    line: "Both lines identified by toggle, and both were mine",
-    note: "Two rendering artifacts isolated in the browser, and owned.",
   },
   {
     line: "Every mark sits on its line by construction, not by a number",
@@ -574,8 +570,8 @@ export function CaseStudy() {
                 </p>
                 <p>
                   North&rsquo;s bet is that the judgment layer becomes
-                  software, and that the difference between this and every
-                  competitor is <em>where</em> the intelligence sits.
+                  software, and that the difference is <em>where</em> the
+                  intelligence sits.
                 </p>
               </>
             }
@@ -643,16 +639,11 @@ export function CaseStudy() {
                 </p>
                 <p className="type-body text-text-secondary">
                   Every audience claim on this page depends on it, and it is
-                  unvalidated. North has been tested against its own engine
-                  and against 31 real phrasings of the questions people ask a
-                  coach; it has not been put in front of the person it was
-                  built for.
-                </p>
-                <p className="type-body text-text-secondary">
-                  The study that would settle it is small and I would run it
-                  first: six to eight people in the segment, shown their own
-                  idle cash, asked what they would want next. The distinction
-                  that matters is whether they say{" "}
+                  unvalidated: North has been tested against its own engine
+                  and 31 real phrasings, not against the person it was built
+                  for. The study I would run first is small. Six to eight
+                  people in the segment, shown their own idle cash, asked what
+                  they would want next. What matters is whether they say{" "}
                   <em className="text-text-primary">
                     I don&rsquo;t know what to do with it
                   </em>{" "}
@@ -660,10 +651,9 @@ export function CaseStudy() {
                   <em className="text-text-primary">
                     I know, and I haven&rsquo;t
                   </em>
-                  . If it is the second, the thesis is wrong in a specific and
-                  useful way: the scarce thing would be follow-through rather
-                  than judgment, and North would need to become a different
-                  product rather than a better one.
+                  . The second answer would mean the scarce thing is
+                  follow-through rather than judgment, and North would need to
+                  become a different product rather than a better one.
                 </p>
               </div>
             </Spread>
@@ -692,7 +682,7 @@ export function CaseStudy() {
           >
             <Spread
               label="The ladder, and where this person stands"
-              caption="Position, never progress. A settled rung gets less ink rather than more, the opposite of how a game would draw it. Nothing animates, nothing celebrates, and the order never re-sorts."
+              caption="Position, never progress. A settled rung gets less ink rather than more. Nothing animates, nothing celebrates, and the order never re-sorts."
             >
               <div className="flex flex-col gap-6">
                 <RungIndicator rung={CURRENT_RUNG} label="high-interest debt" />
@@ -718,8 +708,7 @@ export function CaseStudy() {
                   </p>
                   <ul className="flex flex-col gap-2">
                     {[
-                      "The reader has to classify themselves, which is the coach's job, handed back to them.",
-                      "Four buckets means four sets of advice to write, and to keep true forever.",
+                      "The reader has to classify themselves, which is the coach's job handed back to them.",
                       "Anyone between labels gets advice written for somebody else.",
                     ].map((line) => (
                       <li key={line} className="type-meta text-text-secondary">
@@ -743,8 +732,7 @@ export function CaseStudy() {
                   </p>
                   <ul className="flex flex-col gap-2">
                     {[
-                      "Nobody is asked to name their category: the profile is built from real answers.",
-                      "One list, written once. There is no second copy to keep in agreement.",
+                      "Nobody names their category: the profile is built from real answers.",
                       "A situation nobody anticipated still lands on a sensible rung, because the rules are about the situation rather than the label.",
                     ].map((line) => (
                       <li key={line} className="type-meta text-text-secondary">
@@ -797,7 +785,7 @@ export function CaseStudy() {
           >
             <Spread
               label="The mark"
-              caption="NORTH in the product's own hairline hand, with the O a working compass. Its needle's north point is the one filled shape in the entire identity."
+              caption="The O is a working compass, and its north point is the one filled shape in the identity."
             >
               <div className="text-text-primary">
                 <Wordmark height={56} />
@@ -805,8 +793,8 @@ export function CaseStudy() {
             </Spread>
 
             <Spread
-              label="Three faces, three jobs, each at its working size"
-              caption="The serif is the coach thinking, and it is always the largest voice on a screen. The sans is the interface staying out of the way, so it is shown at interface size. The mono is the machine computing."
+              label="Three faces, three jobs, each shown at its working size"
+              caption="The serif is the coach thinking. The sans is the interface getting out of the way. The mono is the machine computing."
             >
               <div className="flex flex-col">
                 <div className="border-t border-line-hairline py-6">
@@ -838,7 +826,7 @@ export function CaseStudy() {
 
             <Spread
               label="Three color families, and no more"
-              caption="Amounts are never colored and direction is a glyph, so the palette is colorblind-safe by construction rather than by remediation."
+              caption="Amounts are never colored and direction is a glyph, so the palette is colorblind-safe by construction."
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
                 {COLOR_PANELS.map((panel) => (
@@ -878,7 +866,7 @@ export function CaseStudy() {
 
             <Spread
               label="Every number carries its confidence"
-              caption="Stated, inferred, or assumed: each renders differently, and a screen reader hears the same distinction. No other personal-finance product does this."
+              caption="Stated, inferred, or assumed. A screen reader hears the same distinction. No other personal-finance product does this."
             >
               <p className="type-voice-md max-w-2xl text-text-primary">
                 You hold{" "}
@@ -908,34 +896,17 @@ export function CaseStudy() {
 
             {/* ── THE ONE VISUALIZATION ───────────────────────────────────
                 MVP holds exactly one chart, and calling it a chart overstates
-                it: no axes, no gridlines, no legend, no tooltip. Both pieces
-                below are the product's real components, not drawings of them,
-                and the field is a genuine slider. */}
-            <Spread
-              label="The width is the uncertainty"
-              caption="Two projections sharing one domain. The top is a confident profile; the bottom is the same projection with less known about the person. You can see that North knows less without reading a word, which is the whole argument for a range over a single number."
-            >
-              <div className="measure flex flex-col gap-8">
-                <HorizonBand
-                  low={140_000_000}
-                  high={165_000_000}
-                  confidence="inferred"
-                  horizon="by 65"
-                  domainMax={220_000_000}
-                />
-                <HorizonBand
-                  low={95_000_000}
-                  high={205_000_000}
-                  confidence="assumed"
-                  horizon="by 65"
-                  domainMax={220_000_000}
-                />
-              </div>
-            </Spread>
+                it: no axes, no gridlines, no legend, no tooltip.
 
+                This was two spreads. The pair of bands argued that width
+                encodes uncertainty; the field demonstrated the same thing and
+                could be dragged. Two specimens for one argument is exactly
+                the redundancy the page was carrying everywhere, so the
+                argument moved into the caption and the interactive one
+                stayed. */}
             <Spread
-              label="The horizon field: drag it"
-              caption="The large-format sibling, for when the projection is the subject. The in-band bars breathe on a slow stagger, because uncertainty is alive. Drag the field, or focus it and use the arrow keys, to move the horizon year under the cursor."
+              label="The width is the uncertainty, and you can drag it"
+              caption="The band's width is how much North does not know, so a reader sees the confidence without reading a word. The bars breathe on a slow stagger, because uncertainty is alive. Drag it, or use the arrow keys, to move the horizon year."
             >
               <HorizonField
                 low={57_800_000}
@@ -952,7 +923,7 @@ export function CaseStudy() {
 
             <Spread
               label="One drawing, six strokes"
-              caption="Every figure of the onboarding glyph interpolates into every other: the component is mounted once and fed new ids, because keying it on the turn would remount, and a remount is a swap rather than a morph. Pick one and watch."
+              caption="Every figure interpolates into every other. The component is mounted once and fed new ids, because remounting it would be a swap rather than a morph."
             >
               <div className="flex flex-col gap-6">
                 <TurnGlyph
@@ -983,8 +954,8 @@ export function CaseStudy() {
               Each is a rule the product cannot get around: a mark that may
               not be redrawn, a face that appears at one job only, a number
               that cannot reach the screen without stating how well it is
-              known. A system is what still holds when the person who set it
-              is not in the room.
+              known. A system is what still holds when the person who set it is
+              not in the room.
             </p>
 
             {/* The handover argument, said out loud. Every artifact named
@@ -993,23 +964,22 @@ export function CaseStudy() {
                 did not exist yet. This is the closest honest proxy for
                 management thinking a solo project can offer. */}
             <p className="type-body measure text-text-secondary">
-              Which is why the system is enforced rather than documented. The
-              token layer is built so a component{" "}
-              <em className="text-text-primary">cannot</em> reach past it to a
-              raw colour. The principles are pinned by tests that fail the
-              build, not by a page asking people to remember. The gallery at{" "}
+              Which is why the system is enforced rather than documented. A
+              component{" "}
+              <em className="text-text-primary">cannot</em> reach past the
+              token layer to a raw colour. The principles are pinned by tests
+              that fail the build. The gallery at{" "}
               <Link
                 href="/design"
                 className="underline decoration-dotted underline-offset-4 hover:text-text-primary"
               >
                 /design
               </Link>{" "}
-              measures its own contrast in the browser, so it cannot quietly
-              go stale, and ten decision documents record why each rule exists,
-              because a rule whose reason is lost is the first one someone
-              breaks. None of that was necessary for one person. It is what I
-              build so that a team can move without me, and it is the part of
-              this work that would transfer on day one.
+              measures its own contrast so it cannot go stale, and ten
+              documents record why each rule exists, because a rule whose
+              reason is lost is the first one broken. None of that was
+              necessary for one person. It is what I build so a team can move
+              without me.
             </p>
           </Chapter>
         </div>
@@ -1099,7 +1069,7 @@ export function CaseStudy() {
           >
             <Spread
               label="The ethics pin is a test, not a policy"
-              caption="A principle in a document is a hope. A principle in the test suite is a constraint: it cannot be quietly walked back, because walking it back stops the build."
+              caption="A principle in a document is a hope. A principle in the test suite stops the build."
             >
               <div className="measure flex flex-col gap-5">
                 <pre className="type-figure overflow-x-auto rounded-card border border-line-hairline bg-surface-sunken p-5 text-text-secondary">
@@ -1122,11 +1092,11 @@ export function CaseStudy() {
                     },
                     {
                       term: "\"debt-first\"",
-                      def: "The scenario that tells you to stop losing money to high-interest debt, and the single most valuable thing North can say to the person who needs it most.",
+                      def: "The scenario that tells you to stop losing money to high-interest debt.",
                     },
                     {
                       term: "\"the copy just became a lie\"",
-                      def: "What prints when the check fails. The product's own promise says the judgment is never paywalled; moving this scenario would make that sentence false, so whoever broke it reads the reason rather than a line number.",
+                      def: "What prints when the check fails. The product promises the judgment is never paywalled; moving this would make that sentence false.",
                     },
                   ].map((row) => (
                     <div key={row.term} className="flex flex-col gap-1">
@@ -1195,68 +1165,38 @@ export function CaseStudy() {
               ))}
             </ol>
 
+            {/* The receipts, folded in from what used to be a separate "07 ·
+                The making" chapter. Two chapters sat adjacent arguing the
+                same thing — here is the standard I hold, and here is how I
+                catch myself — with the reversals as the stronger evidence
+                and five receipts as five more instances of it. One chapter
+                now, and three of the five receipts went with the merge: the
+                remaining two carry the point the other three repeated. */}
+            <Spread
+              label="And the same standard, at the scale of a single line"
+              caption="Commit messages, verbatim. Each replaces a local patch with a rule the system can hold. This is the standard I would want a team operating at, held here by one person."
+            >
+              <ul className="measure flex flex-col">
+                {RECEIPTS.map((receipt) => (
+                  <li
+                    key={receipt.line}
+                    className="border-t border-line-hairline py-4 first:border-t-0 first:pt-0"
+                  >
+                    <p className="type-voice-sm text-text-primary">
+                      &ldquo;{receipt.line}&rdquo;
+                    </p>
+                    <p className="type-meta mt-1.5 text-text-tertiary">
+                      {receipt.note}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </Spread>
+
             <p className="type-body measure text-text-secondary">
-              What the three have in common is that the reason outlived the
+              What all of them have in common is that the reason outlived the
               rule. A rule is a hypothesis with a reason attached; when the
-              two come apart, the reason is the part worth keeping. Two of
-              these were caught by testing the thing rather than trusting the
-              design, and the second was caught by a single sentence in
-              review, which is the cheapest way any of them could have been
-              found, and the argument for having someone say it out loud.
-            </p>
-          </Chapter>
-
-          <Chapter
-            id="making"
-            kicker="07 · The making"
-            title="Directed, not delegated."
-            lede={
-              /* No elapsed-day figure. The repository is public and its commit
-                 history spans eight days, so a stated "fourteen days" invites a
-                 contradiction a technical reader can check in one click — and
-                 the sentence's point is direction, not speed.
-
-                 A PLAIN block comment, not `{/* … *\/}`: `lede={` opens a JS
-                 expression position, where a braced comment parses as an empty
-                 object literal and the element after it becomes a syntax error.
-                 This exact mistake broke the build once already. */
-              <p>
-                North was built through close, sustained direction of an AI
-                engineering partner. The taste, the standard, and the no were
-                never delegated; the exhausting parts were. The commit history
-                reads as a design review because that is what the process was.
-                Five entries, verbatim:
-              </p>
-            }
-          >
-            <ul className="measure flex flex-col">
-              {RECEIPTS.map((receipt) => (
-                <li
-                  key={receipt.line}
-                  className="border-t border-line-hairline py-4 first:border-t-0"
-                >
-                  <p className="type-voice-sm text-text-primary">
-                    &ldquo;{receipt.line}&rdquo;
-                  </p>
-                  <p className="type-meta mt-1.5 text-text-tertiary">
-                    {receipt.note}
-                  </p>
-                </li>
-              ))}
-            </ul>
-
-            {/* Without this, five receipts read as five engineering anecdotes
-                — which is the misread this section is most exposed to. The
-                line names the standard they are all instances of. It says
-                "the standard I would want a team operating at" rather than
-                "the bar I held a team to": there was no team, and borrowing
-                that credibility would be a lie. */}
-            <p className="type-body measure text-text-secondary">
-              The subjects differ; the standard does not. Each of these
-              replaces a local patch with a rule the system can hold, and each
-              was settled by measurement rather than by opinion, including
-              the one that begins by owning a mistake. That is the standard I
-              would want a team operating at, held here by one person.
+              two come apart, the reason is the part worth keeping.
             </p>
           </Chapter>
 
