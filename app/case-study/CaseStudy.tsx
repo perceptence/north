@@ -338,7 +338,6 @@ const STATS = [
   { value: "9", label: "product screens" },
   { value: "25", label: "design-system components" },
   { value: "602", label: "tests, none failing" },
-  { value: "v1.0", label: "locked and tagged" },
 ];
 
 const COLOR_PANELS: Array<{
@@ -1066,53 +1065,41 @@ export function CaseStudy() {
             </p>
           </Chapter>
 
-          <Chapter
-            id="state"
-            kicker="07 · The state"
-            title="Locked at v1.0, edges written down."
-            lede={
-              <>
-                <p>
-                  Version 1.0 is tagged: 602 tests across 124 suites, clean
-                  typecheck and lint, and a purity guard proving the engine
-                  imports no framework, no clock, and no membership.
-                </p>
-                <p>
-                  The known edges are recorded on purpose — the optional
-                  intent endpoint has no rate limit yet, the dock sits under a
-                  real iPhone&rsquo;s home indicator, and two constant tables
-                  are duplicated in onboarding. A case study that hides its
-                  edges is an advertisement.
-                </p>
-              </>
-            }
-          >
-            <footer className="border-t border-line-hairline pt-10">
-              <div className="flex flex-col items-start gap-6">
-                <div className="text-text-primary">
-                  <Wordmark height={13} strokeWidth={2} />
-                </div>
-                <p className="type-meta measure text-text-tertiary">
-                  Designed and directed by Tanmay Jain. Next.js 16 · React 19
-                  · TypeScript · Tailwind v4 · built with Claude Code. The
-                  system documents itself at{" "}
-                  <Link
-                    href="/design"
-                    className="text-text-secondary underline decoration-dotted underline-offset-4"
-                  >
-                    /design
-                  </Link>
-                  .
-                </p>
-                <Link
-                  href="/preview"
-                  className="type-label text-text-secondary underline decoration-dotted underline-offset-4 transition-colors duration-[--motion-micro] hover:text-text-primary"
-                >
-                  Try North yourself
-                </Link>
+          {/* The footer stands on its own now. It used to be the children of
+              a closing "07 · The state" chapter, which ended the page on a
+              list of engineering debt — the last thing a reader saw. Removing
+              the chapter would have taken the byline, the /design link and
+              the second CTA with it, so the footer was lifted out rather than
+              deleted, and carries the chapters' own `pt-20` so the rule above
+              it sits centred like every other section boundary.
+
+              The page now closes on the making chapter's line about the
+              standard, which is a better last impression than a TODO list. */}
+          <footer className="border-t border-line-hairline pt-20">
+            <div className="flex flex-col items-start gap-6">
+              <div className="text-text-primary">
+                <Wordmark height={13} strokeWidth={2} />
               </div>
-            </footer>
-          </Chapter>
+              <p className="type-meta measure text-text-tertiary">
+                Designed and directed by Tanmay Jain. Next.js 16 · React 19 ·
+                TypeScript · Tailwind v4 · built with Claude Code. The system
+                documents itself at{" "}
+                <Link
+                  href="/design"
+                  className="text-text-secondary underline decoration-dotted underline-offset-4"
+                >
+                  /design
+                </Link>
+                .
+              </p>
+              <Link
+                href="/preview"
+                className="type-label text-text-secondary underline decoration-dotted underline-offset-4 transition-colors duration-[--motion-micro] hover:text-text-primary"
+              >
+                Try North yourself
+              </Link>
+            </div>
+          </footer>
         </div>
       </main>
     </div>
