@@ -631,10 +631,11 @@ export function CaseStudy() {
                 product down, and the first question any reviewer asks of the
                 audience claims above is "how do you know?". The honest answer
                 is written here rather than left for them to ask. */}
-            <Spread
-              label="The assumption everything rests on"
-              caption="Naming the study that would falsify the thesis is cheaper than discovering it late. This one has not been run: the behaviour above was measured against phrasings, not against people."
-            >
+            {/* No caption. It restated in small grey type what the body had
+                just said in full, and a point made twice reads as a point
+                being defended. The body still says plainly that the
+                assumption is unvalidated, so nothing honest was lost. */}
+            <Spread label="The assumption everything rests on">
               <div className="measure flex flex-col gap-4">
                 <p className="type-voice-md text-text-primary">
                   That judgment, not information, is the thing this person
@@ -756,9 +757,15 @@ export function CaseStudy() {
             </Spread>
 
             <p className="type-body measure text-text-secondary">
+              {/* Not "cannot fail during a demo". That was the engineering
+                  note's framing, and it quietly tells the reader they are
+                  looking at a demo rather than a product. The consequences
+                  that matter to a person using it are stronger anyway, and
+                  all three are true of a model-free answer path. */}
               The engine is pure TypeScript with no model call anywhere in the
-              path to an answer, so it cannot fail during a demo and cannot
-              quietly change its mind. The rule is held by a test titled{" "}
+              path to an answer. The same situation always produces the same
+              read, no figure can be invented, and no answer depends on a
+              service being available. The rule is held by a test titled{" "}
               <code className="type-figure text-text-primary">
                 &ldquo;income does not determine the rung&rdquo;
               </code>
