@@ -292,7 +292,7 @@ const SCOPE = [
   {
     area: "Engineering direction",
     detail:
-      "Every change reviewed live in the browser, measured rather than eyeballed, across seventy-plus commits with an AI engineering partner.",
+      "Held the standard through implementation: every screen reviewed in the browser and settled by measurement rather than opinion, so the design did not quietly degrade on its way to the shipped product.",
   },
 ];
 
@@ -320,9 +320,23 @@ const RECEIPTS = [
   },
 ];
 
+/**
+ * Product scope first, then evidence of quality — a reader scanning this row
+ * is looking for how much was owned before they look for how well it was done.
+ *
+ * Every figure is counted from the repository, not estimated: nine screens is
+ * six product destinations plus arrival, onboarding and the story replay
+ * (`/design`, `/demo`, `/preview` and this page are excluded — they are not
+ * product surfaces). Twenty-five is `components/nds/*.tsx` minus
+ * `MotionProvider`, which is infrastructure rather than a component.
+ *
+ * Commits and elapsed days used to sit here and were cut: they measure the
+ * repository rather than the product, and one of them ("14 days") could not
+ * be derived from anything at all.
+ */
 const STATS = [
-  { value: "70+", label: "commits" },
-  { value: "14", label: "days" },
+  { value: "9", label: "product screens" },
+  { value: "25", label: "design-system components" },
   { value: "602", label: "tests, none failing" },
   { value: "v1.0", label: "locked and tagged" },
 ];
@@ -451,6 +465,18 @@ export function CaseStudy() {
             engineering partner through the build. Every judgment on this
             page — what shipped, what was cut, what is never for sale — was
             made here, and the record of it is public in the repository.
+          </p>
+          {/* The scope, stated as the bar it was built to rather than as a
+              caveat about what it lacks. The project's own strategy defines
+              success this way, so this is the brief being reported, not a
+              disclaimer being softened — and it answers "did this ship to
+              users?" before a reader has to wonder. */}
+          <p className="type-body measure mt-4 text-text-secondary">
+            It is a complete, working system rather than a prototype —
+            deployed, and open to anyone with the link. Its own strategy set
+            the bar: that a reader understands the thinking quickly and wants
+            to use the thing, rather than that an adoption curve looks good.
+            Every decision here was made against that.
           </p>
           <div className="mt-10 grid w-full grid-cols-1 gap-x-10 gap-y-7 md:grid-cols-2">
             {SCOPE.map((item) => (
@@ -847,6 +873,18 @@ export function CaseStudy() {
                 </ChoiceChipGroup>
               </div>
             </Spread>
+
+            {/* The six demonstrations above each state a position; nothing
+                said what they collectively argue. One line does it, rather
+                than a "Principles" section restating them as bullets. */}
+            <p className="type-body measure text-text-secondary">
+              Six pieces, one argument: not one of them is a style choice.
+              Each is a rule the product cannot get around — a mark that may
+              not be redrawn, a face that appears at one job only, a number
+              that cannot reach the screen without stating how well it is
+              known. A system is what still holds when the person who set it
+              is not in the room.
+            </p>
           </Chapter>
         </div>
 
@@ -979,8 +1017,17 @@ export function CaseStudy() {
             kicker="06 · The making"
             title="Directed, not delegated."
             lede={
+              /* No elapsed-day figure. The repository is public and its commit
+                 history spans eight days, so a stated "fourteen days" invites a
+                 contradiction a technical reader can check in one click — and
+                 the sentence's point is direction, not speed.
+
+                 A PLAIN block comment, not `{/* … *\/}`: `lede={` opens a JS
+                 expression position, where a braced comment parses as an empty
+                 object literal and the element after it becomes a syntax error.
+                 This exact mistake broke the build once already. */
               <p>
-                North was built in fourteen days of close direction of an AI
+                North was built through close, sustained direction of an AI
                 engineering partner. The taste, the standard, and the no were
                 never delegated; the exhausting parts were. The commit history
                 reads as a design review because that is what the process was.
@@ -1003,6 +1050,20 @@ export function CaseStudy() {
                 </li>
               ))}
             </ul>
+
+            {/* Without this, five receipts read as five engineering anecdotes
+                — which is the misread this section is most exposed to. The
+                line names the standard they are all instances of. It says
+                "the standard I would want a team operating at" rather than
+                "the bar I held a team to": there was no team, and borrowing
+                that credibility would be a lie. */}
+            <p className="type-body measure text-text-secondary">
+              The subjects differ; the standard does not. Each of these
+              replaces a local patch with a rule the system can hold, and each
+              was settled by measurement rather than by opinion — including
+              the one that begins by owning a mistake. That is the standard I
+              would want a team operating at, held here by one person.
+            </p>
           </Chapter>
 
           <Chapter

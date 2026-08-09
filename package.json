@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test 'core/**/*.test.ts'",
+    "test": "node --test 'core/**/*.test.ts' 'test/**/*.test.ts'",
     "test:watch": "node --test --watch 'core/**/*.test.ts'"
   },
   "dependencies": {
